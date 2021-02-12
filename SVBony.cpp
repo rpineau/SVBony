@@ -505,12 +505,12 @@ void CSVBony::getBayerPattern(std::string &sBayerPattern)
     }
 }
 
-int CSVBony::setROI(int nLeft, int nTop, int nRight, int nBottom)
+int CSVBony::setROI(int nLeft, int nTop, int nWidth, int nHeight)
 {
     int nErr = PLUGIN_OK;
     SVB_ERROR_CODE ret;
     
-    ret = SVBSetROIFormat(m_nCameraID, nLeft, nTop, nRight, nBottom, m_nCurrentBin);
+    ret = SVBSetROIFormat(m_nCameraID, nLeft, nTop, nWidth, nHeight, m_nCurrentBin);
     if(ret!=SVB_SUCCESS)
         nErr =ERR_CMDFAILED;
     return nErr;
@@ -518,8 +518,12 @@ int CSVBony::setROI(int nLeft, int nTop, int nRight, int nBottom)
 
 int CSVBony::clearROI()
 {
-    int nErr = ERR_COMMANDNOTSUPPORTED;
-
+    int nErr = PLUGIN_OK;
+    SVB_ERROR_CODE ret;
+    
+    ret = SVBSetROIFormat(m_nCameraID, 0, 0, m_nMaxWidth/m_nCurrentBin, m_nMaxHeight/m_nCurrentBin, m_nCurrentBin);
+    if(ret!=SVB_SUCCESS)
+        nErr =ERR_CMDFAILED;
     return nErr;
 }
 

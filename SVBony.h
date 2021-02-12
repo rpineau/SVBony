@@ -78,7 +78,7 @@ public:
     
     bool        isCameraColor();
     void        getBayerPattern(std::string &sBayerPattern);
-    int         setROI(int nLeft, int nTop, int nRight, int nBottom);
+    int         setROI(int nLeft, int nTop, int nWidth, int nHeight);
     int         clearROI(void);
 
     bool        isFameAvailable();

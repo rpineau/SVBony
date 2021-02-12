@@ -549,7 +549,7 @@ int X2Camera::CCSetBinnedSubFrame(const enumCameraIndex& Camera, const enumWhich
 {
 	X2MutexLocker ml(GetMutex());
 
-    m_Camera.setROI(nLeft, nTop, nRight, nBottom);
+    m_Camera.setROI(nLeft, nTop, nRight-nLeft, nBottom-nTop);
 	return SB_OK;
 }
 
