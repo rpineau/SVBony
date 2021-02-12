@@ -119,7 +119,9 @@ protected:
     bool                    m_bDeviceIsUSB;
     bool                    m_bAbort;
     std::map<int,bool>      m_mAvailableFrameRate;
-
+    bool                    m_bCapturerunning;
+    int                     m_nNbBitToShift;
+    
     CStopWatch              m_ExposureTimer;
     double                  m_dCaptureLenght;
     

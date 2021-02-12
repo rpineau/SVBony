@@ -18,8 +18,9 @@ CSVBony::CSVBony()
     m_bAbort = false;
     m_nCurrentBin = 1;
     m_nVideoMode = SVB_IMG_RAW12;
+    m_nNbBitToShift = 4;
     m_dCaptureLenght = 0;
-    
+    m_bCapturerunning = false;
     m_nDefaultGain = 100;
     
     memset(m_szCameraName,0,BUFFER_LEN);
@@ -111,6 +112,7 @@ int CSVBony::Connect(int nCameraID)
     m_bIsColorCam = m_cameraProperty.IsColorCam;
     m_nBayerPattern = m_cameraProperty.BayerPattern;
     m_nMaxBitDepth = m_cameraProperty.MaxBitDepth;
+    m_nNbBitToShift = 16 - m_cameraProperty.MaxBitDepth;
     m_nNbBin = 0;
     m_nCurrentBin = 0;
     
@@ -138,6 +140,7 @@ int CSVBony::Connect(int nCameraID)
     fprintf(Logfile, "[%s] [CSVBony::Connect] m_bIsColorCam   : %s\n", timestamp, m_bIsColorCam?"Yes":"No");
     fprintf(Logfile, "[%s] [CSVBony::Connect] m_nBayerPattern : %d\n", timestamp, m_nBayerPattern);
     fprintf(Logfile, "[%s] [CSVBony::Connect] m_nMaxBitDepth  : %d\n", timestamp, m_nMaxBitDepth);
+    fprintf(Logfile, "[%s] [CSVBony::Connect] m_nNbBitToShift : %d\n", timestamp, m_nNbBitToShift);
     fprintf(Logfile, "[%s] [CSVBony::Connect] m_nNbBin        : %d\n", timestamp, m_nNbBin);
     fflush(Logfile);
 #endif
@@ -218,6 +221,7 @@ int CSVBony::Connect(int nCameraID)
     ret = SVBStartVideoCapture(m_nCameraID);
     if(ret!=SVB_SUCCESS)
         nErr =ERR_CMDFAILED;
+    m_bCapturerunning = true;
 
 
     /*
@@ -460,6 +464,12 @@ int CSVBony::startCaputure(double dTime)
     if(ret!=SVB_SUCCESS)
         nErr =ERR_CMDFAILED;
 
+    if(!m_bCapturerunning) {
+        ret = SVBStartVideoCapture(m_nCameraID);
+        if(ret!=SVB_SUCCESS)
+            nErr =ERR_CMDFAILED;
+        m_bCapturerunning = true;
+    }
     ret = SVBSetOutputImageType(m_nCameraID, m_nVideoMode);
     if(ret!=SVB_SUCCESS)
         nErr =ERR_CMDFAILED;
@@ -488,9 +498,8 @@ int CSVBony::stopCaputure()
     if(ret!=SVB_SUCCESS)
         nErr =ERR_CMDFAILED;
 
-    ret = SVBStartVideoCapture(m_nCameraID);
-    if(ret!=SVB_SUCCESS)
-        nErr =ERR_CMDFAILED;
+    m_bCapturerunning = false;
+    
 
     return nErr;
 }
@@ -598,7 +607,7 @@ bool CSVBony::isFameAvailable()
 
 uint32_t CSVBony::getBitDepth()
 {
-    return m_nMaxBitDepth;
+    return 16; // m_nMaxBitDepth;
 }
 
 
@@ -608,6 +617,8 @@ int CSVBony::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
     SVB_ERROR_CODE ret;
     int sizeToCopy;
 
+    uint16_t *buf;
+    
     if(!frameBuffer)
         return ERR_POINTER;
 
@@ -617,7 +628,7 @@ int CSVBony::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s] [CSVBony::getFrame] nHeight, nMemWidth,  sizeToCopy : %d, %d, %d\n", timestamp, nHeight, nMemWidth, sizeToCopy);
+        fprintf(Logfile, "[%s] [CSVBony::getFrame] nHeight, nMemWidth, sizeToCopy           : %d, %d, %d\n", timestamp, nHeight, nMemWidth, sizeToCopy);
         fflush(Logfile);
 #endif
     ret = SVBGetVideoData(m_nCameraID, frameBuffer, sizeToCopy, 5000);
@@ -628,7 +639,23 @@ int CSVBony::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s] [CSVBony::getFrame] buffer[0] content : %02x%02x\n", timestamp, *frameBuffer, *(frameBuffer+1));
+        fprintf(Logfile, "[%s] [CSVBony::getFrame] buffer[0] content                        : %02x%02x\n", timestamp, *(frameBuffer+1), *frameBuffer);
+        fprintf(Logfile, "[%s] [CSVBony::getFrame] end of buffer content                    : %02x%02x\n", timestamp, *(frameBuffer+sizeToCopy), *(frameBuffer+sizeToCopy-1));
+        fflush(Logfile);
+#endif
+
+    
+    // shift data
+    buf = (uint16_t *)frameBuffer;
+    for(int i=0; i<sizeToCopy/2; i++)
+        buf[i] = buf[i]<<m_nNbBitToShift;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CSVBony::getFrame] after bit shift buffer[0] content        : %02x%02x\n", timestamp, *(frameBuffer+1), *frameBuffer);
+        fprintf(Logfile, "[%s] [CSVBony::getFrame] after bit shift end of buffer content    : %02x%02x\n", timestamp, *(frameBuffer+sizeToCopy), *(frameBuffer+sizeToCopy-1));
         fflush(Logfile);
 #endif
 
