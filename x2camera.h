@@ -15,6 +15,7 @@
 #include "../../licensedinterfaces/tickcountinterface.h"
 #include "../../licensedinterfaces/basicstringinterface.h"
 #include "../../licensedinterfaces/x2guiinterface.h"
+#include "../../licensedinterfaces/addfitskeyinterface.h"
 
 #include "SVBony.h"
 
@@ -25,6 +26,7 @@ class BasicIniUtilInterface;
 class LoggerInterface;
 class MutexInterface;
 class TickCountInterface;
+class AddFITSKeyInterface;
 
 //As far as a naming convention goes, X2 implementors could do a search and
 //replace in all files and change "X2Camera" to "CoolCompanyCamera"
@@ -55,7 +57,7 @@ class TickCountInterface;
 
 Use this example to write an X2Camera driver.
 */
-class X2Camera: public CameraDriverInterface, public ModalSettingsDialogInterface, public X2GUIEventInterface, public PixelSizeInterface
+class X2Camera: public CameraDriverInterface, public ModalSettingsDialogInterface, public X2GUIEventInterface, public PixelSizeInterface, public  AddFITSKeyInterface
 {
 public: 
 	/*!Standard X2 constructor*/
@@ -168,6 +170,15 @@ public://Methods
 	virtual void uiEvent(X2GUIExchangeInterface* uiex, const char* pszEvent);
 	//@} 
 
+    // AddFITSKeyInterface
+    virtual int     countOfIntegerFields (int &nCount);
+    virtual int     valueForIntegerField (int nIndex, BasicStringInterface &sFieldName, BasicStringInterface &sFieldComment, int &nFieldValue);
+    virtual int     countOfDoubleFields (int &nCount);
+    virtual int     valueForDoubleField (int nIndex, BasicStringInterface &sFieldName, BasicStringInterface &sFieldComment, double &dFieldValue);
+    virtual int     countOfStringFields (int &nCount);
+    virtual int     valueForStringField (int nIndex, BasicStringInterface &sFieldName, BasicStringInterface &sFieldComment, BasicStringInterface &sFieldValue);
+    
+    
 	//Implemenation below here
 private:
 	SerXInterface 									*	GetSerX() {return m_pSerX; }		

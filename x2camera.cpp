@@ -416,6 +416,8 @@ int X2Camera::CCGetChipSize(const enumCameraIndex& Camera, const enumWhichCCD& C
     nH = m_Camera.getHeight()/nYBin;
     nReadOut = CameraDriverInterface::rm_Image;
 
+    m_Camera.setBinSize(nXBin);
+    
     return SB_OK;
 }
 
@@ -609,6 +611,68 @@ int X2Camera::PixelSize1x1InMicrons(const enumCameraIndex &Camera, const enumWhi
 
     x = m_Camera.getPixelSize();
     y = m_Camera.getPixelSize();
+    return nErr;
+}
+
+int X2Camera::countOfIntegerFields (int &nCount)
+{
+    int nErr = SB_OK;
+    nCount = 0;
+    return nErr;
+}
+
+int X2Camera::valueForIntegerField (int nIndex, BasicStringInterface &sFieldName, BasicStringInterface &sFieldComment, int &nFieldValue)
+{
+    int nErr = SB_OK;
+    sFieldName = "";
+    sFieldComment = "";
+    nFieldValue = 0;
+    return nErr;
+}
+
+int X2Camera::countOfDoubleFields (int &nCount)
+{
+    int nErr = SB_OK;
+    nCount = 0;
+    return nErr;
+}
+
+int X2Camera::valueForDoubleField (int nIndex, BasicStringInterface &sFieldName, BasicStringInterface &sFieldComment, double &dFieldValue)
+{
+    int nErr = SB_OK;
+    sFieldName = "";
+    sFieldComment = "";
+    dFieldValue = 0;
+    return nErr;
+}
+
+int X2Camera::countOfStringFields (int &nCount)
+{
+    int nErr = SB_OK;
+    nCount = 0;
+    if(m_Camera.isCameraColor())
+        nCount = 1;
+    return nErr;
+}
+
+int X2Camera::valueForStringField (int nIndex, BasicStringInterface &sFieldName, BasicStringInterface &sFieldComment, BasicStringInterface &sFieldValue)
+{
+    int nErr = SB_OK;
+    std::string sBayerPattern;
+    if(nIndex == 0) { // we only have one extra header, any other index is not valid
+        if(m_Camera.isCameraColor()) {
+            m_Camera.getBayerPattern(sBayerPattern);
+            sFieldName = "DEBAYER";
+            sFieldComment = "Bayer pattern to use to decode color image";
+            sFieldValue = sBayerPattern.c_str();   // need to set the filed for Monochrome/Color.
+        }
+        else {
+            sFieldName = "DEBAYER";
+            sFieldComment = "Bayer pattern to use to decode color image";
+            sFieldValue = "MONO";
+        }
+        
+    }
     return nErr;
 }
 

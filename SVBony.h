@@ -74,7 +74,10 @@ public:
     int         getWidth();
     int         getHeight();
     double      getPixelSize();
+    void        setBinSize(int nBin);
     
+    bool        isCameraColor();
+    void        getBayerPattern(std::string &sBayerPattern);
     int         setROI(int nLeft, int nTop, int nRight, int nBottom);
     int         clearROI(void);
 

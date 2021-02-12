@@ -475,6 +475,35 @@ double CSVBony::getPixelSize()
     return m_dPixelSize;
 }
 
+void CSVBony::setBinSize(int nBin)
+{
+    m_nCurrentBin = nBin;
+}
+
+bool CSVBony::isCameraColor()
+{
+    return m_bIsColorCam;
+}
+
+void CSVBony::getBayerPattern(std::string &sBayerPattern)
+{
+    if(m_bIsColorCam) {
+        switch(m_nBayerPattern) {
+            case SVB_BAYER_RG:
+                sBayerPattern.assign("RGGB");
+                break;
+            case SVB_BAYER_BG:
+                sBayerPattern.assign("BGGR");
+                break;
+            case SVB_BAYER_GR:
+                sBayerPattern.assign("GRBG");
+                break;
+            case SVB_BAYER_GB:
+                sBayerPattern.assign("GBGR");
+                break;
+        }
+    }
+}
 
 int CSVBony::setROI(int nLeft, int nTop, int nRight, int nBottom)
 {
