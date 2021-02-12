@@ -70,6 +70,8 @@ int	X2Camera::queryAbstraction(const char* pszName, void** ppVal)
 			*ppVal = dynamic_cast<X2GUIEventInterface*>(this);
     else if (!strcmp(pszName, PixelSizeInterface_Name))
         *ppVal = dynamic_cast<PixelSizeInterface*>(this);
+    else if (!strcmp(pszName, AddFITSKeyInterface_Name))
+        *ppVal = dynamic_cast<AddFITSKeyInterface*>(this);
 
 	return SB_OK;
 }
@@ -417,7 +419,6 @@ int X2Camera::CCGetChipSize(const enumCameraIndex& Camera, const enumWhichCCD& C
     nReadOut = CameraDriverInterface::rm_Image;
 
     m_Camera.setBinSize(nXBin);
-    
     return SB_OK;
 }
 
