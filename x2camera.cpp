@@ -322,8 +322,7 @@ int X2Camera::CCRegulateTemp(const bool& bOn, const double& dTemp)
 	if (!m_bLinked)
 		return ERR_NOLINK;
 
-    return ERR_NOT_IMPL;
-	// return SB_OK;
+	return SB_OK;
 }
 
 int X2Camera::CCGetRecommendedSetpoint(double& RecTemp)
@@ -331,8 +330,7 @@ int X2Camera::CCGetRecommendedSetpoint(double& RecTemp)
 	X2MutexLocker ml(GetMutex());
 
 	RecTemp = 100;//Set to 100 if you cannot recommend a setpoint
-    return ERR_NOT_IMPL;
-	// return SB_OK;
+	return SB_OK;
 }  
 
 
@@ -476,6 +474,7 @@ void X2Camera::CCBeforeDownload(const enumCameraIndex& Cam, const enumWhichCCD& 
 	X2MutexLocker ml(GetMutex());
 }
 
+
 void X2Camera::CCAfterDownload(const enumCameraIndex& Cam, const enumWhichCCD& CCD)
 {
 	X2MutexLocker ml(GetMutex());
@@ -499,7 +498,7 @@ int X2Camera::CCReadoutImage(const enumCameraIndex& Cam, const enumWhichCCD& CCD
 {
 	X2MutexLocker ml(GetMutex());
 
-	if (!m_bLinked)
+    if (!m_bLinked)
 		return ERR_NOLINK;
 
     m_Camera.getFrame(nHeight, nMemWidth, pMem);

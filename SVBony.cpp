@@ -14,11 +14,14 @@ CSVBony::CSVBony()
 
     m_pframeBuffer = NULL;
     m_bConnected = false;
-    m_bDeviceIsUSB = false;
     m_nCameraID = 0;
     m_bAbort = false;
-    m_bNeedDepthFix = false;
-
+    m_nCurrentBin = 1;
+    m_nVideoMode = SVB_IMG_RAW12;
+    m_dCaptureLenght = 0;
+    
+    m_nDefaultGain = 100;
+    
     memset(m_szCameraName,0,BUFFER_LEN);
 #ifdef PLUGIN_DEBUG
 #if defined(SB_WIN_BUILD)
@@ -184,8 +187,7 @@ int CSVBony::Connect(int nCameraID)
 #endif
 
     ret = SVBSetROIFormat(m_nCameraID, 0, 0, m_nMaxWidth, m_nMaxHeight, 1);
-    if (ret != SVB_SUCCESS)
-    {
+    if (ret != SVB_SUCCESS) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
@@ -198,9 +200,26 @@ int CSVBony::Connect(int nCameraID)
     }
 
 
-
-
+    ret = SVBSetControlValue(m_nCameraID, SVB_EXPOSURE , (double)(1 * 1000000), SVB_FALSE);
+    // set default valurs
+    ret = SVBSetControlValue(m_nCameraID, SVB_GAIN , m_nDefaultGain, SVB_FALSE);
+    ret = SVBSetControlValue(m_nCameraID, SVB_CONTRAST , 50, SVB_FALSE);
+    ret = SVBSetControlValue(m_nCameraID, SVB_SHARPNESS , 0, SVB_FALSE);
+    ret = SVBSetControlValue(m_nCameraID, SVB_SATURATION , 150, SVB_FALSE);
+    ret = SVBSetControlValue(m_nCameraID, SVB_WB_R , 100, SVB_FALSE);
+    ret = SVBSetControlValue(m_nCameraID, SVB_WB_G , 100, SVB_FALSE);
+    ret = SVBSetControlValue(m_nCameraID, SVB_WB_B , 100, SVB_FALSE);
+    ret = SVBSetControlValue(m_nCameraID, SVB_GAMMA , 100, SVB_FALSE);
+    ret = SVBSetControlValue(m_nCameraID, SVB_FRAME_SPEED_MODE , 0, SVB_FALSE); // low speed
     
+    ret = SVBSetOutputImageType(m_nCameraID, m_nVideoMode);
+    ret = SVBSetCameraMode(m_nCameraID, SVB_MODE_TRIG_SOFT);
+    
+    ret = SVBStartVideoCapture(m_nCameraID);
+    if(ret!=SVB_SUCCESS)
+        nErr =ERR_CMDFAILED;
+
+
     /*
     // set video mode by chosng the biggest one for now.
     nFrameSize = 0;
@@ -236,6 +255,7 @@ void CSVBony::Disconnect()
         free(m_pframeBuffer);
         m_pframeBuffer = NULL;
     }
+    SVBStopVideoCapture(m_nCameraID);
     SVBCloseCamera(m_nCameraID);
     m_bConnected = false;
 
@@ -428,19 +448,50 @@ int CSVBony::getBinFromIndex(int nIndex)
     return m_SupportedBins[nIndex];        
 }
 
+
 int CSVBony::startCaputure(double dTime)
 {
     int nErr = PLUGIN_OK;
-
-    m_bAbort = false;
-    m_bFrameAvailable = false;
+    SVB_ERROR_CODE ret;
     
+    m_bAbort = false;
+    
+    ret = SVBSetCameraMode(m_nCameraID, SVB_MODE_TRIG_SOFT);
+    if(ret!=SVB_SUCCESS)
+        nErr =ERR_CMDFAILED;
+
+    ret = SVBSetOutputImageType(m_nCameraID, m_nVideoMode);
+    if(ret!=SVB_SUCCESS)
+        nErr =ERR_CMDFAILED;
+
+    // set exposure time (s -> us)
+    ret = SVBSetControlValue(m_nCameraID, SVB_EXPOSURE , (double)(dTime * 1000000), SVB_FALSE);
+    if(ret!=SVB_SUCCESS)
+        nErr =ERR_CMDFAILED;
+
+    // soft trigger
+    ret = SVBSendSoftTrigger(m_nCameraID);
+    if(ret!=SVB_SUCCESS)
+        nErr =ERR_CMDFAILED;
+
+    m_dCaptureLenght = dTime;
+    m_ExposureTimer.Reset();
     return nErr;
 }
 
 int CSVBony::stopCaputure()
 {
     int nErr = PLUGIN_OK;
+    SVB_ERROR_CODE ret;
+
+    ret = SVBStopVideoCapture(m_nCameraID);
+    if(ret!=SVB_SUCCESS)
+        nErr =ERR_CMDFAILED;
+
+    ret = SVBStartVideoCapture(m_nCameraID);
+    if(ret!=SVB_SUCCESS)
+        nErr =ERR_CMDFAILED;
+
     return nErr;
 }
 
@@ -452,7 +503,6 @@ void CSVBony::abortCapture(void)
 
 int CSVBony::getTemperture(double &dTemp)
 {
-    // (Value)/10 -273.15 = degree C.
     int nErr = PLUGIN_OK;
     // no temperature data for now.
     dTemp = -100;
@@ -509,7 +559,15 @@ int CSVBony::setROI(int nLeft, int nTop, int nWidth, int nHeight)
 {
     int nErr = PLUGIN_OK;
     SVB_ERROR_CODE ret;
-    
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CSVBony::setROI] x, y, w, h : %d, %d, %d, %d\n", timestamp, nLeft, nTop, nWidth, nHeight);
+        fflush(Logfile);
+#endif
+
     ret = SVBSetROIFormat(m_nCameraID, nLeft, nTop, nWidth, nHeight, m_nCurrentBin);
     if(ret!=SVB_SUCCESS)
         nErr =ERR_CMDFAILED;
@@ -532,29 +590,47 @@ bool CSVBony::isFameAvailable()
 {
     bool bFrameAvailable = false;
     
+    if(m_ExposureTimer.GetElapsedSeconds() > m_dCaptureLenght)
+        bFrameAvailable = true;
+
     return bFrameAvailable;
 }
 
 uint32_t CSVBony::getBitDepth()
 {
-    return 16; //  m_tCurrentResolution.nBitsPerPixel;
+    return m_nMaxBitDepth;
 }
+
 
 int CSVBony::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
 {
     int nErr = PLUGIN_OK;
+    SVB_ERROR_CODE ret;
     int sizeToCopy;
-
-    if(!m_bFrameAvailable)
-        return ERR_OBJECTNOTFOUND;
 
     if(!frameBuffer)
         return ERR_POINTER;
 
-    //  copy internal m_pframeBuffer to frameBuffer
     sizeToCopy = nHeight * nMemWidth;
-    printf("copying %d byte from internal buffer\n", sizeToCopy);
-    memcpy(frameBuffer, m_pframeBuffer, sizeToCopy);
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CSVBony::getFrame] nHeight, nMemWidth,  sizeToCopy : %d, %d, %d\n", timestamp, nHeight, nMemWidth, sizeToCopy);
+        fflush(Logfile);
+#endif
+    ret = SVBGetVideoData(m_nCameraID, frameBuffer, sizeToCopy, 5000);
+    if(ret!=SVB_SUCCESS)
+        nErr =ERR_CMDFAILED;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CSVBony::getFrame] buffer[0] content : %02x%02x\n", timestamp, *frameBuffer, *(frameBuffer+1));
+        fflush(Logfile);
+#endif
 
     return nErr;
 }
@@ -597,15 +673,3 @@ void CSVBony::setCameraFeatures()
     uint32_t nTemp;
 
 }
-
-int CSVBony::setCameraExposure(double dTime)
-{
-    int nErr = PLUGIN_OK;
-    uint32_t nValue;
-    float fMin;
-    float fMax;
-    bool bAvailable;
-
-    return nErr;
-}
-

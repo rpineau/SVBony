@@ -16,6 +16,7 @@
 		931844001EEF460500AE51F8 /* SVBony.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 931843FE1EEF460500AE51F8 /* SVBony.cpp */; };
 		931844011EEF460500AE51F8 /* SVBony.h in Headers */ = {isa = PBXBuildFile; fileRef = 931843FF1EEF460500AE51F8 /* SVBony.h */; };
 		931844041EEF502500AE51F8 /* CoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 931844021EEF500B00AE51F8 /* CoreServices.framework */; };
+		9390466D25D7101E009D84F1 /* StopWatch.h in Headers */ = {isa = PBXBuildFile; fileRef = 9390466C25D7101E009D84F1 /* StopWatch.h */; };
 		93E4668F25C7956C00ECFB9D /* SVBCameraSDK.h in Headers */ = {isa = PBXBuildFile; fileRef = 93E4668E25C7956C00ECFB9D /* SVBCameraSDK.h */; };
 		93E47CE125B3D508002EFE61 /* libSVBCameraSDK.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 931844051EEF507A00AE51F8 /* libSVBCameraSDK.a */; };
 /* End PBXBuildFile section */
@@ -33,6 +34,7 @@
 		931844021EEF500B00AE51F8 /* CoreServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreServices.framework; path = System/Library/Frameworks/CoreServices.framework; sourceTree = SDKROOT; };
 		931844051EEF507A00AE51F8 /* libSVBCameraSDK.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libSVBCameraSDK.a; path = static_libs/macOS/libSVBCameraSDK.a; sourceTree = "<group>"; };
 		931844071EEF50D100AE51F8 /* libobjc.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libobjc.tbd; path = usr/lib/libobjc.tbd; sourceTree = SDKROOT; };
+		9390466C25D7101E009D84F1 /* StopWatch.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = StopWatch.h; sourceTree = "<group>"; };
 		93E4668E25C7956C00ECFB9D /* SVBCameraSDK.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SVBCameraSDK.h; sourceTree = "<group>"; };
 		93E47CDF25B3D4DE002EFE61 /* libSVBCameraSDK.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libSVBCameraSDK.a; path = static_libs/x86_64/libSVBCameraSDK.a; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -73,6 +75,7 @@
 		931843EA1EEF341C00AE51F8 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
+				9390466C25D7101E009D84F1 /* StopWatch.h */,
 				93E4668E25C7956C00ECFB9D /* SVBCameraSDK.h */,
 				931843EC1EEF350D00AE51F8 /* main.cpp */,
 				931843ED1EEF350D00AE51F8 /* main.h */,
@@ -113,6 +116,7 @@
 			files = (
 				931843F11EEF350D00AE51F8 /* main.h in Headers */,
 				931844011EEF460500AE51F8 /* SVBony.h in Headers */,
+				9390466D25D7101E009D84F1 /* StopWatch.h in Headers */,
 				93E4668F25C7956C00ECFB9D /* SVBCameraSDK.h in Headers */,
 				931843F31EEF350D00AE51F8 /* x2camera.h in Headers */,
 			);

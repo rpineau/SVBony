@@ -27,6 +27,7 @@
 #include "../../licensedinterfaces/loggerinterface.h"
 
 #include "SVBCameraSDK.h"
+#include "StopWatch.h"
 
 #define PLUGIN_DEBUG    3
 #define PLUGIN_VERSION      1.00
@@ -93,6 +94,8 @@ public:
 protected:
     SVB_CAMERA_INFO         m_CameraInfo;
     SVB_CAMERA_PROPERTY     m_cameraProperty;
+    SVB_IMG_TYPE            m_nVideoMode;
+    long                    m_nDefaultGain;
     
     double                  m_dPixelSize;
     int                     m_nMaxWidth;
@@ -103,20 +106,10 @@ protected:
     int                     m_nNbBin;
     int                     m_SupportedBins[MAX_NB_BIN];
     void                    setCameraFeatures(void);
-    int                     setCameraExposure(double dTime);
     int                     m_nCurrentBin;
     
-    std::vector<camResolution_t>         m_vResList;
-    camResolution_t         m_tCurrentResolution;
-    bool                    m_bNeedSwap;
-    bool                    m_bNeedDepthFix;
-    uint8_t                 m_nDepthBitLeftShift;
-
-
     bool                    m_bConnected;
-    bool                    m_bFrameAvailable;
-    bool                    m_bIsPGR;
-
+ 
     unsigned char *         m_pframeBuffer;
     int                     m_nCameraID;
     std::string             m_sCameraName;
@@ -127,6 +120,9 @@ protected:
     bool                    m_bAbort;
     std::map<int,bool>      m_mAvailableFrameRate;
 
+    CStopWatch              m_ExposureTimer;
+    double                  m_dCaptureLenght;
+    
 #ifdef PLUGIN_DEBUG
     std::string m_sLogfilePath;
     // timestamp for logs
