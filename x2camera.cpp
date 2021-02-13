@@ -504,14 +504,15 @@ int X2Camera::CCDumpLines(const enumCameraIndex& Cam, const enumWhichCCD& CCD, c
 
 int X2Camera::CCReadoutImage(const enumCameraIndex& Cam, const enumWhichCCD& CCD, const int& nWidth, const int& nHeight, const int& nMemWidth, unsigned char* pMem)
 {
-	X2MutexLocker ml(GetMutex());
-
+    int nErr = SB_OK;
+    X2MutexLocker ml(GetMutex());
+    
     if (!m_bLinked)
 		return ERR_NOLINK;
 
-    m_Camera.getFrame(nHeight, nMemWidth, pMem);
+    nErr = m_Camera.getFrame(nHeight, nMemWidth, pMem);
 
-    return SB_OK;
+    return nErr;
 }
 
 int X2Camera::CCDisconnect(const bool bShutDownTemp)

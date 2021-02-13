@@ -206,7 +206,7 @@ int CSVBony::Connect(int nCameraID)
 
 
     ret = SVBSetControlValue(m_nCameraID, SVB_EXPOSURE , (double)(1 * 1000000), SVB_FALSE);
-    // set default valurs
+    // set default values
     ret = SVBSetControlValue(m_nCameraID, SVB_GAIN , m_nDefaultGain, SVB_FALSE);
     ret = SVBSetControlValue(m_nCameraID, SVB_CONTRAST , 50, SVB_FALSE);
     ret = SVBSetControlValue(m_nCameraID, SVB_SHARPNESS , 0, SVB_FALSE);
@@ -224,32 +224,8 @@ int CSVBony::Connect(int nCameraID)
     ret = SVBStartVideoCapture(m_nCameraID);
     if(ret!=SVB_SUCCESS)
         nErr =ERR_CMDFAILED;
+
     m_bCapturerunning = true;
-
-
-    /*
-    // set video mode by chosng the biggest one for now.
-    nFrameSize = 0;
-    nErr = getResolutions(m_vResList);
-    if(nErr)
-        return ERR_COMMANDNOTSUPPORTED;
-
-    for (i=0; i< m_vResList.size(); i++) {
-        if(nFrameSize < (m_vResList[i].nWidth * m_vResList[i].nHeight) && !bIsVideoFormat7(m_vResList[i].vidMode) ) { // let's avoid format 7 for now.
-            nFrameSize = m_vResList[i].nWidth * m_vResList[i].nHeight;
-            m_tCurrentResolution = m_vResList[i];
-            printf("Selecting nWidth %d\n", m_tCurrentResolution.nWidth);
-            printf("Selecting nHeight %d\n", m_tCurrentResolution.nHeight);
-            printf("Selecting vidMode %d\n", m_tCurrentResolution.vidMode);
-            printf("Selecting bMode7 %d\n", m_tCurrentResolution.bMode7);
-            printf("Selecting nPacketSize %d\n", m_tCurrentResolution.nPacketSize);
-            printf("Selecting bModeIs16bits %d\n", m_tCurrentResolution.bModeIs16bits);
-            printf("Selecting nBitsPerPixel %d\n", m_tCurrentResolution.nBitsPerPixel);
-            printf("Selecting bNeed8bitTo16BitExpand %d\n", m_tCurrentResolution.bNeed8bitTo16BitExpand);
-        }
- printf("bit depth = %d\n", m_tCurrentResolution.nBitsPerPixel);
- */
-
     m_bConnected = true;
     return nErr;
 }
@@ -463,6 +439,16 @@ int CSVBony::startCaputure(double dTime)
     
     m_bAbort = false;
     
+
+    ret = SVBSetOutputImageType(m_nCameraID, m_nVideoMode);
+    if(ret!=SVB_SUCCESS)
+        nErr =ERR_CMDFAILED;
+
+    // set exposure time (s -> us)
+    ret = SVBSetControlValue(m_nCameraID, SVB_EXPOSURE , (double)(dTime * 1000000), SVB_FALSE);
+    if(ret!=SVB_SUCCESS)
+        nErr =ERR_CMDFAILED;
+
     ret = SVBSetCameraMode(m_nCameraID, SVB_MODE_TRIG_SOFT);
     if(ret!=SVB_SUCCESS)
         nErr =ERR_CMDFAILED;
@@ -473,15 +459,7 @@ int CSVBony::startCaputure(double dTime)
             nErr =ERR_CMDFAILED;
         m_bCapturerunning = true;
     }
-    ret = SVBSetOutputImageType(m_nCameraID, m_nVideoMode);
-    if(ret!=SVB_SUCCESS)
-        nErr =ERR_CMDFAILED;
 
-    // set exposure time (s -> us)
-    ret = SVBSetControlValue(m_nCameraID, SVB_EXPOSURE , (double)(dTime * 1000000), SVB_FALSE);
-    if(ret!=SVB_SUCCESS)
-        nErr =ERR_CMDFAILED;
-    
     // soft trigger
     ret = SVBSendSoftTrigger(m_nCameraID);
     if(ret!=SVB_SUCCESS)
@@ -580,7 +558,7 @@ int CSVBony::setROI(int nLeft, int nTop, int nWidth, int nHeight)
 {
     int nErr = PLUGIN_OK;
     SVB_ERROR_CODE ret;
-
+    
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
@@ -588,17 +566,10 @@ int CSVBony::setROI(int nLeft, int nTop, int nWidth, int nHeight)
         fprintf(Logfile, "[%s] [CSVBony::setROI] x, y, w, h : %d, %d, %d, %d\n", timestamp, nLeft, nTop, nWidth, nHeight);
         fflush(Logfile);
 #endif
-//    ret = SVBStopVideoCapture(m_nCameraID);
-//    if(ret!=SVB_SUCCESS)
-//       nErr =ERR_CMDFAILED;
-    
+
     ret = SVBSetROIFormat(m_nCameraID, nLeft, nTop, nWidth, nHeight, m_nCurrentBin);
     if(ret!=SVB_SUCCESS)
         nErr =ERR_CMDFAILED;
-
-//    ret = SVBStartVideoCapture(m_nCameraID);
-//    if(ret!=SVB_SUCCESS)
-//        nErr =ERR_CMDFAILED;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
         ltime = time(NULL);
@@ -607,7 +578,6 @@ int CSVBony::setROI(int nLeft, int nTop, int nWidth, int nHeight)
         fprintf(Logfile, "[%s] [CSVBony::setROI] new ROI set\n", timestamp);
         fflush(Logfile);
 #endif
-
     return nErr;
 }
 
@@ -672,7 +642,7 @@ int CSVBony::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
             fprintf(Logfile, "[%s] [CSVBony::getFrame] SVBGetVideoData error %d\n", timestamp, ret);
             fflush(Logfile);
 #endif
-            return ERR_CMDFAILED;
+            return ERR_RXTIMEOUT;
         }
     }
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -684,7 +654,6 @@ int CSVBony::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
         fflush(Logfile);
 #endif
 
-    
     // shift data
     buf = (uint16_t *)frameBuffer;
     for(int i=0; i<sizeToCopy/2; i++)
@@ -700,43 +669,4 @@ int CSVBony::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
 #endif
 
     return nErr;
-}
-
-int CSVBony::getResolutions(std::vector<camResolution_t> &vResList)
-{
-    int nErr = PLUGIN_OK;
-    int i = 0;
-    uint32_t nWidth;
-    uint32_t nHeight;
-    camResolution_t tTmpRes;
-
-
-    return nErr;
-}
-
-/*
-int CSVBony::setFeature(dc1394feature_t tFeature, uint32_t nValue, dc1394feature_mode_t tMode)
-{
-    int nErr;
-
-
-    return nErr;
-}
-
-int CSVBony::getFeature(dc1394feature_t tFeature, uint32_t &nValue, uint32_t nMin, uint32_t nMax,  dc1394feature_mode_t &tMode)
-{
-    int nErr;
-
-    return nErr;
-}
-*/
-
-#pragma mark protected methods
-
-
-void CSVBony::setCameraFeatures()
-{
-    int nErr;
-    uint32_t nTemp;
-
 }

@@ -40,10 +40,6 @@ typedef struct _camere_info {
     char    model[BUFFER_LEN];
 } camera_info_t;
 
-typedef struct camResolution {
-    uint32_t            nWidth;
-    uint32_t            nHeight;
-} camResolution_t;
 
 class CSVBony {
 public:
@@ -89,9 +85,6 @@ public:
     uint32_t    getBitDepth();
     int         getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer);
 
-    int         getResolutions(std::vector<camResolution_t> &vResList);
-    // int         setFeature(dc1394feature_t tFeature, uint32_t nValue, dc1394feature_mode_t tMode);
-    // int         getFeature(dc1394feature_t tFeature, uint32_t &nValue, uint32_t nMin, uint32_t nMax,  dc1394feature_mode_t &tMode);
 
 protected:
     
