@@ -481,7 +481,7 @@ int CSVBony::startCaputure(double dTime)
     ret = SVBSetControlValue(m_nCameraID, SVB_EXPOSURE , (double)(dTime * 1000000), SVB_FALSE);
     if(ret!=SVB_SUCCESS)
         nErr =ERR_CMDFAILED;
-
+    
     // soft trigger
     ret = SVBSendSoftTrigger(m_nCameraID);
     if(ret!=SVB_SUCCESS)
