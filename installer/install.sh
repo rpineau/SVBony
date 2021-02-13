@@ -35,17 +35,17 @@ else
 fi
 
 
-cp "./cameralist IIDC.txt" "$TheSkyX_Path/Resources/Common/Miscellaneous Files/"
-cp "./IIDCCamera.ui" "$TheSkyX_Path/Resources/Common/$PLUGINS_DIR/CameraPlugIns/"
-cp "./IIDCCamSelect.ui" "$TheSkyX_Path/Resources/Common/$PLUGINS_DIR/CameraPlugIns/"
-cp "./libIIDC.so" "$TheSkyX_Path/Resources/Common/$PLUGINS_DIR/CameraPlugIns/"
+cp "./cameralist SVBony.txt" "$TheSkyX_Path/Resources/Common/Miscellaneous Files/"
+cp "./SVBonyCamera.ui" "$TheSkyX_Path/Resources/Common/$PLUGINS_DIR/CameraPlugIns/"
+cp "./SVBonyCamSelect.ui" "$TheSkyX_Path/Resources/Common/$PLUGINS_DIR/CameraPlugIns/"
+cp "./libSVBony.so" "$TheSkyX_Path/Resources/Common/$PLUGINS_DIR/CameraPlugIns/"
 
 app_owner=`/usr/bin/stat -c "%u" "$TheSkyX_Path" | xargs id -n -u`
 if [ ! -z "$app_owner" ]; then
-	chown $app_owner "$TheSkyX_Path/Resources/Common/Miscellaneous Files/focuserlist IIDC.txt"
-	chown $app_owner "$TheSkyX_Path/Resources/Common/$PLUGINS_DIR/CameraPlugIns/IIDCCamera.ui"
-	chown $app_owner "$TheSkyX_Path/Resources/Common/$PLUGINS_DIR/CameraPlugIns/IIDCCamSelect.ui"
-	chown $app_owner "$TheSkyX_Path/Resources/Common/$PLUGINS_DIR/CameraPlugIns/libIIDC.so"
+	chown $app_owner "$TheSkyX_Path/Resources/Common/Miscellaneous Files/focuserlist SVBony.txt"
+	chown $app_owner "$TheSkyX_Path/Resources/Common/$PLUGINS_DIR/CameraPlugIns/SVBonyCamera.ui"
+	chown $app_owner "$TheSkyX_Path/Resources/Common/$PLUGINS_DIR/CameraPlugIns/SVBonyCamSelect.ui"
+	chown $app_owner "$TheSkyX_Path/Resources/Common/$PLUGINS_DIR/CameraPlugIns/libSVBony.so"
 fi
-chmod  755 "$TheSkyX_Path/Resources/Common/$PLUGINS_DIR/CameraPlugIns/libIIDC.so"
+chmod  755 "$TheSkyX_Path/Resources/Common/$PLUGINS_DIR/CameraPlugIns/libSVBony.so"
 
