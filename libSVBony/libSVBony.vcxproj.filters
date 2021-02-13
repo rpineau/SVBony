@@ -21,7 +21,7 @@
     <ClInclude Include="..\SVBony.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\x2dome.h">
+    <ClInclude Include="..\x2camera.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -32,7 +32,7 @@
     <ClCompile Include="..\SVBony.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\x2dome.cpp">
+    <ClCompile Include="..\x2camera.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

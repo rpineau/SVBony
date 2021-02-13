@@ -91,7 +91,8 @@ int X2Camera::execModalSettingsDialog()
     int i;
     char tmpBuffer[128];
     int nCamIndex;
-
+    bool bCameraFoud = false;
+    
     if (NULL == ui)
         return ERR_POINTER;
     nErr = ui->loadUserInterface("SVBonyCamSelect.ui", deviceType(), m_nPrivateISIndex);
@@ -109,6 +110,7 @@ int X2Camera::execModalSettingsDialog()
         dx->setCurrentIndex("comboBox",0);
     }
     else {
+        bCameraFoud = true;
         nCamIndex = 0;
         for(i=0; i< m_tCameraIdList.size(); i++) {
             //Populate the camera combo box and set the current index (selection)
@@ -132,16 +134,18 @@ int X2Camera::execModalSettingsDialog()
     //Retreive values from the user interface
     if (bPressedOK)
     {
-        int nCamera;
-        std::string sCameraSerial;
-        //Camera
-        nCamera = dx->currentIndex("comboBox");
-        m_Camera.setCameraId(m_tCameraIdList[nCamera].cameraId);
-        m_nCameraID = m_tCameraIdList[nCamera].cameraId;
-        m_Camera.getCameraSerialFromID(m_nCameraID, sCameraSerial);
-        m_Camera.setCameraSerial(sCameraSerial);
-        // store camera ID
-        m_pIniUtil->writeString(KEY_X2CAM_ROOT, KEY_X2CAM_GUID, sCameraSerial.c_str());
+        if(bCameraFoud) {
+            int nCamera;
+            std::string sCameraSerial;
+            //Camera
+            nCamera = dx->currentIndex("comboBox");
+            m_Camera.setCameraId(m_tCameraIdList[nCamera].cameraId);
+            m_nCameraID = m_tCameraIdList[nCamera].cameraId;
+            m_Camera.getCameraSerialFromID(m_nCameraID, sCameraSerial);
+            m_Camera.setCameraSerial(sCameraSerial);
+            // store camera ID
+            m_pIniUtil->writeString(KEY_X2CAM_ROOT, KEY_X2CAM_GUID, sCameraSerial.c_str());
+        }
     }
 
     return nErr;

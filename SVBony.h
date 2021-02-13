@@ -1,6 +1,5 @@
 //
 //  SVBony.hpp
-//  IIDC
 //
 //  Created by Rodolphe Pineau on 06/12/2017
 //  Copyright © 2017 RTI-Zone. All rights reserved.
