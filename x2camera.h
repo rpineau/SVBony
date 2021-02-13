@@ -16,6 +16,8 @@
 #include "../../licensedinterfaces/basicstringinterface.h"
 #include "../../licensedinterfaces/x2guiinterface.h"
 #include "../../licensedinterfaces/addfitskeyinterface.h"
+#include "../../licensedinterfaces/subframeinterface.h"
+
 
 #include "SVBony.h"
 
@@ -57,7 +59,7 @@ class AddFITSKeyInterface;
 
 Use this example to write an X2Camera driver.
 */
-class X2Camera: public CameraDriverInterface, public ModalSettingsDialogInterface, public X2GUIEventInterface, public PixelSizeInterface, public  AddFITSKeyInterface
+class X2Camera: public CameraDriverInterface, public SubframeInterface, public ModalSettingsDialogInterface, public X2GUIEventInterface, public PixelSizeInterface, public  AddFITSKeyInterface
 {
 public: 
 	/*!Standard X2 constructor*/
@@ -178,6 +180,8 @@ public://Methods
     virtual int     countOfStringFields (int &nCount);
     virtual int     valueForStringField (int nIndex, BasicStringInterface &sFieldName, BasicStringInterface &sFieldComment, BasicStringInterface &sFieldValue);
     
+    // SubframeInterface
+    virtual int     CCSetBinnedSubFrame3(const enumCameraIndex &Camera, const enumWhichCCD &CCDOrig, const int &nLeft, const int &nTop,  const int &nWidth,  const int &nHeight);
     
 	//Implemenation below here
 private:

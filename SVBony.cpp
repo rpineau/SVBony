@@ -503,6 +503,15 @@ int CSVBony::stopCaputure()
 
     m_bCapturerunning = false;
     
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [CSVBony::stopCaputure] capture stoppeds\n", timestamp);
+    fflush(Logfile);
+#endif
+
+    m_pSleeper->sleep(500);
 
     return nErr;
 }
@@ -579,10 +588,26 @@ int CSVBony::setROI(int nLeft, int nTop, int nWidth, int nHeight)
         fprintf(Logfile, "[%s] [CSVBony::setROI] x, y, w, h : %d, %d, %d, %d\n", timestamp, nLeft, nTop, nWidth, nHeight);
         fflush(Logfile);
 #endif
-
+//    ret = SVBStopVideoCapture(m_nCameraID);
+//    if(ret!=SVB_SUCCESS)
+//        nErr =ERR_CMDFAILED;
+    
     ret = SVBSetROIFormat(m_nCameraID, nLeft, nTop, nWidth, nHeight, m_nCurrentBin);
     if(ret!=SVB_SUCCESS)
         nErr =ERR_CMDFAILED;
+
+//    ret = SVBStartVideoCapture(m_nCameraID);
+//    if(ret!=SVB_SUCCESS)
+//        nErr =ERR_CMDFAILED;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CSVBony::setROI] new ROI set\n", timestamp);
+        fflush(Logfile);
+#endif
+
     return nErr;
 }
 

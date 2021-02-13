@@ -70,6 +70,8 @@ int	X2Camera::queryAbstraction(const char* pszName, void** ppVal)
 		*ppVal = dynamic_cast<ModalSettingsDialogInterface*>(this);
 	else if (!strcmp(pszName, X2GUIEventInterface_Name))
 			*ppVal = dynamic_cast<X2GUIEventInterface*>(this);
+    else if (!strcmp(pszName, SubframeInterface_Name))
+        *ppVal = dynamic_cast<SubframeInterface*>(this);
     else if (!strcmp(pszName, PixelSizeInterface_Name))
         *ppVal = dynamic_cast<PixelSizeInterface*>(this);
     else if (!strcmp(pszName, AddFITSKeyInterface_Name))
@@ -549,10 +551,30 @@ void X2Camera::CCMakeExposureState(int* pnState, enumCameraIndex Cam, int nXBin,
 
 int X2Camera::CCSetBinnedSubFrame(const enumCameraIndex& Camera, const enumWhichCCD& CCD, const int& nLeft, const int& nTop, const int& nRight, const int& nBottom)
 {
+    int nErr = SB_OK;
 	X2MutexLocker ml(GetMutex());
 
-    m_Camera.setROI(nLeft, nTop, (nRight-nLeft)+1, (nBottom-nTop)+1);
-	return SB_OK;
+    printf("nLeft %d\n", nLeft);
+    printf("nTop %d\n", nTop);
+    printf("nRight %d\n", nRight);
+    printf("nBottom %d\n", nBottom);
+    nErr = m_Camera.setROI(nLeft, nTop, (nRight-nLeft)+1, (nBottom-nTop)+1);
+    return nErr;
+}
+
+int X2Camera::CCSetBinnedSubFrame3(const enumCameraIndex &Camera, const enumWhichCCD &CCDOrig, const int &nLeft, const int &nTop,  const int &nWidth,  const int &nHeight)
+{
+    int nErr = SB_OK;
+    
+    X2MutexLocker ml(GetMutex());
+
+    printf("nLeft %d\n", nLeft);
+    printf("nTop %d\n", nTop);
+    printf("nWidth %d\n", nWidth);
+    printf("nHeight %d\n", nHeight);
+    nErr = m_Camera.setROI(nLeft, nTop, nWidth, nHeight);
+    
+    return nErr;
 }
 
 
