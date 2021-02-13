@@ -30,6 +30,8 @@ X2Camera::X2Camera( const char* pszSelection,
     mPixelSizeX = 0.0;
     mPixelSizeY = 0.0;
 
+    m_Camera.setSleeper(m_pSleeper);
+    
     // Read in settings
     if (m_pIniUtil) {
         m_pIniUtil->readString(KEY_X2CAM_ROOT, KEY_X2CAM_GUID, "0", m_szCameraSerial, 128);
@@ -549,7 +551,7 @@ int X2Camera::CCSetBinnedSubFrame(const enumCameraIndex& Camera, const enumWhich
 {
 	X2MutexLocker ml(GetMutex());
 
-    m_Camera.setROI(nLeft, nTop, nRight-nLeft, nBottom-nTop);
+    m_Camera.setROI(nLeft, nTop, (nRight-nLeft)+1, (nBottom-nTop)+1);
 	return SB_OK;
 }
 

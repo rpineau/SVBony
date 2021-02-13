@@ -22,6 +22,7 @@ CSVBony::CSVBony()
     m_dCaptureLenght = 0;
     m_bCapturerunning = false;
     m_nDefaultGain = 100;
+    m_pSleeper = nullptr;
     
     memset(m_szCameraName,0,BUFFER_LEN);
 #ifdef PLUGIN_DEBUG
@@ -205,6 +206,7 @@ int CSVBony::Connect(int nCameraID)
 
     ret = SVBSetControlValue(m_nCameraID, SVB_EXPOSURE , (double)(1 * 1000000), SVB_FALSE);
     // set default valurs
+    /*
     ret = SVBSetControlValue(m_nCameraID, SVB_GAIN , m_nDefaultGain, SVB_FALSE);
     ret = SVBSetControlValue(m_nCameraID, SVB_CONTRAST , 50, SVB_FALSE);
     ret = SVBSetControlValue(m_nCameraID, SVB_SHARPNESS , 0, SVB_FALSE);
@@ -213,7 +215,8 @@ int CSVBony::Connect(int nCameraID)
     ret = SVBSetControlValue(m_nCameraID, SVB_WB_G , 100, SVB_FALSE);
     ret = SVBSetControlValue(m_nCameraID, SVB_WB_B , 100, SVB_FALSE);
     ret = SVBSetControlValue(m_nCameraID, SVB_GAMMA , 100, SVB_FALSE);
-    ret = SVBSetControlValue(m_nCameraID, SVB_FRAME_SPEED_MODE , 0, SVB_FALSE); // low speed
+*/
+     ret = SVBSetControlValue(m_nCameraID, SVB_FRAME_SPEED_MODE , 0, SVB_FALSE); // low speed
     
     ret = SVBSetOutputImageType(m_nCameraID, m_nVideoMode);
     ret = SVBSetCameraMode(m_nCameraID, SVB_MODE_TRIG_SOFT);
@@ -631,10 +634,15 @@ int CSVBony::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
         fprintf(Logfile, "[%s] [CSVBony::getFrame] nHeight, nMemWidth, sizeToCopy           : %d, %d, %d\n", timestamp, nHeight, nMemWidth, sizeToCopy);
         fflush(Logfile);
 #endif
-    ret = SVBGetVideoData(m_nCameraID, frameBuffer, sizeToCopy, 5000);
-    if(ret!=SVB_SUCCESS)
-        nErr =ERR_CMDFAILED;
-
+    ret = SVBGetVideoData(m_nCameraID, frameBuffer, sizeToCopy, 100);
+    if(ret!=SVB_SUCCESS) {
+        // wait and retry
+        m_pSleeper->sleep(100);
+        ret = SVBGetVideoData(m_nCameraID, frameBuffer, sizeToCopy, 100);
+        if(ret!=SVB_SUCCESS) {
+            return ERR_CMDFAILED;
+        }
+    }
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));

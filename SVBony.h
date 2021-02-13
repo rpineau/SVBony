@@ -25,6 +25,7 @@
 
 #include "../../licensedinterfaces/sberrorx.h"
 #include "../../licensedinterfaces/loggerinterface.h"
+#include "../../licensedinterfaces/sleeperinterface.h"
 
 #include "SVBCameraSDK.h"
 #include "StopWatch.h"
@@ -49,6 +50,8 @@ class CSVBony {
 public:
     CSVBony();
     ~CSVBony();
+
+    void        setSleeper(SleeperInterface *pSleeper) { m_pSleeper = pSleeper; };
 
     int         Connect(int nCameraId);
     void        Disconnect(void);
@@ -92,6 +95,10 @@ public:
     // int         getFeature(dc1394feature_t tFeature, uint32_t &nValue, uint32_t nMin, uint32_t nMax,  dc1394feature_mode_t &tMode);
 
 protected:
+    
+    SleeperInterface    *m_pSleeper;
+
+    
     SVB_CAMERA_INFO         m_CameraInfo;
     SVB_CAMERA_PROPERTY     m_cameraProperty;
     SVB_IMG_TYPE            m_nVideoMode;
