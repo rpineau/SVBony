@@ -69,9 +69,22 @@ int CSVBony::Connect(int nCameraID)
     
     if(nCameraID)
         m_nCameraID = nCameraID;
-    else
-        return ERR_DEVICENOTSUPPORTED;
-
+    else {
+        // check if there is at least one camera connected to the system
+        if(SVBGetNumOfConnectedCameras() == 1) {
+            std::vector<camera_info_t> tCameraIdList;
+            listCamera(tCameraIdList);
+            if(tCameraIdList.size()) {
+                m_nCameraID = tCameraIdList[0].cameraId;
+                m_sCameraSerial.assign((char *)tCameraIdList[0].Sn.id);
+            }
+            else
+                return ERR_NODEVICESELECTED;
+        }
+        else
+            return ERR_NODEVICESELECTED;
+    }
+    
     ret = SVBOpenCamera(m_nCameraID);
     if (ret != SVB_SUCCESS) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -271,7 +284,8 @@ void CSVBony::getCameraIdFromSerial(int &nCameraId, std::string sSerial)
         fprintf(Logfile, "[%s] [getCameraIdFromSerial] sSerial = %s\n", timestamp, sSerial.c_str());
     fflush(Logfile);
 #endif
-
+    nCameraId = 0;
+    
     int cameraNum = SVBGetNumOfConnectedCameras();
     for (int i = 0; i < cameraNum; i++)
     {
@@ -387,6 +401,7 @@ int CSVBony::listCamera(std::vector<camera_info_t>  &cameraIdList)
     int nErr = PLUGIN_OK;
     camera_info_t   tCameraInfo;
     cameraIdList.clear();
+
     // list camera connected to the system
     int cameraNum = SVBGetNumOfConnectedCameras();
 

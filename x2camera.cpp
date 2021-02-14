@@ -292,8 +292,6 @@ int X2Camera::CCEstablishLink(const enumLPTPort portLPT, const enumWhichCCD& CCD
     int nErr = SB_OK;
 
     m_bLinked = false;
-    if(!m_nCameraID)
-        return ERR_NODEVICESELECTED;
 
     m_dCurTemp = -100.0;
     nErr = m_Camera.Connect(m_nCameraID);
@@ -302,6 +300,14 @@ int X2Camera::CCEstablishLink(const enumLPTPort portLPT, const enumWhichCCD& CCD
     else
         m_bLinked = true;
 
+    if(!m_nCameraID) {
+        m_Camera.getCameraId(m_nCameraID);
+        std::string sCameraSerial;
+        m_Camera.getCameraSerialFromID(m_nCameraID, sCameraSerial);
+        // store camera ID
+        m_pIniUtil->writeString(KEY_X2CAM_ROOT, KEY_X2CAM_GUID, sCameraSerial.c_str());
+    }
+    
     return nErr;
 }
 
