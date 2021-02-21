@@ -35,17 +35,17 @@ class AddFITSKeyInterface;
 //where CoolCompany is your company name.  This is not a requirement.
 
 //For properties that need to be persistent
-#define KEY_X2CAM_ROOT			"X2_SVBony"
-#define KEY_X2CAM_GUID          "X2_SVBony_GUID"
-
-#define KEY_X2CAM_BRIGHTNESS        "X2_SVBony_BRIGHTNESS"
-#define KEY_X2CAM_SHARPNESS         "X2_SVBony_SHARPNESS"
-#define KEY_X2CAM_WHITE_BALANCE_B   "X2_SVBony_WHITE_BALANCE_B"
-#define KEY_X2CAM_WHITE_BALANCE_R   "X2_SVBony_WHITE_BALANCE_R"
-#define KEY_X2CAM_HUE               "X2_SVBony_HUE"
-#define KEY_X2CAM_SATURATION        "X2_SVBony_SATURATION"
-#define KEY_X2CAM_GAMA              "X2_SVBony_GAMA"
-#define KEY_X2CAM_GAIN              "X2_SVBony_GAIN"
+#define KEY_X2CAM_ROOT        "SVBony"
+#define KEY_GUID              "SVBony_GUID"
+#define KEY_GAIN              "Gain"
+#define KEY_CONTRAST          "Contrast"
+#define KEY_SHARPNESS         "Sharpness"
+#define KEY_SATURATION        "Saturation"
+#define KEY_WHITE_BALANCE_R   "WB_R"
+#define KEY_WHITE_BALANCE_G   "WB_G"
+#define KEY_WHITE_BALANCE_B   "WB_B"
+#define KEY_GAMMA             "Gamma"
+#define KEY_OFFSET            "Offset"
 
 
 #define KEY_WIDTH				"Width"

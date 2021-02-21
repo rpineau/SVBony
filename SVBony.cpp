@@ -20,7 +20,7 @@ CSVBony::CSVBony()
     m_nNbBitToShift = 4;
     m_dCaptureLenght = 0;
     m_bCapturerunning = false;
-    m_nDefaultGain = 100;
+    m_nDefaultGain = 10;
     m_pSleeper = nullptr;
     m_nNbBin = 1;
     m_SupportedBins[0] = 1;
@@ -223,10 +223,10 @@ int CSVBony::Connect(int nCameraID)
     ret = SVBSetControlValue(m_nCameraID, SVB_GAIN , m_nDefaultGain, SVB_FALSE);
     ret = SVBSetControlValue(m_nCameraID, SVB_CONTRAST , 50, SVB_FALSE);
     ret = SVBSetControlValue(m_nCameraID, SVB_SHARPNESS , 0, SVB_FALSE);
-    ret = SVBSetControlValue(m_nCameraID, SVB_SATURATION , 150, SVB_FALSE);
-    ret = SVBSetControlValue(m_nCameraID, SVB_WB_R , 100, SVB_FALSE);
-    ret = SVBSetControlValue(m_nCameraID, SVB_WB_G , 100, SVB_FALSE);
-    ret = SVBSetControlValue(m_nCameraID, SVB_WB_B , 100, SVB_FALSE);
+    ret = SVBSetControlValue(m_nCameraID, SVB_SATURATION , 100, SVB_FALSE);
+    ret = SVBSetControlValue(m_nCameraID, SVB_WB_R , 130, SVB_FALSE);
+    ret = SVBSetControlValue(m_nCameraID, SVB_WB_G , 80, SVB_FALSE);
+    ret = SVBSetControlValue(m_nCameraID, SVB_WB_B , 160, SVB_FALSE);
     ret = SVBSetControlValue(m_nCameraID, SVB_GAMMA , 100, SVB_FALSE);
 
     ret = SVBSetControlValue(m_nCameraID, SVB_FRAME_SPEED_MODE , 0, SVB_FALSE); // low speed
@@ -554,16 +554,16 @@ void CSVBony::getBayerPattern(std::string &sBayerPattern)
     if(m_bIsColorCam) {
         switch(m_nBayerPattern) {
             case SVB_BAYER_RG:
-                sBayerPattern.assign("RGBG");
+                sBayerPattern.assign("RGGB");
                 break;
             case SVB_BAYER_BG:
-                sBayerPattern.assign("BGRG");
+                sBayerPattern.assign("BGGR");
                 break;
             case SVB_BAYER_GR:
-                sBayerPattern.assign("GRBG"); // GRBG
+                sBayerPattern.assign("GRBG");
                 break;
             case SVB_BAYER_GB:
-                sBayerPattern.assign("GBGR");
+                sBayerPattern.assign("GBRG");
                 break;
         }
     }
@@ -644,11 +644,11 @@ int CSVBony::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
         fprintf(Logfile, "[%s] [CSVBony::getFrame] nHeight, nMemWidth, sizeToCopy           : %d, %d, %d\n", timestamp, nHeight, nMemWidth, sizeToCopy);
         fflush(Logfile);
 #endif
-    ret = SVBGetVideoData(m_nCameraID, frameBuffer, sizeToCopy, 1000);
+    ret = SVBGetVideoData(m_nCameraID, frameBuffer, sizeToCopy, 5000);
     if(ret!=SVB_SUCCESS) {
         // wait and retry
         m_pSleeper->sleep(1000);
-        ret = SVBGetVideoData(m_nCameraID, frameBuffer, sizeToCopy, 1000);
+        ret = SVBGetVideoData(m_nCameraID, frameBuffer, sizeToCopy, 5000);
         if(ret!=SVB_SUCCESS) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
             ltime = time(NULL);

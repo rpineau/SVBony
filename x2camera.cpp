@@ -34,7 +34,7 @@ X2Camera::X2Camera( const char* pszSelection,
     
     // Read in settings
     if (m_pIniUtil) {
-        m_pIniUtil->readString(KEY_X2CAM_ROOT, KEY_X2CAM_GUID, "0", m_szCameraSerial, 128);
+        m_pIniUtil->readString(KEY_X2CAM_ROOT, KEY_GUID, "0", m_szCameraSerial, 128);
         m_Camera.getCameraIdFromSerial(m_nCameraID, std::string(m_szCameraSerial));
         m_Camera.setCameraSerial(std::string(m_szCameraSerial));
         m_Camera.setCameraId(m_nCameraID);
@@ -144,7 +144,7 @@ int X2Camera::execModalSettingsDialog()
             m_Camera.getCameraSerialFromID(m_nCameraID, sCameraSerial);
             m_Camera.setCameraSerial(sCameraSerial);
             // store camera ID
-            m_pIniUtil->writeString(KEY_X2CAM_ROOT, KEY_X2CAM_GUID, sCameraSerial.c_str());
+            m_pIniUtil->writeString(KEY_X2CAM_ROOT, KEY_GUID, sCameraSerial.c_str());
         }
     }
 
@@ -305,7 +305,7 @@ int X2Camera::CCEstablishLink(const enumLPTPort portLPT, const enumWhichCCD& CCD
         std::string sCameraSerial;
         m_Camera.getCameraSerialFromID(m_nCameraID, sCameraSerial);
         // store camera ID
-        m_pIniUtil->writeString(KEY_X2CAM_ROOT, KEY_X2CAM_GUID, sCameraSerial.c_str());
+        m_pIniUtil->writeString(KEY_X2CAM_ROOT, KEY_GUID, sCameraSerial.c_str());
     }
     
     return nErr;
@@ -388,20 +388,10 @@ int X2Camera::CCIsExposureComplete(const enumCameraIndex& Cam, const enumWhichCC
 
     *pbComplete = false;
 
-	if (m_pTickCount)
-	{
-        if (m_pTickCount->elapsed()>m_dwFin) {
-            if(m_Camera.isFameAvailable())
-                *pbComplete = true;
-        }
-	}
-    else {
-        if(m_Camera.isFameAvailable())
-            *pbComplete = true;
+    if(m_Camera.isFameAvailable())
+        *pbComplete = true;
 
-    }
-
-	return SB_OK;
+    return SB_OK;
 }
 
 int X2Camera::CCEndExposure(const enumCameraIndex& Cam, const enumWhichCCD CCD, const bool& bWasAborted, const bool& bLeaveShutterAlone)           
