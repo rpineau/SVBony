@@ -588,46 +588,60 @@ int CSVBony::setROI(int nLeft, int nTop, int nWidth, int nHeight)
     int n_newWidth = 0;
     int n_newHeight = 0;
 
-#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        ltime = time(NULL);
-        timestamp = asctime(localtime(&ltime));
-        timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s] [CSVBony::setROI] Requested x, y, w, h : %d, %d, %d, %d\n", timestamp, nLeft, nTop, nWidth, nHeight);
-        fflush(Logfile);
-#endif
+
     m_nReqROILeft = nLeft;
     m_nReqROITop = nTop;
     m_nReqROIWidth = nWidth;
     m_nReqROIHeight = nHeight;
 
-    if( m_nReqROILeft % 2 != 0)
-        n_newLeft = (m_nReqROILeft/2) * 2;  // round to lower even pixel.
+    // X
+    if( m_nReqROILeft % 8 != 0)
+        n_newLeft = (m_nReqROILeft/8) * 8;  // round to lower 8 pixel. boundary
     else
         n_newLeft = m_nReqROILeft;
-    
+    // Y
     if( m_nReqROITop % 2 != 0)
         n_newTop = (m_nReqROITop/2) * 2;  // round to lower even pixel.
     else
         n_newTop = m_nReqROITop;
-    
-    if( m_nReqROIWidth % 8 != 0)
-        n_newWidth = ((m_nReqROIWidth/8) + 1) * 8;
+    // W
+    if( (m_nReqROIWidth % 8 != 0) || (nLeft!=n_newLeft)) // Adjust width to upper 8 boundary or if the left border changed we need to adjust the width
+        n_newWidth = (( (m_nReqROIWidth + (n_newLeft%8)) /8) + 1) * 8;
     else
         n_newWidth = m_nReqROIWidth;
-
-    if( m_nReqROIHeight % 2 != 0)
-        n_newHeight = ((m_nReqROIHeight/2) + 1) * 2;
+    // H
+    if( (m_nReqROIHeight % 2 != 0) || (nTop!=n_newTop)) // Adjust height to lower 2 boundary or if the top changed we need to adjust the height
+        n_newHeight = (((m_nReqROIHeight + (n_newTop%2))/2) + 1) * 2;
     else
         n_newHeight = m_nReqROIHeight;
 
-    if( m_nROILeft == n_newLeft && m_nROITop == n_newTop && m_nROIWidth == n_newWidth && m_nROIHeight == n_newHeight)
-        return nErr;
-    
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s] [CSVBony::setROI] Set to x, y, w, h : %d, %d, %d, %d\n", timestamp, n_newLeft, n_newTop, n_newWidth, n_newWidth);
+    fprintf(Logfile, "[%s] [CSVBony::setROI] nLeft          : %d\n", timestamp, nLeft);
+    fprintf(Logfile, "[%s] [CSVBony::setROI] nTop           : %d\n", timestamp, nTop);
+    fprintf(Logfile, "[%s] [CSVBony::setROI] nWidth         : %d\n", timestamp, nWidth);
+    fprintf(Logfile, "[%s] [CSVBony::setROI] nHeight        : %d\n", timestamp, nHeight);
+    
+    fprintf(Logfile, "[%s] [CSVBony::setROI] n_newLeft      : %d\n", timestamp, n_newLeft);
+    fprintf(Logfile, "[%s] [CSVBony::setROI] n_newTop       : %d\n", timestamp, n_newTop);
+    fprintf(Logfile, "[%s] [CSVBony::setROI] n_newWidth     : %d\n", timestamp, n_newWidth);
+    fprintf(Logfile, "[%s] [CSVBony::setROI] n_newHeight    : %d\n", timestamp, n_newHeight);
+
+    fflush(Logfile);
+#endif
+
+    
+    if( m_nROILeft == n_newLeft && m_nROITop == n_newTop && m_nROIWidth == n_newWidth && m_nROIHeight == n_newHeight) {
+        return nErr; // no change since last ROI change request
+    }
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [CSVBony::setROI] Requested x, y, w, h : %d, %d, %d, %d\n", timestamp, nLeft, nTop, nWidth, nHeight);
+    fprintf(Logfile, "[%s] [CSVBony::setROI] Set to    x, y, w, h : %d, %d, %d, %d\n", timestamp, n_newLeft, n_newTop, n_newWidth, n_newHeight);
     fflush(Logfile);
 #endif
 
@@ -696,15 +710,20 @@ int CSVBony::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
     timestamp[strlen(timestamp) - 1] = 0;
     fprintf(Logfile, "[%s] [CSVBony::getFrame] nHeight          : %d\n", timestamp, nHeight);
     fprintf(Logfile, "[%s] [CSVBony::getFrame] nMemWidth        : %d\n", timestamp, nMemWidth);
+    fprintf(Logfile, "[%s] [CSVBony::getFrame] m_nROILeft       : %d\n", timestamp, m_nROILeft);
+    fprintf(Logfile, "[%s] [CSVBony::getFrame] m_nReqROILeft    : %d\n", timestamp, m_nReqROILeft);
+    fprintf(Logfile, "[%s] [CSVBony::getFrame] m_nROITop        : %d\n", timestamp, m_nROITop);
+    fprintf(Logfile, "[%s] [CSVBony::getFrame] m_nReqROITop     : %d\n", timestamp, m_nReqROITop);
     fprintf(Logfile, "[%s] [CSVBony::getFrame] m_nROIWidth      : %d\n", timestamp, m_nROIWidth);
     fprintf(Logfile, "[%s] [CSVBony::getFrame] m_nReqROIWidth   : %d\n", timestamp, m_nReqROIWidth);
     fprintf(Logfile, "[%s] [CSVBony::getFrame] m_nROIHeight     : %d\n", timestamp, m_nROIHeight);
     fprintf(Logfile, "[%s] [CSVBony::getFrame] m_nReqROIHeight  : %d\n", timestamp, m_nReqROIHeight);
+    fprintf(Logfile, "[%s] [CSVBony::getFrame] getBitDepth()/8  : %d\n", timestamp, getBitDepth()/8);
     fflush(Logfile);
 #endif
 
     // do we need to extract data as ROI was re-aligned to match SVBony specs of heigth%2 and width%8
-    if(m_nROIWidth != m_nReqROIWidth && m_nROIHeight != m_nReqROIHeight) {
+    if(m_nROIWidth != m_nReqROIWidth || m_nROIHeight != m_nReqROIHeight) {
         // me need to extract the data so we allocate a buffer
         srcMemWidth = m_nROIWidth * (getBitDepth()/8);
         imgBuffer = (unsigned char*)malloc(m_nROIHeight * srcMemWidth);
@@ -720,6 +739,7 @@ int CSVBony::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
     fprintf(Logfile, "[%s] [CSVBony::getFrame] srcMemWidth      : %d\n", timestamp,srcMemWidth);
+    fprintf(Logfile, "[%s] [CSVBony::getFrame] nMemWidth        : %d\n", timestamp,nMemWidth);
     fprintf(Logfile, "[%s] [CSVBony::getFrame] sizeReadFromCam  : %d\n", timestamp,sizeReadFromCam);
     fflush(Logfile);
 #endif
@@ -747,6 +767,18 @@ int CSVBony::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
         buf[i] = buf[i]<<m_nNbBitToShift;
 
     if(imgBuffer != frameBuffer) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CSVBony::getFrame] copying (%d,%d,%d,%d) => (%d,%d,%d,%d)\n", timestamp,
+                                                                                            m_nROILeft,    m_nROITop,    m_nROIWidth,    m_nROIHeight,
+                                                                                            m_nReqROILeft, m_nReqROITop, m_nReqROIWidth, m_nReqROIHeight);
+        fprintf(Logfile, "[%s] [CSVBony::getFrame] srcMemWidth  =>  nMemWidth   : %d => %d\n", timestamp, srcMemWidth, nMemWidth);
+        fprintf(Logfile, "[%s] [CSVBony::getFrame] sizeReadFromCam  : %d\n", timestamp, sizeReadFromCam);
+        fprintf(Logfile, "[%s] [CSVBony::getFrame] size to TSX      : %d\n", timestamp, nHeight * nMemWidth);
+        fflush(Logfile);
+#endif
         // copy every line from source buffer newly aligned into TSX buffer cutting at nMemWidth
         for(i=0; i<nHeight; i++) {
             memcpy(frameBuffer+(i*nMemWidth), imgBuffer+(i*srcMemWidth), nMemWidth);
