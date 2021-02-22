@@ -24,7 +24,17 @@ CSVBony::CSVBony()
     m_pSleeper = nullptr;
     m_nNbBin = 1;
     m_SupportedBins[0] = 1;
-    
+
+    m_nROILeft = 0;
+    m_nROITop = 0;
+    m_nROIWidth = 0;
+    m_nROIHeight = 0;
+
+    m_nReqROILeft = 0;
+    m_nReqROITop = 0;
+    m_nReqROIWidth = 0;
+    m_nReqROIHeight = 0;
+
     memset(m_szCameraName,0,BUFFER_LEN);
 #ifdef PLUGIN_DEBUG
 #if defined(SB_WIN_BUILD)
@@ -220,14 +230,14 @@ int CSVBony::Connect(int nCameraID)
 
     ret = SVBSetControlValue(m_nCameraID, SVB_EXPOSURE , (double)(1 * 1000000), SVB_FALSE);
     // set default values
-    ret = SVBSetControlValue(m_nCameraID, SVB_GAIN , m_nDefaultGain, SVB_FALSE);
-    ret = SVBSetControlValue(m_nCameraID, SVB_CONTRAST , 50, SVB_FALSE);
-    ret = SVBSetControlValue(m_nCameraID, SVB_SHARPNESS , 0, SVB_FALSE);
-    ret = SVBSetControlValue(m_nCameraID, SVB_SATURATION , 100, SVB_FALSE);
-    ret = SVBSetControlValue(m_nCameraID, SVB_WB_R , 130, SVB_FALSE);
-    ret = SVBSetControlValue(m_nCameraID, SVB_WB_G , 80, SVB_FALSE);
-    ret = SVBSetControlValue(m_nCameraID, SVB_WB_B , 160, SVB_FALSE);
-    ret = SVBSetControlValue(m_nCameraID, SVB_GAMMA , 100, SVB_FALSE);
+    ret = SVBSetControlValue(m_nCameraID, SVB_GAIN, m_nDefaultGain, SVB_FALSE);
+    ret = SVBSetControlValue(m_nCameraID, SVB_CONTRAST,         50, SVB_FALSE);
+    ret = SVBSetControlValue(m_nCameraID, SVB_SHARPNESS,         0, SVB_FALSE);
+    ret = SVBSetControlValue(m_nCameraID, SVB_SATURATION,      100, SVB_FALSE);
+    ret = SVBSetControlValue(m_nCameraID, SVB_WB_R,            130, SVB_FALSE);
+    ret = SVBSetControlValue(m_nCameraID, SVB_WB_G,             80, SVB_FALSE);
+    ret = SVBSetControlValue(m_nCameraID, SVB_WB_B,            160, SVB_FALSE);
+    ret = SVBSetControlValue(m_nCameraID, SVB_GAMMA,           100, SVB_FALSE);
 
     ret = SVBSetControlValue(m_nCameraID, SVB_FRAME_SPEED_MODE , 0, SVB_FALSE); // low speed
     
@@ -573,19 +583,62 @@ int CSVBony::setROI(int nLeft, int nTop, int nWidth, int nHeight)
 {
     int nErr = PLUGIN_OK;
     SVB_ERROR_CODE ret;
-    
+    int n_newLeft = 0;
+    int n_newTop = 0;
+    int n_newWidth = 0;
+    int n_newHeight = 0;
+
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
         timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s] [CSVBony::setROI] x, y, w, h : %d, %d, %d, %d\n", timestamp, nLeft, nTop, nWidth, nHeight);
+        fprintf(Logfile, "[%s] [CSVBony::setROI] Requested x, y, w, h : %d, %d, %d, %d\n", timestamp, nLeft, nTop, nWidth, nHeight);
         fflush(Logfile);
 #endif
+    m_nReqROILeft = nLeft;
+    m_nReqROITop = nTop;
+    m_nReqROIWidth = nWidth;
+    m_nReqROIHeight = nHeight;
 
-    ret = SVBSetROIFormat(m_nCameraID, nLeft, nTop, nWidth, nHeight, m_nCurrentBin);
+    if( m_nReqROILeft % 2 != 0)
+        n_newLeft = (m_nReqROILeft/2) * 2;  // round to lower even pixel.
+    else
+        n_newLeft = m_nReqROILeft;
+    
+    if( m_nReqROITop % 2 != 0)
+        n_newTop = (m_nReqROITop/2) * 2;  // round to lower even pixel.
+    else
+        n_newTop = m_nReqROITop;
+    
+    if( m_nReqROIWidth % 8 != 0)
+        n_newWidth = ((m_nReqROIWidth/8) + 1) * 8;
+    else
+        n_newWidth = m_nReqROIWidth;
+
+    if( m_nReqROIHeight % 2 != 0)
+        n_newHeight = ((m_nReqROIHeight/2) + 1) * 2;
+    else
+        n_newHeight = m_nReqROIHeight;
+
+    if( m_nROILeft == n_newLeft && m_nROITop == n_newTop && m_nROIWidth == n_newWidth && m_nROIHeight == n_newHeight)
+        return nErr;
+    
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [CSVBony::setROI] Set to x, y, w, h : %d, %d, %d, %d\n", timestamp, n_newLeft, n_newTop, n_newWidth, n_newWidth);
+    fflush(Logfile);
+#endif
+
+    ret = SVBSetROIFormat(m_nCameraID, n_newLeft, n_newTop, n_newWidth, n_newHeight, m_nCurrentBin);
     if(ret!=SVB_SUCCESS)
         nErr =ERR_CMDFAILED;
 
+    m_nROILeft = n_newLeft;
+    m_nROITop = n_newTop;
+    m_nROIWidth = n_newWidth;
+    m_nROIHeight = n_newHeight;
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
@@ -628,27 +681,54 @@ int CSVBony::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
 {
     int nErr = PLUGIN_OK;
     SVB_ERROR_CODE ret;
-    int sizeToCopy;
-
+    int sizeReadFromCam;
+    unsigned char* imgBuffer = nullptr;
+    int i = 0;
     uint16_t *buf;
+    int srcMemWidth;
     
     if(!frameBuffer)
         return ERR_POINTER;
 
-    sizeToCopy = nHeight * nMemWidth;
-
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        ltime = time(NULL);
-        timestamp = asctime(localtime(&ltime));
-        timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s] [CSVBony::getFrame] nHeight, nMemWidth, sizeToCopy           : %d, %d, %d\n", timestamp, nHeight, nMemWidth, sizeToCopy);
-        fflush(Logfile);
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [CSVBony::getFrame] nHeight          : %d\n", timestamp, nHeight);
+    fprintf(Logfile, "[%s] [CSVBony::getFrame] nMemWidth        : %d\n", timestamp, nMemWidth);
+    fprintf(Logfile, "[%s] [CSVBony::getFrame] m_nROIWidth      : %d\n", timestamp, m_nROIWidth);
+    fprintf(Logfile, "[%s] [CSVBony::getFrame] m_nReqROIWidth   : %d\n", timestamp, m_nReqROIWidth);
+    fprintf(Logfile, "[%s] [CSVBony::getFrame] m_nROIHeight     : %d\n", timestamp, m_nROIHeight);
+    fprintf(Logfile, "[%s] [CSVBony::getFrame] m_nReqROIHeight  : %d\n", timestamp, m_nReqROIHeight);
+    fflush(Logfile);
 #endif
-    ret = SVBGetVideoData(m_nCameraID, frameBuffer, sizeToCopy, 5000);
+
+    // do we need to extract data as ROI was re-aligned to match SVBony specs of heigth%2 and width%8
+    if(m_nROIWidth != m_nReqROIWidth && m_nROIHeight != m_nReqROIHeight) {
+        // me need to extract the data so we allocate a buffer
+        srcMemWidth = m_nROIWidth * (getBitDepth()/8);
+        imgBuffer = (unsigned char*)malloc(m_nROIHeight * srcMemWidth);
+    }
+    else {
+        imgBuffer = frameBuffer;
+        srcMemWidth = nMemWidth;
+    }
+
+    sizeReadFromCam = m_nROIHeight * srcMemWidth;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [CSVBony::getFrame] srcMemWidth      : %d\n", timestamp,srcMemWidth);
+    fprintf(Logfile, "[%s] [CSVBony::getFrame] sizeReadFromCam  : %d\n", timestamp,sizeReadFromCam);
+    fflush(Logfile);
+#endif
+
+    ret = SVBGetVideoData(m_nCameraID, imgBuffer, sizeReadFromCam, 5000);
     if(ret!=SVB_SUCCESS) {
         // wait and retry
         m_pSleeper->sleep(1000);
-        ret = SVBGetVideoData(m_nCameraID, frameBuffer, sizeToCopy, 5000);
+        ret = SVBGetVideoData(m_nCameraID, imgBuffer, sizeReadFromCam, 5000);
         if(ret!=SVB_SUCCESS) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
             ltime = time(NULL);
@@ -660,28 +740,18 @@ int CSVBony::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
             return ERR_RXTIMEOUT;
         }
     }
-#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        ltime = time(NULL);
-        timestamp = asctime(localtime(&ltime));
-        timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s] [CSVBony::getFrame] buffer[0] content                        : %02x%02x\n", timestamp, *(frameBuffer+1), *frameBuffer);
-        fprintf(Logfile, "[%s] [CSVBony::getFrame] end of buffer content                    : %02x%02x\n", timestamp, *(frameBuffer+sizeToCopy), *(frameBuffer+sizeToCopy-1));
-        fflush(Logfile);
-#endif
 
     // shift data
-    buf = (uint16_t *)frameBuffer;
-    for(int i=0; i<sizeToCopy/2; i++)
+    buf = (uint16_t *)imgBuffer;
+    for(int i=0; i<sizeReadFromCam/2; i++)
         buf[i] = buf[i]<<m_nNbBitToShift;
 
-#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        ltime = time(NULL);
-        timestamp = asctime(localtime(&ltime));
-        timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s] [CSVBony::getFrame] after bit shift buffer[0] content        : %02x%02x\n", timestamp, *(frameBuffer+1), *frameBuffer);
-        fprintf(Logfile, "[%s] [CSVBony::getFrame] after bit shift end of buffer content    : %02x%02x\n", timestamp, *(frameBuffer+sizeToCopy), *(frameBuffer+sizeToCopy-1));
-        fflush(Logfile);
-#endif
-
+    if(imgBuffer != frameBuffer) {
+        // copy every line from source buffer newly aligned into TSX buffer cutting at nMemWidth
+        for(i=0; i<nHeight; i++) {
+            memcpy(frameBuffer+(i*nMemWidth), imgBuffer+(i*srcMemWidth), nMemWidth);
+        }
+        free(imgBuffer);
+    }
     return nErr;
 }

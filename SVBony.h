@@ -124,6 +124,16 @@ protected:
     CStopWatch              m_ExposureTimer;
     double                  m_dCaptureLenght;
     
+    int                     m_nROILeft;
+    int                     m_nROITop;
+    int                     m_nROIWidth;
+    int                     m_nROIHeight;
+
+    int                     m_nReqROILeft;
+    int                     m_nReqROITop;
+    int                     m_nReqROIWidth;
+    int                     m_nReqROIHeight;
+
 #ifdef PLUGIN_DEBUG
     std::string m_sLogfilePath;
     // timestamp for logs
