@@ -226,7 +226,18 @@ int CSVBony::Connect(int nCameraID)
         SVBCloseCamera(m_nCameraID);
         return ERR_CMDFAILED;
     }
-
+    ret = SVBGetROIFormat(m_nCameraID, &m_nROILeft, &m_nROITop, &m_nROIWidth, &m_nROIHeight, &m_nCurrentBin);
+    if (ret != SVB_SUCCESS) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CSVBony::Connect] SVBGetROIFormat Error : %d\n", timestamp, ret);
+        fflush(Logfile);
+#endif
+        SVBCloseCamera(m_nCameraID);
+        return ERR_CMDFAILED;
+    }
 
     ret = SVBSetControlValue(m_nCameraID, SVB_EXPOSURE , (double)(1 * 1000000), SVB_FALSE);
     // set default values
@@ -583,10 +594,10 @@ int CSVBony::setROI(int nLeft, int nTop, int nWidth, int nHeight)
 {
     int nErr = PLUGIN_OK;
     SVB_ERROR_CODE ret;
-    int n_newLeft = 0;
-    int n_newTop = 0;
-    int n_newWidth = 0;
-    int n_newHeight = 0;
+    int nNewLeft = 0;
+    int nNewTop = 0;
+    int nNewWidth = 0;
+    int nNewHeight = 0;
 
 
     m_nReqROILeft = nLeft;
@@ -596,24 +607,43 @@ int CSVBony::setROI(int nLeft, int nTop, int nWidth, int nHeight)
 
     // X
     if( m_nReqROILeft % 8 != 0)
-        n_newLeft = (m_nReqROILeft/8) * 8;  // round to lower 8 pixel. boundary
+        nNewLeft = (m_nReqROILeft/8) * 8;  // round to lower 8 pixel. boundary
     else
-        n_newLeft = m_nReqROILeft;
+        nNewLeft = m_nReqROILeft;
+
+    // W
+    if( (m_nReqROIWidth % 8 != 0) || (nLeft!=nNewLeft)) {// Adjust width to upper 8 boundary or if the left border changed we need to adjust the width
+        nNewWidth = (( (m_nReqROIWidth + (nNewLeft%8)) /8) + 1) * 8;
+        if ((nNewLeft + nNewWidth) > m_nMaxWidth) {
+            nNewLeft -=8;
+            if(nNewLeft<0) {
+                nNewLeft = 0;
+                nNewWidth = m_nMaxWidth;
+            }
+        }
+    }
+    else
+        nNewWidth = m_nReqROIWidth;
+
     // Y
     if( m_nReqROITop % 2 != 0)
-        n_newTop = (m_nReqROITop/2) * 2;  // round to lower even pixel.
+        nNewTop = (m_nReqROITop/2) * 2;  // round to lower even pixel.
     else
-        n_newTop = m_nReqROITop;
-    // W
-    if( (m_nReqROIWidth % 8 != 0) || (nLeft!=n_newLeft)) // Adjust width to upper 8 boundary or if the left border changed we need to adjust the width
-        n_newWidth = (( (m_nReqROIWidth + (n_newLeft%8)) /8) + 1) * 8;
-    else
-        n_newWidth = m_nReqROIWidth;
+        nNewTop = m_nReqROITop;
+
     // H
-    if( (m_nReqROIHeight % 2 != 0) || (nTop!=n_newTop)) // Adjust height to lower 2 boundary or if the top changed we need to adjust the height
-        n_newHeight = (((m_nReqROIHeight + (n_newTop%2))/2) + 1) * 2;
+    if( (m_nReqROIHeight % 2 != 0) || (nTop!=nNewTop)) {// Adjust height to lower 2 boundary or if the top changed we need to adjust the height
+        nNewHeight = (((m_nReqROIHeight + (nNewTop%2))/2) + 1) * 2;
+        if((nNewTop + nNewHeight) > m_nMaxHeight) {
+            nNewTop -=2;
+            if(nNewTop <0) {
+                nNewTop = 0;
+                nNewHeight = m_nMaxHeight;
+            }
+        }
+    }
     else
-        n_newHeight = m_nReqROIHeight;
+        nNewHeight = m_nReqROIHeight;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     ltime = time(NULL);
@@ -624,16 +654,16 @@ int CSVBony::setROI(int nLeft, int nTop, int nWidth, int nHeight)
     fprintf(Logfile, "[%s] [CSVBony::setROI] nWidth         : %d\n", timestamp, nWidth);
     fprintf(Logfile, "[%s] [CSVBony::setROI] nHeight        : %d\n", timestamp, nHeight);
     
-    fprintf(Logfile, "[%s] [CSVBony::setROI] n_newLeft      : %d\n", timestamp, n_newLeft);
-    fprintf(Logfile, "[%s] [CSVBony::setROI] n_newTop       : %d\n", timestamp, n_newTop);
-    fprintf(Logfile, "[%s] [CSVBony::setROI] n_newWidth     : %d\n", timestamp, n_newWidth);
-    fprintf(Logfile, "[%s] [CSVBony::setROI] n_newHeight    : %d\n", timestamp, n_newHeight);
+    fprintf(Logfile, "[%s] [CSVBony::setROI] nNewLeft      : %d\n", timestamp, nNewLeft);
+    fprintf(Logfile, "[%s] [CSVBony::setROI] nNewTop       : %d\n", timestamp, nNewTop);
+    fprintf(Logfile, "[%s] [CSVBony::setROI] nNewWidth     : %d\n", timestamp, nNewWidth);
+    fprintf(Logfile, "[%s] [CSVBony::setROI] nNewHeight    : %d\n", timestamp, nNewHeight);
 
     fflush(Logfile);
 #endif
 
     
-    if( m_nROILeft == n_newLeft && m_nROITop == n_newTop && m_nROIWidth == n_newWidth && m_nROIHeight == n_newHeight) {
+    if( m_nROILeft == nNewLeft && m_nROITop == nNewTop && m_nROIWidth == nNewWidth && m_nROIHeight == nNewHeight) {
         return nErr; // no change since last ROI change request
     }
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -641,18 +671,18 @@ int CSVBony::setROI(int nLeft, int nTop, int nWidth, int nHeight)
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
     fprintf(Logfile, "[%s] [CSVBony::setROI] Requested x, y, w, h : %d, %d, %d, %d\n", timestamp, nLeft, nTop, nWidth, nHeight);
-    fprintf(Logfile, "[%s] [CSVBony::setROI] Set to    x, y, w, h : %d, %d, %d, %d\n", timestamp, n_newLeft, n_newTop, n_newWidth, n_newHeight);
+    fprintf(Logfile, "[%s] [CSVBony::setROI] Set to    x, y, w, h : %d, %d, %d, %d\n", timestamp, nNewLeft, nNewTop, nNewWidth, nNewHeight);
     fflush(Logfile);
 #endif
 
-    ret = SVBSetROIFormat(m_nCameraID, n_newLeft, n_newTop, n_newWidth, n_newHeight, m_nCurrentBin);
+    ret = SVBSetROIFormat(m_nCameraID, nNewLeft, nNewTop, nNewWidth, nNewHeight, m_nCurrentBin);
     if(ret!=SVB_SUCCESS)
         nErr =ERR_CMDFAILED;
 
-    m_nROILeft = n_newLeft;
-    m_nROITop = n_newTop;
-    m_nROIWidth = n_newWidth;
-    m_nROIHeight = n_newHeight;
+    m_nROILeft = nNewLeft;
+    m_nROITop = nNewTop;
+    m_nROIWidth = nNewWidth;
+    m_nROIHeight = nNewHeight;
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
