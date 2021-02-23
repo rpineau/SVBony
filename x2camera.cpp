@@ -538,7 +538,7 @@ int X2Camera::CCGetFullDynamicRange(const enumCameraIndex& Camera, const enumWhi
     uint32_t nBitDepth;
 
     nBitDepth = m_Camera.getBitDepth();
-    dwDynRg = (unsigned long)2^nBitDepth;
+    dwDynRg = (unsigned long)(1 << nBitDepth);
 
 	return SB_OK;
 }
