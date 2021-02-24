@@ -555,10 +555,6 @@ int X2Camera::CCSetBinnedSubFrame(const enumCameraIndex& Camera, const enumWhich
     int nErr = SB_OK;
 	X2MutexLocker ml(GetMutex());
 
-    printf("nLeft %d\n", nLeft);
-    printf("nTop %d\n", nTop);
-    printf("nRight %d\n", nRight);
-    printf("nBottom %d\n", nBottom);
     nErr = m_Camera.setROI(nLeft, nTop, (nRight-nLeft)+1, (nBottom-nTop)+1);
     return nErr;
 }
@@ -569,10 +565,6 @@ int X2Camera::CCSetBinnedSubFrame3(const enumCameraIndex &Camera, const enumWhic
     
     X2MutexLocker ml(GetMutex());
 
-    printf("nLeft %d\n", nLeft);
-    printf("nTop %d\n", nTop);
-    printf("nWidth %d\n", nWidth);
-    printf("nHeight %d\n", nHeight);
     nErr = m_Camera.setROI(nLeft, nTop, nWidth, nHeight);
     
     return nErr;
@@ -635,7 +627,7 @@ int X2Camera::PixelSize1x1InMicrons(const enumCameraIndex &Camera, const enumWhi
     }
 
     x = m_Camera.getPixelSize();
-    y = m_Camera.getPixelSize();
+    y = x;
     return nErr;
 }
 
@@ -674,9 +666,7 @@ int X2Camera::valueForDoubleField (int nIndex, BasicStringInterface &sFieldName,
 int X2Camera::countOfStringFields (int &nCount)
 {
     int nErr = SB_OK;
-    nCount = 0;
-    if(m_Camera.isCameraColor())
-        nCount = 1;
+    nCount = 1;
     return nErr;
 }
 
@@ -689,7 +679,7 @@ int X2Camera::valueForStringField (int nIndex, BasicStringInterface &sFieldName,
             m_Camera.getBayerPattern(sBayerPattern);
             sFieldName = "DEBAYER";
             sFieldComment = "Bayer pattern to use to decode color image";
-            sFieldValue = sBayerPattern.c_str();   // need to set the filed for Monochrome/Color.
+            sFieldValue = sBayerPattern.c_str();   // need to set the field for Monochrome/Color.
         }
         else {
             sFieldName = "DEBAYER";
