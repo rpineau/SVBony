@@ -474,18 +474,9 @@ int CSVBony::startCaputure(double dTime)
     SVB_ERROR_CODE ret;
     
     m_bAbort = false;
-    
-
-    ret = SVBSetOutputImageType(m_nCameraID, m_nVideoMode);
-    if(ret!=SVB_SUCCESS)
-        nErr =ERR_CMDFAILED;
 
     // set exposure time (s -> us)
     ret = SVBSetControlValue(m_nCameraID, SVB_EXPOSURE , (double)(dTime * 1000000), SVB_FALSE);
-    if(ret!=SVB_SUCCESS)
-        nErr =ERR_CMDFAILED;
-
-    ret = SVBSetCameraMode(m_nCameraID, SVB_MODE_TRIG_SOFT);
     if(ret!=SVB_SUCCESS)
         nErr =ERR_CMDFAILED;
 
@@ -674,10 +665,12 @@ int CSVBony::setROI(int nLeft, int nTop, int nWidth, int nHeight)
     fprintf(Logfile, "[%s] [CSVBony::setROI] Set to    x, y, w, h : %d, %d, %d, %d\n", timestamp, nNewLeft, nNewTop, nNewWidth, nNewHeight);
     fflush(Logfile);
 #endif
-
+    SVBStopVideoCapture(m_nCameraID);
+    m_bCapturerunning = false;
+    
     ret = SVBSetROIFormat(m_nCameraID, nNewLeft, nNewTop, nNewWidth, nNewHeight, m_nCurrentBin);
     if(ret!=SVB_SUCCESS)
-        nErr =ERR_CMDFAILED;
+        return ERR_CMDFAILED;
 
     m_nROILeft = nNewLeft;
     m_nROITop = nNewTop;
@@ -690,6 +683,11 @@ int CSVBony::setROI(int nLeft, int nTop, int nWidth, int nHeight)
         fprintf(Logfile, "[%s] [CSVBony::setROI] new ROI set\n", timestamp);
         fflush(Logfile);
 #endif
+    ret = SVBStartVideoCapture(m_nCameraID);
+    if(ret!=SVB_SUCCESS)
+        return ERR_CMDFAILED;
+    m_bCapturerunning = true;
+
     return nErr;
 }
 
@@ -774,11 +772,11 @@ int CSVBony::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
     fflush(Logfile);
 #endif
 
-    ret = SVBGetVideoData(m_nCameraID, imgBuffer, sizeReadFromCam, 5000);
+    ret = SVBGetVideoData(m_nCameraID, imgBuffer, sizeReadFromCam, 100);
     if(ret!=SVB_SUCCESS) {
         // wait and retry
         m_pSleeper->sleep(1000);
-        ret = SVBGetVideoData(m_nCameraID, imgBuffer, sizeReadFromCam, 5000);
+        ret = SVBGetVideoData(m_nCameraID, imgBuffer, sizeReadFromCam, 100);
         if(ret!=SVB_SUCCESS) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
             ltime = time(NULL);
