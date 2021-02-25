@@ -20,7 +20,6 @@ CSVBony::CSVBony()
     m_nNbBitToShift = 4;
     m_dCaptureLenght = 0;
     m_bCapturerunning = false;
-    m_nDefaultGain = 10;
     m_pSleeper = nullptr;
     m_nNbBin = 1;
     m_SupportedBins[0] = 1;
@@ -35,6 +34,23 @@ CSVBony::CSVBony()
     m_nReqROIWidth = 0;
     m_nReqROIHeight = 0;
 
+    
+    m_nGain = 10;
+    m_nExposureMs = (1 * 1000000);
+    m_nGama = 100;
+    m_nGamaConstrast = 100;
+    m_nWbR = 130;
+    m_nWbG = 80;
+    m_nWbB = 160;
+    m_nFlip = 0;
+    m_nSpeedMode = 0; // low speed
+    m_nContrast = 50;
+    m_nSharpness = 0;
+    m_nSaturation = 100;
+    m_nAutoBrightnesTarget = 0;
+    m_nBlackLevel = 0;
+
+    
     memset(m_szCameraName,0,BUFFER_LEN);
 #ifdef PLUGIN_DEBUG
 #if defined(SB_WIN_BUILD)
@@ -239,18 +255,18 @@ int CSVBony::Connect(int nCameraID)
         return ERR_CMDFAILED;
     }
 
-    ret = SVBSetControlValue(m_nCameraID, SVB_EXPOSURE , (double)(1 * 1000000), SVB_FALSE);
-    // set default values
-    ret = SVBSetControlValue(m_nCameraID, SVB_GAIN, m_nDefaultGain, SVB_FALSE);
-    ret = SVBSetControlValue(m_nCameraID, SVB_CONTRAST,         50, SVB_FALSE);
-    ret = SVBSetControlValue(m_nCameraID, SVB_SHARPNESS,         0, SVB_FALSE);
-    ret = SVBSetControlValue(m_nCameraID, SVB_SATURATION,      100, SVB_FALSE);
-    ret = SVBSetControlValue(m_nCameraID, SVB_WB_R,            130, SVB_FALSE);
-    ret = SVBSetControlValue(m_nCameraID, SVB_WB_G,             80, SVB_FALSE);
-    ret = SVBSetControlValue(m_nCameraID, SVB_WB_B,            160, SVB_FALSE);
-    ret = SVBSetControlValue(m_nCameraID, SVB_GAMMA,           100, SVB_FALSE);
 
-    ret = SVBSetControlValue(m_nCameraID, SVB_FRAME_SPEED_MODE , 0, SVB_FALSE); // low speed
+    // set default values
+    ret = SVBSetControlValue(m_nCameraID, SVB_GAIN, m_nGain, SVB_FALSE);
+    ret = SVBSetControlValue(m_nCameraID, SVB_EXPOSURE, m_nExposureMs, SVB_FALSE);
+    ret = SVBSetControlValue(m_nCameraID, SVB_GAMMA, m_nGama, SVB_FALSE);
+    ret = SVBSetControlValue(m_nCameraID, SVB_CONTRAST, m_nContrast, SVB_FALSE);
+    ret = SVBSetControlValue(m_nCameraID, SVB_SHARPNESS, m_nSharpness, SVB_FALSE);
+    ret = SVBSetControlValue(m_nCameraID, SVB_SATURATION, m_nSaturation, SVB_FALSE);
+    ret = SVBSetControlValue(m_nCameraID, SVB_WB_R, m_nWbR, SVB_FALSE);
+    ret = SVBSetControlValue(m_nCameraID, SVB_WB_G, m_nWbG, SVB_FALSE);
+    ret = SVBSetControlValue(m_nCameraID, SVB_WB_B, m_nWbB, SVB_FALSE);
+    ret = SVBSetControlValue(m_nCameraID, SVB_FRAME_SPEED_MODE , m_nSpeedMode, SVB_FALSE);
     
     ret = SVBSetOutputImageType(m_nCameraID, m_nVideoMode);
     ret = SVBSetCameraMode(m_nCameraID, SVB_MODE_TRIG_SOFT);
@@ -665,8 +681,34 @@ int CSVBony::setROI(int nLeft, int nTop, int nWidth, int nHeight)
     fprintf(Logfile, "[%s] [CSVBony::setROI] Set to    x, y, w, h : %d, %d, %d, %d\n", timestamp, nNewLeft, nNewTop, nNewWidth, nNewHeight);
     fflush(Logfile);
 #endif
+    if(m_pframeBuffer) {
+        free(m_pframeBuffer);
+        m_pframeBuffer = NULL;
+    }
     SVBStopVideoCapture(m_nCameraID);
+    SVBCloseCamera(m_nCameraID);
     m_bCapturerunning = false;
+
+    ret = SVBOpenCamera(m_nCameraID);
+    if (ret != SVB_SUCCESS) {
+        m_bConnected = false;
+        return ERR_CMDFAILED;
+    }
+    
+    // set default values
+    ret = SVBSetControlValue(m_nCameraID, SVB_GAIN, m_nGain, SVB_FALSE);
+    ret = SVBSetControlValue(m_nCameraID, SVB_EXPOSURE, m_nExposureMs, SVB_FALSE);
+    ret = SVBSetControlValue(m_nCameraID, SVB_GAMMA, m_nGama, SVB_FALSE);
+    ret = SVBSetControlValue(m_nCameraID, SVB_CONTRAST, m_nContrast, SVB_FALSE);
+    ret = SVBSetControlValue(m_nCameraID, SVB_SHARPNESS, m_nSharpness, SVB_FALSE);
+    ret = SVBSetControlValue(m_nCameraID, SVB_SATURATION, m_nSaturation, SVB_FALSE);
+    ret = SVBSetControlValue(m_nCameraID, SVB_WB_R, m_nWbR, SVB_FALSE);
+    ret = SVBSetControlValue(m_nCameraID, SVB_WB_G, m_nWbG, SVB_FALSE);
+    ret = SVBSetControlValue(m_nCameraID, SVB_WB_B, m_nWbB, SVB_FALSE);
+    ret = SVBSetControlValue(m_nCameraID, SVB_FRAME_SPEED_MODE , m_nSpeedMode, SVB_FALSE);
+    
+    ret = SVBSetOutputImageType(m_nCameraID, m_nVideoMode);
+    ret = SVBSetCameraMode(m_nCameraID, SVB_MODE_TRIG_SOFT);
     
     ret = SVBSetROIFormat(m_nCameraID, nNewLeft, nNewTop, nNewWidth, nNewHeight, m_nCurrentBin);
     if(ret!=SVB_SUCCESS)

@@ -94,8 +94,21 @@ protected:
     SVB_CAMERA_INFO         m_CameraInfo;
     SVB_CAMERA_PROPERTY     m_cameraProperty;
     SVB_IMG_TYPE            m_nVideoMode;
-    long                    m_nDefaultGain;
-    
+    long                    m_nGain;
+    long                    m_nExposureMs;
+    long                    m_nGama;
+    long                    m_nGamaConstrast;
+    long                    m_nWbR;
+    long                    m_nWbG;
+    long                    m_nWbB;
+    long                    m_nFlip;
+    long                    m_nSpeedMode;
+    long                    m_nContrast;
+    long                    m_nSharpness;
+    long                    m_nSaturation;
+    long                    m_nAutoBrightnesTarget;
+    long                    m_nBlackLevel;
+
     double                  m_dPixelSize;
     int                     m_nMaxWidth;
     int                     m_nMaxHeight;
