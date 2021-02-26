@@ -39,6 +39,7 @@ X2Camera::X2Camera( const char* pszSelection,
         m_Camera.setCameraSerial(std::string(m_szCameraSerial));
         m_Camera.setCameraId(m_nCameraID);
         // read other camera settngs
+        
     }
 
 }
@@ -673,21 +674,104 @@ int X2Camera::countOfStringFields (int &nCount)
 int X2Camera::valueForStringField (int nIndex, BasicStringInterface &sFieldName, BasicStringInterface &sFieldComment, BasicStringInterface &sFieldValue)
 {
     int nErr = SB_OK;
-    std::string sBayerPattern;
-    if(nIndex == 0) { // we only have one extra header, any other index is not valid
-        if(m_Camera.isCameraColor()) {
-            m_Camera.getBayerPattern(sBayerPattern);
-            sFieldName = "DEBAYER";
-            sFieldComment = "Bayer pattern to use to decode color image";
-            sFieldValue = sBayerPattern.c_str();   // need to set the field for Monochrome/Color.
-        }
-        else {
-            sFieldName = "DEBAYER";
-            sFieldComment = "Bayer pattern to use to decode color image";
-            sFieldValue = "MONO";
-        }
+    std::string sTmp;
+    
+    switch(nIndex) {
+        case F_BAYER :
+            if(m_Camera.isCameraColor()) {
+                m_Camera.getBayerPattern(sTmp);
+                sFieldName = "DEBAYER";
+                sFieldComment = "Bayer pattern to use to decode color image";
+                sFieldValue = sTmp.c_str();
+            }
+            else {
+                sFieldName = "DEBAYER";
+                sFieldComment = "Bayer pattern to use to decode color image";
+                sFieldValue = "MONO";
+            }
+            break;
         
+        case F_GAIN :
+            m_Camera.getGain(sTmp);
+            sFieldName = "Gain";
+            sFieldComment = "";
+            sFieldValue = sTmp.c_str();
+            break;
+
+        case F_GAMMA :
+            m_Camera.getGamma(sTmp);
+            sFieldName = "Gamma";
+            sFieldComment = "";
+            sFieldValue = sTmp.c_str();
+            break;
+
+        case F_GAMMA_CONTRAST :
+            m_Camera.getGammaContrast(sTmp);
+            sFieldName = "GammaContrast";
+            sFieldComment = "";
+            sFieldValue = sTmp.c_str();
+            break;
+
+        case F_WB_R :
+            m_Camera.getWB_R(sTmp);
+            sFieldName = "Red White Balance";
+            sFieldComment = "";
+            sFieldValue = sTmp.c_str();
+            break;
+
+        case F_WB_G :
+            m_Camera.getWB_G(sTmp);
+            sFieldName = "Green White Balance";
+            sFieldComment = "";
+            sFieldValue = sTmp.c_str();
+            break;
+
+        case F_WB_B :
+            m_Camera.getWB_B(sTmp);
+            sFieldName = "Blue White Balance";
+            sFieldComment = "";
+            sFieldValue = sTmp.c_str();
+            break;
+
+        case F_FLIP :
+            m_Camera.getFlip(sTmp);
+            sFieldName = "Flip";
+            sFieldComment = "";
+            sFieldValue = sTmp.c_str();
+            break;
+
+        case F_CONTRAST :
+            m_Camera.getContrast(sTmp);
+            sFieldName = "Contrast";
+            sFieldComment = "";
+            sFieldValue = sTmp.c_str();
+            break;
+
+        case F_SHARPNESS :
+            m_Camera.getSharpness(sTmp);
+            sFieldName = "Sharpness";
+            sFieldComment = "";
+            sFieldValue = sTmp.c_str();
+            break;
+
+        case F_SATURATION :
+            m_Camera.getSaturation(sTmp);
+            sFieldName = "Saturation";
+            sFieldComment = "";
+            sFieldValue = sTmp.c_str();
+            break;
+
+        case F_BLACK_LEVEL :
+            m_Camera.getBlackLevel(sTmp);
+            sFieldName = "Black Offset";
+            sFieldComment = "";
+            sFieldValue = sTmp.c_str();
+            break;
+
+        default :
+            break;
     }
+
     return nErr;
 }
 

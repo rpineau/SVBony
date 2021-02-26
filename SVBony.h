@@ -77,6 +77,41 @@ public:
     
     bool        isCameraColor();
     void        getBayerPattern(std::string &sBayerPattern);
+    void        getGain(std::string &sGain);
+    void        getGamma(std::string &sGamma);
+    void        getGammaContrast(std::string &sGammaContrast);
+    void        getWB_R(std::string &sWB_R);
+    void        getWB_G(std::string &sWB_G);
+    void        getWB_B(std::string &sWB_B);
+    void        getFlip(std::string &sFlip);
+    void        getContrast(std::string &sContrast);
+    void        getSharpness(std::string &sSharpness);
+    void        getSaturation(std::string &sSaturation);
+    void        getBlackLevel(std::string &sBlackLevel);
+
+    void        getGain(long &nMin, long &nMax, long &nValue);
+    int         setGain(long nGain);
+    void        getGamma(long &nMin, long &nMax, long &nValue);
+    int         setGamma(long nGamma);
+    void        getGammaContrast(long &nMin, long &nMax, long &nValue);
+    int         setGammaContrast(long nGammaContrast);
+    void        getWB_R(long &nMin, long &nMax, long &nValue);
+    int         setWB_R(long nWB_R);
+    void        getWB_G(long &nMin, long &nMax, long &nValue);
+    int         setWB_G(long nWB_G);
+    void        getWB_B(long &nMin, long &nMax, long &nValue);
+    int         setWB_B(long nWB_B);
+    void        getFlip(long &nMin, long &nMax, long &nValue);
+    int         setFlip(long nFlip);
+    void        getContrast(long &nMin, long &nMax, long &nValue);
+    int         setContrast(long nContrast);
+    void        getSharpness(long &nMin, long &nMax, long &nValue);
+    int         setSharpness(long nSharpness);
+    void        getSaturation(long &nMin, long &nMax, long &nValue);
+    int         setSaturation(long nSaturation);
+    void        getBlackLevel(long &nMin, long &nMax, long &nValue);
+    int         setBlackLevel(long nBlackLevel);
+
     int         setROI(int nLeft, int nTop, int nWidth, int nHeight);
     int         clearROI(void);
 
@@ -88,16 +123,21 @@ public:
 
 protected:
     
+    int         getControlValues(SVB_CONTROL_TYPE nControlType, long &nMin, long &nMax, long &nValue);
+
     SleeperInterface    *m_pSleeper;
 
     
     SVB_CAMERA_INFO         m_CameraInfo;
     SVB_CAMERA_PROPERTY     m_cameraProperty;
     SVB_IMG_TYPE            m_nVideoMode;
+    int                     m_nControlNums;
+    std::vector<SVB_CONTROL_CAPS> m_ControlList;
+    
     long                    m_nGain;
     long                    m_nExposureMs;
-    long                    m_nGama;
-    long                    m_nGamaConstrast;
+    long                    m_nGamma;
+    long                    m_nGammaConstrast;
     long                    m_nWbR;
     long                    m_nWbG;
     long                    m_nWbB;
@@ -106,7 +146,7 @@ protected:
     long                    m_nContrast;
     long                    m_nSharpness;
     long                    m_nSaturation;
-    long                    m_nAutoBrightnesTarget;
+    long                    m_nAutoExposureTarget;
     long                    m_nBlackLevel;
 
     double                  m_dPixelSize;
