@@ -69,7 +69,8 @@ public:
     int         stopCaputure();
     void        abortCapture(void);
 
-    int         getTemperture(double &dTemp);
+    int         getTemperture(double &dTemp, double &dPower, double &dSetPoint, bool &bEnabled);
+    int         setCoolerTemperature(bool bOn, double dTemp);
     int         getWidth();
     int         getHeight();
     double      getPixelSize();

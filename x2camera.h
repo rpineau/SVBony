@@ -225,8 +225,8 @@ private:
 	int m_nPrivateISIndex;
 
 	double m_dCurTemp;
+    double m_dCurSetPoint;
 	double m_dCurPower;
-    double m_dwFin;
     
 	int doSVBonyCAmFeatureConfig(bool& bPressedOK);
 

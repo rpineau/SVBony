@@ -22,8 +22,6 @@ X2Camera::X2Camera( const char* pszSelection,
 	m_pIOMutex						= pIOMutex;
 	m_pTickCount					= pTickCount;
 
-
-    m_dwFin = 0;
 	m_dCurTemp = -100.0;
 	m_dCurPower = 0;
 
@@ -321,23 +319,26 @@ int X2Camera::CCQueryTemperature(double& dCurTemp, double& dCurPower, char* lpsz
 	if (!m_bLinked)
 		return ERR_NOLINK;
 
-    nErr = m_Camera.getTemperture(m_dCurTemp);
+    nErr = m_Camera.getTemperture(m_dCurTemp, m_dCurPower, m_dCurSetPoint, bCurEnabled);
     dCurTemp = m_dCurTemp;
-	dCurPower = 0;
-    dCurSetPoint = 0;
+	dCurPower = m_dCurPower;
+    dCurSetPoint = m_dCurSetPoint;
     bCurEnabled = false;
 
     return nErr;
 }
 
 int X2Camera::CCRegulateTemp(const bool& bOn, const double& dTemp)
-{ 
+{
+    int nErr = SB_OK;
 	X2MutexLocker ml(GetMutex());
 
 	if (!m_bLinked)
 		return ERR_NOLINK;
 
-	return SB_OK;
+    nErr = m_Camera.setCoolerTemperature(bOn, dTemp);
+    
+	return nErr;
 }
 
 int X2Camera::CCGetRecommendedSetpoint(double& RecTemp)
@@ -369,11 +370,6 @@ int X2Camera::CCStartExposure(const enumCameraIndex& Cam, const enumWhichCCD CCD
 		default:				return ERR_CMDFAILED;
 	}
 
-	if (m_pTickCount)
-		m_dwFin = (unsigned long)(dTime*1000)+m_pTickCount->elapsed();
-	else
-		m_dwFin = 0;
-
     nErr = m_Camera.startCaputure(dTime);
 	return nErr;
 }   
@@ -404,10 +400,8 @@ int X2Camera::CCEndExposure(const enumCameraIndex& Cam, const enumWhichCCD CCD, 
 
 	int nErr = SB_OK;
 
-	if (bWasAborted)
-    {
+	if (bWasAborted) {
         m_Camera.abortCapture();
-        // cleanup ?
 	}
 
     return nErr;
@@ -667,7 +661,7 @@ int X2Camera::valueForDoubleField (int nIndex, BasicStringInterface &sFieldName,
 int X2Camera::countOfStringFields (int &nCount)
 {
     int nErr = SB_OK;
-    nCount = 1;
+    nCount = 12;
     return nErr;
 }
 

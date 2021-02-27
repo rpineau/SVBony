@@ -597,14 +597,25 @@ void CSVBony::abortCapture(void)
     stopCaputure();
 }
 
-int CSVBony::getTemperture(double &dTemp)
+int CSVBony::getTemperture(double &dTemp, double &dPower, double &dSetPoint, bool &bEnabled)
 {
     int nErr = PLUGIN_OK;
     // no temperature data for now.
+    // this will change for the nex SVB camera as the SV405C seems to have temperature control
     dTemp = -100;
+    dPower = 0;
+    dSetPoint = dTemp;
+    bEnabled = false;
     return nErr;
 }
 
+int CSVBony::setCoolerTemperature(bool bOn, double dTemp)
+{
+    int nErr = PLUGIN_OK;
+    // no option to set the cooler temperature for now
+    // this will change for the nex SVB camera as the SV405C seems to have temperature control
+    return nErr;
+}
 
 int CSVBony::getWidth()
 {
@@ -992,11 +1003,11 @@ int CSVBony::setROI(int nLeft, int nTop, int nWidth, int nHeight)
     fprintf(Logfile, "[%s] [CSVBony::setROI] Set to    x, y, w, h : %d, %d, %d, %d\n", timestamp, nNewLeft, nNewTop, nNewWidth, nNewHeight);
     fflush(Logfile);
 #endif
+    SVBStopVideoCapture(m_nCameraID);
     if(m_pframeBuffer) {
         free(m_pframeBuffer);
         m_pframeBuffer = NULL;
     }
-    SVBStopVideoCapture(m_nCameraID);
     SVBCloseCamera(m_nCameraID);
     m_bCapturerunning = false;
 
