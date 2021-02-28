@@ -104,6 +104,8 @@ public:
     int         setWB_B(long nWB_B);
     void        getFlip(long &nMin, long &nMax, long &nValue);
     int         setFlip(long nFlip);
+    void        getSpeedMode(long &nMin, long &nMax, long &nValue);
+    int         setSpeedMode(long nFlip);
     void        getContrast(long &nMin, long &nMax, long &nValue);
     int         setContrast(long nContrast);
     void        getSharpness(long &nMin, long &nMax, long &nValue);
@@ -124,7 +126,7 @@ public:
 
 protected:
     
-    int         getControlValues(SVB_CONTROL_TYPE nControlType, long &nMin, long &nMax, long &nValue);
+    SVB_ERROR_CODE         getControlValues(SVB_CONTROL_TYPE nControlType, long &nMin, long &nMax, long &nValue);
 
     SleeperInterface    *m_pSleeper;
 
@@ -138,7 +140,7 @@ protected:
     long                    m_nGain;
     long                    m_nExposureMs;
     long                    m_nGamma;
-    long                    m_nGammaConstrast;
+    long                    m_nGammaContrast;
     long                    m_nWbR;
     long                    m_nWbG;
     long                    m_nWbB;

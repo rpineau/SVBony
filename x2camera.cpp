@@ -120,12 +120,12 @@ int X2Camera::execModalSettingsDialog()
         }
         dx->setCurrentIndex("comboBox",nCamIndex);
     }
-    //if(m_bLinked) {
+    if(m_bLinked) {
         dx->setEnabled("pushButton", true);
-    //}
-    //else {
-    //    dx->setEnabled("pushButton", false);
-    //}
+    }
+    else {
+        dx->setEnabled("pushButton", false);
+    }
     //Display the user interface
     if ((nErr = ui->exec(bPressedOK)))
         return nErr;
@@ -157,7 +157,8 @@ int X2Camera::doSVBonyCAmFeatureConfig(bool& bPressedOK)
     X2GUIInterface*                    ui = uiutil.X2UI();
     X2GUIExchangeInterface*            dx = NULL;
     bPressedOK = false;
-
+    long nVal, nMin, nMax;
+    
     if (NULL == ui)
         return ERR_POINTER;
 
@@ -167,8 +168,127 @@ int X2Camera::doSVBonyCAmFeatureConfig(bool& bPressedOK)
     if (NULL == (dx = uiutil.X2DX()))
         return ERR_POINTER;
 
-    // dx->setText("label_7","RoRo");
 
+    if(m_bLinked){
+        m_Camera.getGain(nMin, nMax, nVal);
+        if(nMax == -1)
+            dx->setEnabled("Gain", false);
+        else {
+            dx->setPropertyInt("Gain", "minimum", (int)nMin);
+            dx->setPropertyInt("Gain", "maximum", (int)nMax);
+            dx->setPropertyInt("Gain", "value", (int)nVal);
+        }
+
+        m_Camera.getGamma(nMin, nMax, nVal);
+        if(nMax == -1)
+            dx->setEnabled("Gamma", false);
+        else {
+            dx->setPropertyInt("Gamma", "minimum", (int)nMin);
+            dx->setPropertyInt("Gamma", "maximum", (int)nMax);
+            dx->setPropertyInt("Gamma", "value", (int)nVal);
+        }
+
+        m_Camera.getGammaContrast(nMin, nMax, nVal);
+        if(nMax == -1)
+            dx->setEnabled("GammaContrast", false);
+        else {
+            dx->setPropertyInt("GammaContrast", "minimum", (int)nMin);
+            dx->setPropertyInt("GammaContrast", "maximum", (int)nMax);
+            dx->setPropertyInt("GammaContrast", "value", (int)nVal);
+        }
+
+        m_Camera.getWB_R(nMin, nMax, nVal);
+        if(nMax == -1)
+            dx->setEnabled("WB_R", false);
+        else {
+            dx->setPropertyInt("WB_R", "minimum", (int)nMin);
+            dx->setPropertyInt("WB_R", "maximum", (int)nMax);
+            dx->setPropertyInt("WB_R", "value", (int)nVal);
+        }
+
+        m_Camera.getWB_G(nMin, nMax, nVal);
+        if(nMax == -1)
+            dx->setEnabled("WB_G", false);
+        else {
+            dx->setPropertyInt("WB_G", "minimum", (int)nMin);
+            dx->setPropertyInt("WB_G", "maximum", (int)nMax);
+            dx->setPropertyInt("WB_G", "value", (int)nVal);
+        }
+
+        m_Camera.getWB_B(nMin, nMax, nVal);
+        if(nMax == -1)
+            dx->setEnabled("WB_B", false);
+        else {
+            dx->setPropertyInt("WB_B", "minimum", (int)nMin);
+            dx->setPropertyInt("WB_B", "maximum", (int)nMax);
+            dx->setPropertyInt("WB_B", "value", (int)nVal);
+        }
+
+        m_Camera.getFlip(nMin, nMax, nVal);
+        if(nMax == -1)
+            dx->setEnabled("Flip", false);
+        else {
+            dx->setCurrentIndex("Flip", (int)nVal);
+        }
+
+        m_Camera.getSpeedMode(nMin, nMax, nVal);
+        if(nMax == -1)
+            dx->setEnabled("SpeedMode", false);
+        else {
+            dx->setCurrentIndex("SpeedMode", (int)nVal);
+        }
+
+        m_Camera.getContrast(nMin, nMax, nVal);
+        if(nMax == -1)
+            dx->setEnabled("Contrast", false);
+        else {
+            dx->setPropertyInt("Contrast", "minimum", (int)nMin);
+            dx->setPropertyInt("Contrast", "maximum", (int)nMax);
+            dx->setPropertyInt("Contrast", "value", (int)nVal);
+        }
+        
+        m_Camera.getSharpness(nMin, nMax, nVal);
+        if(nMax == -1)
+            dx->setEnabled("Sharpness", false);
+        else {
+            dx->setPropertyInt("Sharpness", "minimum", (int)nMin);
+            dx->setPropertyInt("Sharpness", "maximum", (int)nMax);
+            dx->setPropertyInt("Sharpness", "value", (int)nVal);
+        }
+
+        m_Camera.getSaturation(nMin, nMax, nVal);
+        if(nMax == -1)
+            dx->setEnabled("Saturation", false);
+        else {
+            dx->setPropertyInt("Saturation", "minimum", (int)nMin);
+            dx->setPropertyInt("Saturation", "maximum", (int)nMax);
+            dx->setPropertyInt("Saturation", "value", (int)nVal);
+        }
+
+        m_Camera.getBlackLevel(nMin, nMax, nVal);
+        if(nMax == -1)
+            dx->setEnabled("Offset", false);
+        else {
+            dx->setPropertyInt("Offset", "minimum", (int)nMin);
+            dx->setPropertyInt("Offset", "maximum", (int)nMax);
+            dx->setPropertyInt("Offset", "value", (int)nVal);
+        }
+
+    }
+    else {
+        dx->setEnabled("Gain", false);
+        dx->setEnabled("Gamma", false);
+        dx->setEnabled("GammaContrast", false);
+        dx->setEnabled("WB_R", false);
+        dx->setEnabled("WB_G", false);
+        dx->setEnabled("WB_B", false);
+        dx->setEnabled("Flip", false);
+        dx->setEnabled("SpeedMode", false);
+        dx->setEnabled("Contrast", false);
+        dx->setEnabled("Sharpness", false);
+        dx->setEnabled("Saturation", false);
+        dx->setEnabled("Offset", false);
+    }
     //Display the user interface
     if ((nErr = ui->exec(bPressedOK)))
         return nErr;

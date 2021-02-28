@@ -40,7 +40,7 @@ CSVBony::CSVBony()
     m_nGain = 10;
     m_nExposureMs = (1 * 1000000);
     m_nGamma = 100;
-    m_nGammaConstrast = 100;
+    m_nGammaContrast = 100;
     m_nWbR = 130;
     m_nWbG = 80;
     m_nWbB = 160;
@@ -269,16 +269,18 @@ int CSVBony::Connect(int nCameraID)
     }
 
     // set default values
-    ret = SVBSetControlValue(m_nCameraID, SVB_GAIN, m_nGain, SVB_FALSE);
-    ret = SVBSetControlValue(m_nCameraID, SVB_EXPOSURE, m_nExposureMs, SVB_FALSE);
-    ret = SVBSetControlValue(m_nCameraID, SVB_GAMMA, m_nGamma, SVB_FALSE);
-    ret = SVBSetControlValue(m_nCameraID, SVB_CONTRAST, m_nContrast, SVB_FALSE);
-    ret = SVBSetControlValue(m_nCameraID, SVB_SHARPNESS, m_nSharpness, SVB_FALSE);
-    ret = SVBSetControlValue(m_nCameraID, SVB_SATURATION, m_nSaturation, SVB_FALSE);
-    ret = SVBSetControlValue(m_nCameraID, SVB_WB_R, m_nWbR, SVB_FALSE);
-    ret = SVBSetControlValue(m_nCameraID, SVB_WB_G, m_nWbG, SVB_FALSE);
-    ret = SVBSetControlValue(m_nCameraID, SVB_WB_B, m_nWbB, SVB_FALSE);
-    ret = SVBSetControlValue(m_nCameraID, SVB_FRAME_SPEED_MODE , m_nSpeedMode, SVB_FALSE);
+    setGain(m_nGain);
+    setGamma(m_nGamma);
+    setGammaContrast(m_nGammaContrast);
+    setWB_R(m_nWbR);
+    setWB_G(m_nWbG);
+    setWB_B(m_nWbB);
+    setFlip(m_nFlip);
+    setSpeedMode(m_nSpeedMode);
+    setContrast(m_nContrast);
+    setSharpness(m_nSharpness);
+    setSaturation(m_nSaturation);
+    setBlackLevel(m_nBlackLevel);
     
     ret = SVBSetOutputImageType(m_nCameraID, m_nVideoMode);
     ret = SVBSetCameraMode(m_nCameraID, SVB_MODE_TRIG_SOFT);
@@ -501,7 +503,6 @@ int CSVBony::startCaputure(double dTime)
     int nErr = PLUGIN_OK;
     SVB_ERROR_CODE ret;
     long nValue;
-    SVB_BOOL isAuto;
     int nTimeout;
     m_bAbort = false;
 
@@ -515,28 +516,6 @@ int CSVBony::startCaputure(double dTime)
     fprintf(Logfile, "[%s] [CSVBony::startCaputure] Waiting for camera to be idle\n", timestamp);
     fflush(Logfile);
 #endif
-/*
- // this not working .. nValue is always returning 1000000
-    while (true){
-        ret =  SVBGetControlValue(m_nCameraID, SVB_EXPOSURE, &nValue, &isAuto);
-        if(ret!=SVB_SUCCESS)
-            return ERR_CMDFAILED;
-#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        ltime = time(NULL);
-        timestamp = asctime(localtime(&ltime));
-        timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s] [CSVBony::startCaputure] nValue = %d\n", timestamp, nValue);
-        fflush(Logfile);
-#endif
-
-        if(nValue == SVB_EXP_IDLE)
-            break;
-        nTimeout++;
-        if(nTimeout > 5)
-            return ERR_CMDFAILED;
-        m_pSleeper->sleep(100);
-    }
- */
     
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     ltime = time(NULL);
@@ -674,7 +653,7 @@ void CSVBony::getGamma(std::string &sGamma)
 
 void CSVBony::getGammaContrast(std::string &sGammaContrast)
 {
-    sGammaContrast = std::to_string(m_nGammaConstrast);
+    sGammaContrast = std::to_string(m_nGammaContrast);
 }
 
 void CSVBony::getWB_R(std::string &sWB_R)
@@ -720,7 +699,7 @@ void CSVBony::getBlackLevel(std::string &sBlackLevel)
 
 void CSVBony::getGain(long &nMin, long &nMax, long &nValue)
 {
-    int ret;
+    SVB_ERROR_CODE ret;
     ret = getControlValues(SVB_GAIN, nMin, nMax, nValue);
     if(ret != PLUGIN_OK) {
         return;
@@ -730,13 +709,27 @@ void CSVBony::getGain(long &nMin, long &nMax, long &nValue)
 int CSVBony::setGain(long nGain)
 {
     int nErr = PLUGIN_OK;
+    SVB_ERROR_CODE ret;
     
+    m_nGain = nGain;
+    ret = SVBSetControlValue(m_nCameraID, SVB_GAIN, m_nGain, SVB_FALSE);
+    if(ret != SVB_SUCCESS)
+        nErr = ERR_CMDFAILED;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [CSVBony::setGain] Gain set to %ld\n", timestamp, m_nGain);
+    fflush(Logfile);
+#endif
+
     return nErr;
 }
 
 void CSVBony::getGamma(long &nMin, long &nMax, long &nValue)
 {
-    int ret;
+    SVB_ERROR_CODE ret;
     ret = getControlValues(SVB_GAMMA, nMin, nMax, nValue);
     if(ret != PLUGIN_OK) {
         return;
@@ -746,13 +739,27 @@ void CSVBony::getGamma(long &nMin, long &nMax, long &nValue)
 int CSVBony::setGamma(long nGamma)
 {
     int nErr = PLUGIN_OK;
+    SVB_ERROR_CODE ret;
     
+    m_nGamma = nGamma;
+    ret = SVBSetControlValue(m_nCameraID, SVB_GAMMA, m_nGamma, SVB_FALSE);
+    if(ret != SVB_SUCCESS)
+        nErr = ERR_CMDFAILED;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [CSVBony::setGamma] Gamma set to %ld\n", timestamp, m_nGamma);
+    fflush(Logfile);
+#endif
+
     return nErr;
 }
 
 void CSVBony::getGammaContrast(long &nMin, long &nMax, long &nValue)
 {
-    int ret;
+    SVB_ERROR_CODE ret;
     ret = getControlValues(SVB_GAMMA_CONTRAST, nMin, nMax, nValue);
     if(ret != PLUGIN_OK) {
         return;
@@ -762,13 +769,27 @@ void CSVBony::getGammaContrast(long &nMin, long &nMax, long &nValue)
 int CSVBony::setGammaContrast(long nGammaContrast)
 {
     int nErr = PLUGIN_OK;
-    
+    SVB_ERROR_CODE ret;
+
+    m_nGammaContrast = nGammaContrast;
+    ret = SVBSetControlValue(m_nCameraID, SVB_GAMMA_CONTRAST, m_nGammaContrast, SVB_FALSE);
+    if(ret != SVB_SUCCESS)
+        nErr = ERR_CMDFAILED;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [CSVBony::setGammaContrast] GammaContrats set to %ld\n", timestamp, m_nGammaContrast);
+    fflush(Logfile);
+#endif
+
     return nErr;
 }
 
 void CSVBony::getWB_R(long &nMin, long &nMax, long &nValue)
 {
-    int ret;
+    SVB_ERROR_CODE ret;
     ret = getControlValues(SVB_WB_R, nMin, nMax, nValue);
     if(ret != PLUGIN_OK) {
         return;
@@ -778,13 +799,27 @@ void CSVBony::getWB_R(long &nMin, long &nMax, long &nValue)
 int CSVBony::setWB_R(long nWB_R)
 {
     int nErr = PLUGIN_OK;
+    SVB_ERROR_CODE ret;
     
+    m_nWbR = nWB_R;
+    ret = SVBSetControlValue(m_nCameraID, SVB_WB_R, m_nWbR, SVB_FALSE);
+    if(ret != SVB_SUCCESS)
+        nErr = ERR_CMDFAILED;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [CSVBony::setWB_R] WB_R set to %ld\n", timestamp, m_nWbR);
+    fflush(Logfile);
+#endif
+
     return nErr;
 }
 
 void CSVBony::getWB_G(long &nMin, long &nMax, long &nValue)
 {
-    int ret;
+    SVB_ERROR_CODE ret;
     ret = getControlValues(SVB_WB_G, nMin, nMax, nValue);
     if(ret != PLUGIN_OK) {
         return;
@@ -794,13 +829,27 @@ void CSVBony::getWB_G(long &nMin, long &nMax, long &nValue)
 int CSVBony::setWB_G(long nWB_G)
 {
     int nErr = PLUGIN_OK;
-    
+    SVB_ERROR_CODE ret;
+
+    m_nWbG = nWB_G;
+    ret = SVBSetControlValue(m_nCameraID, SVB_WB_G, m_nWbG, SVB_FALSE);
+    if(ret != SVB_SUCCESS)
+        nErr = ERR_CMDFAILED;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [CSVBony::setWB_G] WB_G set to %ld\n", timestamp, m_nWbG);
+    fflush(Logfile);
+#endif
+
     return nErr;
 }
 
 void CSVBony::getWB_B(long &nMin, long &nMax, long &nValue)
 {
-    int ret;
+    SVB_ERROR_CODE ret;
     ret = getControlValues(SVB_WB_B, nMin, nMax, nValue);
     if(ret != PLUGIN_OK) {
         return;
@@ -810,13 +859,27 @@ void CSVBony::getWB_B(long &nMin, long &nMax, long &nValue)
 int CSVBony::setWB_B(long nWB_B)
 {
     int nErr = PLUGIN_OK;
-    
+    SVB_ERROR_CODE ret;
+
+    m_nWbB = nWB_B;
+    ret = SVBSetControlValue(m_nCameraID, SVB_WB_B, m_nWbB, SVB_FALSE);
+    if(ret != SVB_SUCCESS)
+        nErr = ERR_CMDFAILED;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [CSVBony::setWB_b] WB_b set to %ld\n", timestamp, m_nWbB);
+    fflush(Logfile);
+#endif
+
     return nErr;
 }
 
 void CSVBony::getFlip(long &nMin, long &nMax, long &nValue)
 {
-    int ret;
+    SVB_ERROR_CODE ret;
     ret = getControlValues(SVB_FLIP, nMin, nMax, nValue);
     if(ret != PLUGIN_OK) {
         return;
@@ -826,13 +889,57 @@ void CSVBony::getFlip(long &nMin, long &nMax, long &nValue)
 int CSVBony::setFlip(long nFlip)
 {
     int nErr = PLUGIN_OK;
+    SVB_ERROR_CODE ret;
+    
+    m_nFlip = nFlip;
+    ret = SVBSetControlValue(m_nCameraID, SVB_FLIP, m_nFlip, SVB_FALSE);
+    if(ret != SVB_SUCCESS)
+        nErr = ERR_CMDFAILED;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [CSVBony::setFlip] Flip set to %ld\n", timestamp, m_nFlip);
+    fflush(Logfile);
+#endif
+
+    return nErr;
+}
+
+void CSVBony::getSpeedMode(long &nMin, long &nMax, long &nValue)
+{
+    SVB_ERROR_CODE ret;
+    ret = getControlValues(SVB_FRAME_SPEED_MODE, nMin, nMax, nValue);
+    if(ret != PLUGIN_OK) {
+        return;
+    }
+}
+
+int CSVBony::setSpeedMode(long nSpeed)
+{
+    int nErr = PLUGIN_OK;
+    SVB_ERROR_CODE ret;
+    
+    m_nSpeedMode = nSpeed;
+    ret = SVBSetControlValue(m_nCameraID, SVB_FRAME_SPEED_MODE , m_nSpeedMode, SVB_FALSE);
+    if(ret != SVB_SUCCESS)
+        nErr = ERR_CMDFAILED;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [CSVBony::setSpeedMode] SpeedMode set to %ld\n", timestamp, m_nSpeedMode);
+    fflush(Logfile);
+#endif
     
     return nErr;
 }
 
 void CSVBony::getContrast(long &nMin, long &nMax, long &nValue)
 {
-    int ret;
+    SVB_ERROR_CODE ret;
     ret = getControlValues(SVB_CONTRAST, nMin, nMax, nValue);
     if(ret != PLUGIN_OK) {
         return;
@@ -842,13 +949,27 @@ void CSVBony::getContrast(long &nMin, long &nMax, long &nValue)
 int CSVBony::setContrast(long nContrast)
 {
     int nErr = PLUGIN_OK;
+    SVB_ERROR_CODE ret;
     
+    m_nContrast = nContrast;
+    ret = SVBSetControlValue(m_nCameraID, SVB_CONTRAST, m_nContrast, SVB_FALSE);
+    if(ret != SVB_SUCCESS)
+        nErr = ERR_CMDFAILED;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [CSVBony::setContrast] Contrast set to %ld\n", timestamp, m_nContrast);
+    fflush(Logfile);
+#endif
+
     return nErr;
 }
 
 void CSVBony::getSharpness(long &nMin, long &nMax, long &nValue)
 {
-    int ret;
+    SVB_ERROR_CODE ret;
     ret = getControlValues(SVB_SHARPNESS, nMin, nMax, nValue);
     if(ret != PLUGIN_OK) {
         return;
@@ -858,13 +979,27 @@ void CSVBony::getSharpness(long &nMin, long &nMax, long &nValue)
 int CSVBony::setSharpness(long nSharpness)
 {
     int nErr = PLUGIN_OK;
-    
+    SVB_ERROR_CODE ret;
+
+    m_nSharpness = nSharpness;
+    ret = SVBSetControlValue(m_nCameraID, SVB_SHARPNESS, m_nSharpness, SVB_FALSE);
+    if(ret != SVB_SUCCESS)
+        nErr = ERR_CMDFAILED;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [CSVBony::setSharpness] Sharpness set to %ld\n", timestamp, m_nSharpness);
+    fflush(Logfile);
+#endif
+
     return nErr;
 }
 
 void CSVBony::getSaturation(long &nMin, long &nMax, long &nValue)
 {
-    int ret;
+    SVB_ERROR_CODE ret;
     ret = getControlValues(SVB_SATURATION, nMin, nMax, nValue);
     if(ret != PLUGIN_OK) {
         return;
@@ -874,13 +1009,27 @@ void CSVBony::getSaturation(long &nMin, long &nMax, long &nValue)
 int CSVBony::setSaturation(long nSaturation)
 {
     int nErr = PLUGIN_OK;
-    
+    SVB_ERROR_CODE ret;
+
+    m_nSaturation = nSaturation;
+    ret = SVBSetControlValue(m_nCameraID, SVB_SATURATION, m_nSaturation, SVB_FALSE);
+    if(ret != SVB_SUCCESS)
+        nErr = ERR_CMDFAILED;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [CSVBony::setSaturation] Saturation set to %ld\n", timestamp, m_nSaturation);
+    fflush(Logfile);
+#endif
+
     return nErr;
 }
 
 void CSVBony::getBlackLevel(long &nMin, long &nMax, long &nValue)
 {
-    int ret;
+    SVB_ERROR_CODE ret;
     ret = getControlValues(SVB_BLACK_LEVEL, nMin, nMax, nValue);
     if(ret != PLUGIN_OK) {
         return;
@@ -890,11 +1039,25 @@ void CSVBony::getBlackLevel(long &nMin, long &nMax, long &nValue)
 int CSVBony::setBlackLevel(long nBlackLevel)
 {
     int nErr = PLUGIN_OK;
+    SVB_ERROR_CODE ret;
     
+    m_nBlackLevel = nBlackLevel;
+    ret = SVBSetControlValue(m_nCameraID, SVB_BLACK_LEVEL, m_nBlackLevel, SVB_FALSE);
+    if(ret != SVB_SUCCESS)
+        nErr = ERR_CMDFAILED;
+ 
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [CSVBony::setBlackLevel] Black level set to %ld\n", timestamp, m_nBlackLevel);
+    fflush(Logfile);
+#endif
+
     return nErr;
 }
 
-int CSVBony::getControlValues(SVB_CONTROL_TYPE nControlType, long &nMin, long &nMax, long &nValue)
+SVB_ERROR_CODE CSVBony::getControlValues(SVB_CONTROL_TYPE nControlType, long &nMin, long &nMax, long &nValue)
 {
     SVB_ERROR_CODE ret;
     SVB_BOOL isAuto;
@@ -906,7 +1069,7 @@ int CSVBony::getControlValues(SVB_CONTROL_TYPE nControlType, long &nMin, long &n
     
     ret = SVBGetControlValue(m_nCameraID, nControlType, &nValue, &isAuto);
     if(ret != SVB_SUCCESS)
-        return ERR_CMDFAILED;
+        return ret;
     // look for min,max in the control caps
     for(i = 0; i< m_nControlNums; i++) {
         if(m_ControlList.at(i).ControlType == nControlType) {
@@ -915,6 +1078,18 @@ int CSVBony::getControlValues(SVB_CONTROL_TYPE nControlType, long &nMin, long &n
             break;
         }
     }
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [CSVBony::getControlValues] nControlType = %d\n", timestamp, nControlType);
+    fprintf(Logfile, "[%s] [CSVBony::getControlValues] nMin         = %ld\n", timestamp, nMin);
+    fprintf(Logfile, "[%s] [CSVBony::getControlValues] nMax         = %ld\n", timestamp, nMax);
+    fprintf(Logfile, "[%s] [CSVBony::getControlValues] nValue       = %ld\n", timestamp, nValue);
+    fflush(Logfile);
+#endif
+
     return ret;
 }
 
@@ -983,10 +1158,10 @@ int CSVBony::setROI(int nLeft, int nTop, int nWidth, int nHeight)
     fprintf(Logfile, "[%s] [CSVBony::setROI] nWidth         : %d\n", timestamp, nWidth);
     fprintf(Logfile, "[%s] [CSVBony::setROI] nHeight        : %d\n", timestamp, nHeight);
     
-    fprintf(Logfile, "[%s] [CSVBony::setROI] nNewLeft      : %d\n", timestamp, nNewLeft);
-    fprintf(Logfile, "[%s] [CSVBony::setROI] nNewTop       : %d\n", timestamp, nNewTop);
-    fprintf(Logfile, "[%s] [CSVBony::setROI] nNewWidth     : %d\n", timestamp, nNewWidth);
-    fprintf(Logfile, "[%s] [CSVBony::setROI] nNewHeight    : %d\n", timestamp, nNewHeight);
+    fprintf(Logfile, "[%s] [CSVBony::setROI] nNewLeft       : %d\n", timestamp, nNewLeft);
+    fprintf(Logfile, "[%s] [CSVBony::setROI] nNewTop        : %d\n", timestamp, nNewTop);
+    fprintf(Logfile, "[%s] [CSVBony::setROI] nNewWidth      : %d\n", timestamp, nNewWidth);
+    fprintf(Logfile, "[%s] [CSVBony::setROI] nNewHeight     : %d\n", timestamp, nNewHeight);
 
     fflush(Logfile);
 #endif
@@ -1016,18 +1191,20 @@ int CSVBony::setROI(int nLeft, int nTop, int nWidth, int nHeight)
         m_bConnected = false;
         return ERR_CMDFAILED;
     }
-    
+
     // set default values
-    ret = SVBSetControlValue(m_nCameraID, SVB_GAIN, m_nGain, SVB_FALSE);
-    ret = SVBSetControlValue(m_nCameraID, SVB_EXPOSURE, m_nExposureMs, SVB_FALSE);
-    ret = SVBSetControlValue(m_nCameraID, SVB_GAMMA, m_nGamma, SVB_FALSE);
-    ret = SVBSetControlValue(m_nCameraID, SVB_CONTRAST, m_nContrast, SVB_FALSE);
-    ret = SVBSetControlValue(m_nCameraID, SVB_SHARPNESS, m_nSharpness, SVB_FALSE);
-    ret = SVBSetControlValue(m_nCameraID, SVB_SATURATION, m_nSaturation, SVB_FALSE);
-    ret = SVBSetControlValue(m_nCameraID, SVB_WB_R, m_nWbR, SVB_FALSE);
-    ret = SVBSetControlValue(m_nCameraID, SVB_WB_G, m_nWbG, SVB_FALSE);
-    ret = SVBSetControlValue(m_nCameraID, SVB_WB_B, m_nWbB, SVB_FALSE);
-    ret = SVBSetControlValue(m_nCameraID, SVB_FRAME_SPEED_MODE , m_nSpeedMode, SVB_FALSE);
+    setGain(m_nGain);
+    setGamma(m_nGamma);
+    setGammaContrast(m_nGammaContrast);
+    setWB_R(m_nWbR);
+    setWB_G(m_nWbG);
+    setWB_B(m_nWbB);
+    setFlip(m_nFlip);
+    setSpeedMode(m_nSpeedMode);
+    setContrast(m_nContrast);
+    setSharpness(m_nSharpness);
+    setSaturation(m_nSaturation);
+    setBlackLevel(m_nBlackLevel);
     
     ret = SVBSetOutputImageType(m_nCameraID, m_nVideoMode);
     ret = SVBSetCameraMode(m_nCameraID, SVB_MODE_TRIG_SOFT);
@@ -1070,30 +1247,9 @@ int CSVBony::clearROI()
 bool CSVBony::isFameAvailable()
 {
     bool bFrameAvailable = false;
-    // SVB_ERROR_CODE ret;
-    // long nValue;
-    // SVB_BOOL isAuto;
-    
+
     if(m_ExposureTimer.GetElapsedSeconds() > m_dCaptureLenght)
         bFrameAvailable = true;
-
-    /*
-     This doeasn't work. nValue always report 10009
-    ret =  SVBGetControlValue(m_nCameraID, SVB_EXPOSURE, &nValue, &isAuto);
-    if(ret != SVB_SUCCESS) {
-        return false;
-    }
-#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s] [CSVBony::isFameAvailable] nValue = %d\n", timestamp, nValue);
-    fflush(Logfile);
-#endif
-
-    if(nValue == SVB_EXP_SUCCESS)
-        bFrameAvailable = true;
-     */
 
     return bFrameAvailable;
 }

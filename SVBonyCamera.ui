@@ -130,12 +130,12 @@
        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
       </property>
      </widget>
-     <widget class="QSpinBox" name="spinBox">
+     <widget class="QSpinBox" name="Gain">
       <property name="geometry">
        <rect>
         <x>168</x>
         <y>88</y>
-        <width>90</width>
+        <width>96</width>
         <height>24</height>
        </rect>
       </property>
@@ -143,12 +143,12 @@
        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
       </property>
      </widget>
-     <widget class="QSpinBox" name="spinBox_2">
+     <widget class="QSpinBox" name="Gamma">
       <property name="geometry">
        <rect>
         <x>168</x>
         <y>120</y>
-        <width>90</width>
+        <width>96</width>
         <height>24</height>
        </rect>
       </property>
@@ -156,12 +156,12 @@
        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
       </property>
      </widget>
-     <widget class="QSpinBox" name="spinBox_3">
+     <widget class="QSpinBox" name="GammaContrast">
       <property name="geometry">
        <rect>
         <x>168</x>
         <y>152</y>
-        <width>90</width>
+        <width>96</width>
         <height>24</height>
        </rect>
       </property>
@@ -169,12 +169,12 @@
        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
       </property>
      </widget>
-     <widget class="QSpinBox" name="spinBox_4">
+     <widget class="QSpinBox" name="WB_R">
       <property name="geometry">
        <rect>
         <x>168</x>
         <y>184</y>
-        <width>90</width>
+        <width>96</width>
         <height>24</height>
        </rect>
       </property>
@@ -182,12 +182,12 @@
        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
       </property>
      </widget>
-     <widget class="QSpinBox" name="spinBox_5">
+     <widget class="QSpinBox" name="WB_G">
       <property name="geometry">
        <rect>
         <x>168</x>
         <y>216</y>
-        <width>90</width>
+        <width>96</width>
         <height>24</height>
        </rect>
       </property>
@@ -211,12 +211,12 @@
        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
       </property>
      </widget>
-     <widget class="QSpinBox" name="spinBox_6">
+     <widget class="QSpinBox" name="WB_B">
       <property name="geometry">
        <rect>
         <x>168</x>
         <y>248</y>
-        <width>90</width>
+        <width>96</width>
         <height>24</height>
        </rect>
       </property>
@@ -250,26 +250,13 @@
        <string>Cancel</string>
       </property>
      </widget>
-     <widget class="QCheckBox" name="checkBox">
-      <property name="geometry">
-       <rect>
-        <x>64</x>
-        <y>280</y>
-        <width>86</width>
-        <height>24</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>Flip image</string>
-      </property>
-     </widget>
-     <widget class="QComboBox" name="comboBox">
+     <widget class="QComboBox" name="SpeedMode">
       <property name="geometry">
        <rect>
         <x>160</x>
-        <y>312</y>
-        <width>104</width>
-        <height>32</height>
+        <y>315</y>
+        <width>112</width>
+        <height>24</height>
        </rect>
       </property>
       <item>
@@ -292,7 +279,7 @@
       <property name="geometry">
        <rect>
         <x>32</x>
-        <y>352</y>
+        <y>344</y>
         <width>120</width>
         <height>24</height>
        </rect>
@@ -308,7 +295,7 @@
       <property name="geometry">
        <rect>
         <x>32</x>
-        <y>384</y>
+        <y>376</y>
         <width>120</width>
         <height>24</height>
        </rect>
@@ -320,12 +307,12 @@
        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
       </property>
      </widget>
-     <widget class="QSpinBox" name="spinBox_7">
+     <widget class="QSpinBox" name="Contrast">
       <property name="geometry">
        <rect>
         <x>168</x>
-        <y>352</y>
-        <width>90</width>
+        <y>344</y>
+        <width>96</width>
         <height>24</height>
        </rect>
       </property>
@@ -333,12 +320,12 @@
        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
       </property>
      </widget>
-     <widget class="QSpinBox" name="spinBox_8">
+     <widget class="QSpinBox" name="Sharpness">
       <property name="geometry">
        <rect>
         <x>168</x>
-        <y>384</y>
-        <width>90</width>
+        <y>376</y>
+        <width>96</width>
         <height>24</height>
        </rect>
       </property>
@@ -350,7 +337,7 @@
       <property name="geometry">
        <rect>
         <x>32</x>
-        <y>416</y>
+        <y>408</y>
         <width>120</width>
         <height>24</height>
        </rect>
@@ -362,12 +349,12 @@
        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
       </property>
      </widget>
-     <widget class="QSpinBox" name="spinBox_9">
+     <widget class="QSpinBox" name="Saturation">
       <property name="geometry">
        <rect>
         <x>168</x>
-        <y>416</y>
-        <width>90</width>
+        <y>408</y>
+        <width>96</width>
         <height>24</height>
        </rect>
       </property>
@@ -379,7 +366,7 @@
       <property name="geometry">
        <rect>
         <x>32</x>
-        <y>448</y>
+        <y>440</y>
         <width>120</width>
         <height>24</height>
        </rect>
@@ -391,12 +378,12 @@
        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
       </property>
      </widget>
-     <widget class="QSpinBox" name="spinBox_10">
+     <widget class="QSpinBox" name="Offset">
       <property name="geometry">
        <rect>
         <x>168</x>
-        <y>448</y>
-        <width>90</width>
+        <y>440</y>
+        <width>96</width>
         <height>24</height>
        </rect>
       </property>
@@ -425,6 +412,52 @@
       <property name="X2_PhotoFileName" stdset="0">
        <string>SVBony.png</string>
       </property>
+     </widget>
+     <widget class="QLabel" name="label_7">
+      <property name="geometry">
+       <rect>
+        <x>8</x>
+        <y>280</y>
+        <width>144</width>
+        <height>24</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Image flip :</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+      </property>
+     </widget>
+     <widget class="QComboBox" name="Flip">
+      <property name="geometry">
+       <rect>
+        <x>160</x>
+        <y>283</y>
+        <width>112</width>
+        <height>24</height>
+       </rect>
+      </property>
+      <item>
+       <property name="text">
+        <string>None</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Horizontal</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Vertical</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Both</string>
+       </property>
+      </item>
      </widget>
     </widget>
    </item>
