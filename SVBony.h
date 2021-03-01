@@ -78,17 +78,7 @@ public:
     
     bool        isCameraColor();
     void        getBayerPattern(std::string &sBayerPattern);
-    void        getGain(std::string &sGain);
-    void        getGamma(std::string &sGamma);
-    void        getGammaContrast(std::string &sGammaContrast);
-    void        getWB_R(std::string &sWB_R);
-    void        getWB_G(std::string &sWB_G);
-    void        getWB_B(std::string &sWB_B);
-    void        getFlip(std::string &sFlip);
-    void        getContrast(std::string &sContrast);
-    void        getSharpness(std::string &sSharpness);
-    void        getSaturation(std::string &sSaturation);
-    void        getBlackLevel(std::string &sBlackLevel);
+    void        getFlip(std::string &sFlipMode);
 
     void        getGain(long &nMin, long &nMax, long &nValue);
     int         setGain(long nGain);

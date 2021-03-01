@@ -39,7 +39,7 @@ class AddFITSKeyInterface;
 #define KEY_GUID              "SVBony_GUID"
 #define KEY_GAIN              "Gain"
 #define KEY_GAMMA             "Gamma"
-#define KEY_GAMA_CONTRAST     "GammaContrast"
+#define KEY_GAMMA_CONTRAST    "GammaContrast"
 #define KEY_WHITE_BALANCE_R   "WB_R"
 #define KEY_WHITE_BALANCE_G   "WB_G"
 #define KEY_WHITE_BALANCE_B   "WB_B"
@@ -52,16 +52,20 @@ class AddFITSKeyInterface;
 
 
 // extra fit heard indexes
-enum EXTRA_FIT_SVB {
+enum EXTRA_FIT_STRING_SVB {
     F_BAYER = 0,
-    F_GAIN,
+    F_BAYERPAT,
+    F_FLIP
+};
+
+enum EXTRA_FIT_INT_SVB {
+    F_GAIN = 0,
     F_EXPOSURE,
     F_GAMMA,
     F_GAMMA_CONTRAST,
     F_WB_R,
     F_WB_G,
     F_WB_B,
-    F_FLIP,
     F_CONTRAST,
     F_SHARPNESS,
     F_SATURATION,

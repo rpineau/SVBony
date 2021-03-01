@@ -13,7 +13,9 @@ X2Camera::X2Camera( const char* pszSelection,
 					LoggerInterface*					pLogger,
 					MutexInterface*						pIOMutex,
 					TickCountInterface*					pTickCount)
-{   
+{
+    int nValue = 0;
+    
 	m_nPrivateISIndex				= nISIndex;
 	m_pTheSkyXForMounts				= pTheSkyXForMounts;
 	m_pSleeper						= pSleeper;
@@ -29,15 +31,48 @@ X2Camera::X2Camera( const char* pszSelection,
     mPixelSizeY = 0.0;
 
     m_Camera.setSleeper(m_pSleeper);
-    
-    // Read in settings
+        
+    // Read in settings, default values were chosen based on test with a SV305
     if (m_pIniUtil) {
         m_pIniUtil->readString(KEY_X2CAM_ROOT, KEY_GUID, "0", m_szCameraSerial, 128);
         m_Camera.getCameraIdFromSerial(m_nCameraID, std::string(m_szCameraSerial));
         m_Camera.setCameraSerial(std::string(m_szCameraSerial));
         m_Camera.setCameraId(m_nCameraID);
-        // read other camera settngs
-        
+        nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_GAIN, 10);
+        m_Camera.setGain((long)nValue);
+
+        nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_GAMMA, 100);
+        m_Camera.setGamma((long)nValue);
+
+        nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_GAMMA_CONTRAST, 100);
+        m_Camera.setGammaContrast((long)nValue);
+
+        nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_R, 127);
+        m_Camera.setWB_R((long)nValue);
+
+        nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_G, 80);
+        m_Camera.setWB_G((long)nValue);
+
+        nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_B, 158);
+        m_Camera.setWB_B((long)nValue);
+
+        nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_FLIP, 0);
+        m_Camera.setFlip((long)nValue);
+
+        nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_SPEED_MODE, 0);
+        m_Camera.setSpeedMode((long)nValue);
+
+        nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_CONTRAST, 50);
+        m_Camera.setContrast((long)nValue);
+
+        nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_SHARPNESS, 0);
+        m_Camera.setSharpness((long)nValue);
+
+        nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_SATURATION, 100);
+        m_Camera.setSaturation((long)nValue);
+
+        nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_OFFSET, 0);
+        m_Camera.setBlackLevel((long)nValue);
     }
 
 }
@@ -158,6 +193,7 @@ int X2Camera::doSVBonyCAmFeatureConfig(bool& bPressedOK)
     X2GUIExchangeInterface*            dx = NULL;
     bPressedOK = false;
     long nVal, nMin, nMax;
+    int nCtrlVal;
     
     if (NULL == ui)
         return ERR_POINTER;
@@ -293,6 +329,68 @@ int X2Camera::doSVBonyCAmFeatureConfig(bool& bPressedOK)
     if ((nErr = ui->exec(bPressedOK)))
         return nErr;
 
+    //Retreive values from the user interface
+    if (bPressedOK) {
+        dx->propertyInt("Gain", "value", nCtrlVal);
+        nErr = m_Camera.setGain((long)nCtrlVal);
+        if(!nErr)
+            m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_GAIN, nCtrlVal);
+
+        dx->propertyInt("Gamma", "value", nCtrlVal);
+        nErr = m_Camera.setGamma((long)nCtrlVal);
+        if(!nErr)
+            m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_GAMMA, nCtrlVal);
+
+        dx->propertyInt("GammaContrast", "value", nCtrlVal);
+        nErr = m_Camera.setGammaContrast((long)nCtrlVal);
+        if(!nErr)
+            m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_GAMMA_CONTRAST, nCtrlVal);
+
+        dx->propertyInt("WB_R", "value", nCtrlVal);
+        nErr = m_Camera.setWB_R((long)nCtrlVal);
+        if(!nErr)
+            m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_R, nCtrlVal);
+
+        dx->propertyInt("WB_G", "value", nCtrlVal);
+        nErr = m_Camera.setWB_G((long)nCtrlVal);
+        if(!nErr)
+            m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_G, nCtrlVal);
+
+        dx->propertyInt("WB_B", "value", nCtrlVal);
+        nErr = m_Camera.setWB_B((long)nCtrlVal);
+        if(!nErr)
+            m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_B, nCtrlVal);
+
+        nCtrlVal = dx->currentIndex("Flip");
+        nErr = m_Camera.setFlip((long)nCtrlVal);
+        if(!nErr)
+            m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_FLIP, nCtrlVal);
+
+        nCtrlVal = dx->currentIndex("SpeedMode");
+        nErr = m_Camera.setSpeedMode((long)nCtrlVal);
+        if(!nErr)
+            m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_SPEED_MODE, nCtrlVal);
+
+        dx->propertyInt("Contrast", "value", nCtrlVal);
+        nErr = m_Camera.setContrast((long)nCtrlVal);
+        if(!nErr)
+            m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_CONTRAST, nCtrlVal);
+
+        dx->propertyInt("Sharpness", "value", nCtrlVal);
+        nErr = m_Camera.setSharpness((long)nCtrlVal);
+        if(!nErr)
+            m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_SHARPNESS, nCtrlVal);
+
+        dx->propertyInt("Saturation", "value", nCtrlVal);
+        nErr = m_Camera.setSaturation((long)nCtrlVal);
+        if(!nErr)
+            m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_SATURATION, nCtrlVal);
+
+        dx->propertyInt("Offset", "value", nCtrlVal);
+        nErr = m_Camera.setBlackLevel((long)nCtrlVal);
+        if(!nErr)
+            m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_OFFSET, nCtrlVal);
+    }
 
     return nErr;
 }
@@ -749,16 +847,92 @@ int X2Camera::PixelSize1x1InMicrons(const enumCameraIndex &Camera, const enumWhi
 int X2Camera::countOfIntegerFields (int &nCount)
 {
     int nErr = SB_OK;
-    nCount = 0;
+    nCount = 12;
     return nErr;
 }
 
 int X2Camera::valueForIntegerField (int nIndex, BasicStringInterface &sFieldName, BasicStringInterface &sFieldComment, int &nFieldValue)
 {
     int nErr = SB_OK;
-    sFieldName = "";
-    sFieldComment = "";
-    nFieldValue = 0;
+    long nVal = 0;
+    long nMin = 0;
+    long nMax = 0;
+    
+    switch(nIndex) {
+        case F_GAIN :
+            m_Camera.getGain(nMin, nMax, nVal);
+            sFieldName = "GAIN";
+            sFieldComment = "";
+            nFieldValue = (int)nVal;
+            break;
+            
+        case F_GAMMA :
+            m_Camera.getGamma(nMin, nMax, nVal);
+            sFieldName = "GAMMA";
+            sFieldComment = "";
+            nFieldValue = (int)nVal;
+            break;
+            
+        case F_GAMMA_CONTRAST :
+            m_Camera.getGammaContrast(nMin, nMax, nVal);
+            sFieldName = "GAMMACONTRAST";
+            sFieldComment = "";
+            nFieldValue = (int)nVal;
+            break;
+            
+        case F_WB_R :
+            m_Camera.getWB_R(nMin, nMax, nVal);
+            sFieldName = "R-WB";
+            sFieldComment = "";
+            nFieldValue = (int)nVal;
+            break;
+            
+        case F_WB_G :
+            m_Camera.getWB_G(nMin, nMax, nVal);
+            sFieldName = "G-WB";
+            sFieldComment = "";
+            nFieldValue = (int)nVal;
+            break;
+            
+        case F_WB_B :
+            m_Camera.getWB_B(nMin, nMax, nVal);
+            sFieldName = "B-WB";
+            sFieldComment = "";
+            nFieldValue = (int)nVal;
+            break;
+                        
+        case F_CONTRAST :
+            m_Camera.getContrast(nMin, nMax, nVal);
+            sFieldName = "CONTRAST";
+            sFieldComment = "";
+            nFieldValue = (int)nVal;
+            break;
+            
+        case F_SHARPNESS :
+            m_Camera.getSharpness(nMin, nMax, nVal);
+            sFieldName = "SHARPNESS";
+            sFieldComment = "";
+            nFieldValue = (int)nVal;
+            break;
+            
+        case F_SATURATION :
+            m_Camera.getSaturation(nMin, nMax, nVal);
+            sFieldName = "SATURATIOM";
+            sFieldComment = "";
+            nFieldValue = (int)nVal;
+            break;
+            
+        case F_BLACK_LEVEL :
+            m_Camera.getBlackLevel(nMin, nMax, nVal);
+            sFieldName = "BLACK-OFFSET";
+            sFieldComment = "";
+            nFieldValue = (int)nVal;
+            break;
+            
+        default :
+            break;
+
+    }
     return nErr;
 }
 
@@ -781,7 +955,7 @@ int X2Camera::valueForDoubleField (int nIndex, BasicStringInterface &sFieldName,
 int X2Camera::countOfStringFields (int &nCount)
 {
     int nErr = SB_OK;
-    nCount = 12;
+    nCount = 3;
     return nErr;
 }
 
@@ -789,7 +963,6 @@ int X2Camera::valueForStringField (int nIndex, BasicStringInterface &sFieldName,
 {
     int nErr = SB_OK;
     std::string sTmp;
-    
     switch(nIndex) {
         case F_BAYER :
             if(m_Camera.isCameraColor()) {
@@ -804,80 +977,24 @@ int X2Camera::valueForStringField (int nIndex, BasicStringInterface &sFieldName,
                 sFieldValue = "MONO";
             }
             break;
-        
-        case F_GAIN :
-            m_Camera.getGain(sTmp);
-            sFieldName = "Gain";
-            sFieldComment = "";
-            sFieldValue = sTmp.c_str();
-            break;
 
-        case F_GAMMA :
-            m_Camera.getGamma(sTmp);
-            sFieldName = "Gamma";
-            sFieldComment = "";
-            sFieldValue = sTmp.c_str();
-            break;
-
-        case F_GAMMA_CONTRAST :
-            m_Camera.getGammaContrast(sTmp);
-            sFieldName = "GammaContrast";
-            sFieldComment = "";
-            sFieldValue = sTmp.c_str();
-            break;
-
-        case F_WB_R :
-            m_Camera.getWB_R(sTmp);
-            sFieldName = "Red White Balance";
-            sFieldComment = "";
-            sFieldValue = sTmp.c_str();
-            break;
-
-        case F_WB_G :
-            m_Camera.getWB_G(sTmp);
-            sFieldName = "Green White Balance";
-            sFieldComment = "";
-            sFieldValue = sTmp.c_str();
-            break;
-
-        case F_WB_B :
-            m_Camera.getWB_B(sTmp);
-            sFieldName = "Blue White Balance";
-            sFieldComment = "";
-            sFieldValue = sTmp.c_str();
+        case F_BAYERPAT: // PixInsight
+            if(m_Camera.isCameraColor()) {
+                m_Camera.getBayerPattern(sTmp);
+                sFieldName = "BAYERPAT";
+                sFieldComment = "Bayer pattern to use to decode color image";
+                sFieldValue = sTmp.c_str();
+            }
+            else {
+                sFieldName = "BAYERPAT";
+                sFieldComment = "Bayer pattern to use to decode color image";
+                sFieldValue = "MONO";
+            }
             break;
 
         case F_FLIP :
             m_Camera.getFlip(sTmp);
-            sFieldName = "Flip";
-            sFieldComment = "";
-            sFieldValue = sTmp.c_str();
-            break;
-
-        case F_CONTRAST :
-            m_Camera.getContrast(sTmp);
-            sFieldName = "Contrast";
-            sFieldComment = "";
-            sFieldValue = sTmp.c_str();
-            break;
-
-        case F_SHARPNESS :
-            m_Camera.getSharpness(sTmp);
-            sFieldName = "Sharpness";
-            sFieldComment = "";
-            sFieldValue = sTmp.c_str();
-            break;
-
-        case F_SATURATION :
-            m_Camera.getSaturation(sTmp);
-            sFieldName = "Saturation";
-            sFieldComment = "";
-            sFieldValue = sTmp.c_str();
-            break;
-
-        case F_BLACK_LEVEL :
-            m_Camera.getBlackLevel(sTmp);
-            sFieldName = "Black Offset";
+            sFieldName = "FLIP";
             sFieldComment = "";
             sFieldValue = sTmp.c_str();
             break;

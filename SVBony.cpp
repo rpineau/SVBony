@@ -641,59 +641,25 @@ void CSVBony::getBayerPattern(std::string &sBayerPattern)
     }
 }
 
-void CSVBony::getGain(std::string &sGain)
+void CSVBony::getFlip(std::string &sFlipMode)
 {
-    sGain = std::to_string(m_nGain);
-}
-
-void CSVBony::getGamma(std::string &sGamma)
-{
-    sGamma = std::to_string(m_nGamma);
-}
-
-void CSVBony::getGammaContrast(std::string &sGammaContrast)
-{
-    sGammaContrast = std::to_string(m_nGammaContrast);
-}
-
-void CSVBony::getWB_R(std::string &sWB_R)
-{
-    sWB_R = std::to_string(m_nWbR);
-}
-
-void CSVBony::getWB_G(std::string &sWB_G)
-{
-    sWB_G = std::to_string(m_nWbG);
-}
-
-void CSVBony::getWB_B(std::string &sWB_B)
-{
-    sWB_B = std::to_string(m_nWbB);
-}
-
-void CSVBony::getFlip(std::string &sFlip)
-{
-    sFlip = std::to_string(m_nFlip);
-}
-
-void CSVBony::getContrast(std::string &sContrast)
-{
-    sContrast = std::to_string(m_nContrast);
-}
-
-void CSVBony::getSharpness(std::string &sSharpness)
-{
-    sSharpness = std::to_string(m_nSharpness);
-}
-
-void CSVBony::getSaturation(std::string &sSaturation)
-{
-    sSaturation = std::to_string(m_nSaturation);
-}
-
-void CSVBony::getBlackLevel(std::string &sBlackLevel)
-{
-    sBlackLevel = std::to_string(m_nBlackLevel);
+    switch(m_nFlip) {
+        case SVB_FLIP_NONE :
+            sFlipMode.assign("None");
+            break;
+        case SVB_FLIP_HORIZ :
+            sFlipMode.assign("Horizontal");
+            break;
+        case SVB_FLIP_VERT :
+            sFlipMode.assign("Vertical");
+            break;
+        case SVB_FLIP_BOTH :
+            sFlipMode.assign("both horizontal and vertical");
+            break;
+        default:
+            sFlipMode.clear();
+            break;
+    }
 }
 
 
@@ -870,7 +836,7 @@ int CSVBony::setWB_B(long nWB_B)
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s] [CSVBony::setWB_b] WB_b set to %ld\n", timestamp, m_nWbB);
+    fprintf(Logfile, "[%s] [CSVBony::setWB_B] WB_B set to %ld\n", timestamp, m_nWbB);
     fflush(Logfile);
 #endif
 
