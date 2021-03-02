@@ -6,19 +6,19 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>306</width>
+    <width>374</width>
     <height>558</height>
    </rect>
   </property>
   <property name="minimumSize">
    <size>
-    <width>306</width>
+    <width>374</width>
     <height>558</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
-    <width>306</width>
+    <width>374</width>
     <height>558</height>
    </size>
   </property>
@@ -227,8 +227,8 @@
      <widget class="QPushButton" name="pushButtonOK">
       <property name="geometry">
        <rect>
-        <x>184</x>
-        <y>488</y>
+        <x>256</x>
+        <y>496</y>
         <width>81</width>
         <height>24</height>
        </rect>
@@ -240,8 +240,8 @@
      <widget class="QPushButton" name="pushButtonCancel">
       <property name="geometry">
        <rect>
-        <x>88</x>
-        <y>488</y>
+        <x>168</x>
+        <y>496</y>
         <width>81</width>
         <height>24</height>
        </rect>
@@ -458,6 +458,58 @@
         <string>Both</string>
        </property>
       </item>
+     </widget>
+     <widget class="QCheckBox" name="checkBox">
+      <property name="geometry">
+       <rect>
+        <x>272</x>
+        <y>90</y>
+        <width>56</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Auto</string>
+      </property>
+     </widget>
+     <widget class="QCheckBox" name="checkBox_2">
+      <property name="geometry">
+       <rect>
+        <x>272</x>
+        <y>186</y>
+        <width>56</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Auto</string>
+      </property>
+     </widget>
+     <widget class="QCheckBox" name="checkBox_3">
+      <property name="geometry">
+       <rect>
+        <x>272</x>
+        <y>218</y>
+        <width>56</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Auto</string>
+      </property>
+     </widget>
+     <widget class="QCheckBox" name="checkBox_4">
+      <property name="geometry">
+       <rect>
+        <x>272</x>
+        <y>250</y>
+        <width>56</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Auto</string>
+      </property>
      </widget>
     </widget>
    </item>

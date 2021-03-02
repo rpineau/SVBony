@@ -80,18 +80,18 @@ public:
     void        getBayerPattern(std::string &sBayerPattern);
     void        getFlip(std::string &sFlipMode);
 
-    void        getGain(long &nMin, long &nMax, long &nValue);
-    int         setGain(long nGain);
+    void        getGain(long &nMin, long &nMax, long &nValue, bool &bIsAuto);
+    int         setGain(long nGain, bool bIsAuto = SVB_FALSE);
     void        getGamma(long &nMin, long &nMax, long &nValue);
     int         setGamma(long nGamma);
     void        getGammaContrast(long &nMin, long &nMax, long &nValue);
     int         setGammaContrast(long nGammaContrast);
-    void        getWB_R(long &nMin, long &nMax, long &nValue);
-    int         setWB_R(long nWB_R);
-    void        getWB_G(long &nMin, long &nMax, long &nValue);
-    int         setWB_G(long nWB_G);
-    void        getWB_B(long &nMin, long &nMax, long &nValue);
-    int         setWB_B(long nWB_B);
+    void        getWB_R(long &nMin, long &nMax, long &nValue, bool &bIsAuto);
+    int         setWB_R(long nWB_R, bool bIsAuto = SVB_FALSE);
+    void        getWB_G(long &nMin, long &nMax, long &nValue, bool &bIsAuto);
+    int         setWB_G(long nWB_G, bool bIsAuto = SVB_FALSE);
+    void        getWB_B(long &nMin, long &nMax, long &nValue, bool &bIsAuto);
+    int         setWB_B(long nWB_B, bool bIsAuto = SVB_FALSE);
     void        getFlip(long &nMin, long &nMax, long &nValue);
     int         setFlip(long nFlip);
     void        getSpeedMode(long &nMin, long &nMax, long &nValue);
@@ -113,11 +113,13 @@ public:
     uint32_t    getBitDepth();
     int         getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer);
 
+    SVB_ERROR_CODE        restartCamera();
 
 protected:
     
-    SVB_ERROR_CODE         getControlValues(SVB_CONTROL_TYPE nControlType, long &nMin, long &nMax, long &nValue);
-
+    SVB_ERROR_CODE          getControlValues(SVB_CONTROL_TYPE nControlType, long &nMin, long &nMax, long &nValue, SVB_BOOL &bIsAuto);
+    SVB_ERROR_CODE          setControlValue(SVB_CONTROL_TYPE nControlType, long nValue, SVB_BOOL bAuto=SVB_FALSE);
+    
     SleeperInterface    *m_pSleeper;
 
     
@@ -128,12 +130,16 @@ protected:
     std::vector<SVB_CONTROL_CAPS> m_ControlList;
     
     long                    m_nGain;
+    bool                    m_bGainAuto;
     long                    m_nExposureMs;
     long                    m_nGamma;
     long                    m_nGammaContrast;
     long                    m_nWbR;
+    bool                    m_bR_Auto;
     long                    m_nWbG;
+    bool                    m_bG_Auto;
     long                    m_nWbB;
+    bool                    m_bB_Auto;
     long                    m_nFlip;
     long                    m_nSpeedMode;
     long                    m_nContrast;

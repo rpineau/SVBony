@@ -15,6 +15,7 @@ X2Camera::X2Camera( const char* pszSelection,
 					TickCountInterface*					pTickCount)
 {
     int nValue = 0;
+    bool bIsAuto;
     
 	m_nPrivateISIndex				= nISIndex;
 	m_pTheSkyXForMounts				= pTheSkyXForMounts;
@@ -39,7 +40,8 @@ X2Camera::X2Camera( const char* pszSelection,
         m_Camera.setCameraSerial(std::string(m_szCameraSerial));
         m_Camera.setCameraId(m_nCameraID);
         nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_GAIN, 10);
-        m_Camera.setGain((long)nValue);
+        bIsAuto =  (m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_GAIN_AUTO, 0) == 0?false:true);
+        m_Camera.setGain((long)nValue, bIsAuto);
 
         nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_GAMMA, 100);
         m_Camera.setGamma((long)nValue);
@@ -48,13 +50,16 @@ X2Camera::X2Camera( const char* pszSelection,
         m_Camera.setGammaContrast((long)nValue);
 
         nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_R, 127);
-        m_Camera.setWB_R((long)nValue);
+        bIsAuto =  (m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_R_AUTO, 0) == 0?false:true);
+        m_Camera.setWB_R((long)nValue, bIsAuto);
 
         nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_G, 80);
-        m_Camera.setWB_G((long)nValue);
+        bIsAuto =  (m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_G_AUTO, 0) == 0?false:true);
+        m_Camera.setWB_G((long)nValue, bIsAuto);
 
         nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_B, 158);
-        m_Camera.setWB_B((long)nValue);
+        bIsAuto =  (m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_B_AUTO, 0) == 0?false:true);
+        m_Camera.setWB_B((long)nValue, bIsAuto);
 
         nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_FLIP, 0);
         m_Camera.setFlip((long)nValue);
@@ -68,7 +73,7 @@ X2Camera::X2Camera( const char* pszSelection,
         nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_SHARPNESS, 0);
         m_Camera.setSharpness((long)nValue);
 
-        nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_SATURATION, 100);
+        nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_SATURATION, 150);
         m_Camera.setSaturation((long)nValue);
 
         nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_OFFSET, 0);
@@ -161,6 +166,8 @@ int X2Camera::execModalSettingsDialog()
     else {
         dx->setEnabled("pushButton", false);
     }
+    m_nCurrentDialog = SELECT;
+    
     //Display the user interface
     if ((nErr = ui->exec(bPressedOK)))
         return nErr;
@@ -185,15 +192,16 @@ int X2Camera::execModalSettingsDialog()
     return nErr;
 }
 
-int X2Camera::doSVBonyCAmFeatureConfig(bool& bPressedOK)
+int X2Camera::doSVBonyCAmFeatureConfig()
 {
     int nErr = SB_OK;
     X2ModalUIUtil uiutil(this, GetTheSkyXFacadeForDrivers());
     X2GUIInterface*                    ui = uiutil.X2UI();
     X2GUIExchangeInterface*            dx = NULL;
-    bPressedOK = false;
     long nVal, nMin, nMax;
     int nCtrlVal;
+    bool bIsAuto;
+    bool bPressedOK = false;
     
     if (NULL == ui)
         return ERR_POINTER;
@@ -206,13 +214,17 @@ int X2Camera::doSVBonyCAmFeatureConfig(bool& bPressedOK)
 
 
     if(m_bLinked){
-        m_Camera.getGain(nMin, nMax, nVal);
+        m_Camera.getGain(nMin, nMax, nVal, bIsAuto);
         if(nMax == -1)
             dx->setEnabled("Gain", false);
         else {
             dx->setPropertyInt("Gain", "minimum", (int)nMin);
             dx->setPropertyInt("Gain", "maximum", (int)nMax);
             dx->setPropertyInt("Gain", "value", (int)nVal);
+            if(bIsAuto) {
+                dx->setEnabled("Gain", false);
+                dx->setChecked("checkBox", 1);
+            }
         }
 
         m_Camera.getGamma(nMin, nMax, nVal);
@@ -233,31 +245,43 @@ int X2Camera::doSVBonyCAmFeatureConfig(bool& bPressedOK)
             dx->setPropertyInt("GammaContrast", "value", (int)nVal);
         }
 
-        m_Camera.getWB_R(nMin, nMax, nVal);
+        m_Camera.getWB_R(nMin, nMax, nVal, bIsAuto);
         if(nMax == -1)
             dx->setEnabled("WB_R", false);
         else {
             dx->setPropertyInt("WB_R", "minimum", (int)nMin);
             dx->setPropertyInt("WB_R", "maximum", (int)nMax);
             dx->setPropertyInt("WB_R", "value", (int)nVal);
+            if(bIsAuto){
+                dx->setEnabled("WB_R", false);
+                dx->setChecked("checkBox_2", 1);
+            }
         }
 
-        m_Camera.getWB_G(nMin, nMax, nVal);
+        m_Camera.getWB_G(nMin, nMax, nVal, bIsAuto);
         if(nMax == -1)
             dx->setEnabled("WB_G", false);
         else {
             dx->setPropertyInt("WB_G", "minimum", (int)nMin);
             dx->setPropertyInt("WB_G", "maximum", (int)nMax);
             dx->setPropertyInt("WB_G", "value", (int)nVal);
+            if(bIsAuto){
+                dx->setEnabled("WB_G", false);
+                dx->setChecked("checkBox_3", 1);
+            }
         }
 
-        m_Camera.getWB_B(nMin, nMax, nVal);
+        m_Camera.getWB_B(nMin, nMax, nVal, bIsAuto);
         if(nMax == -1)
             dx->setEnabled("WB_B", false);
         else {
             dx->setPropertyInt("WB_B", "minimum", (int)nMin);
             dx->setPropertyInt("WB_B", "maximum", (int)nMax);
             dx->setPropertyInt("WB_B", "value", (int)nVal);
+            if(bIsAuto) {
+                dx->setEnabled("WB_B", false);
+                dx->setChecked("checkBox_4", 1);
+            }
         }
 
         m_Camera.getFlip(nMin, nMax, nVal);
@@ -325,6 +349,8 @@ int X2Camera::doSVBonyCAmFeatureConfig(bool& bPressedOK)
         dx->setEnabled("Saturation", false);
         dx->setEnabled("Offset", false);
     }
+
+    m_nCurrentDialog = SETTINGS;
     //Display the user interface
     if ((nErr = ui->exec(bPressedOK)))
         return nErr;
@@ -332,9 +358,12 @@ int X2Camera::doSVBonyCAmFeatureConfig(bool& bPressedOK)
     //Retreive values from the user interface
     if (bPressedOK) {
         dx->propertyInt("Gain", "value", nCtrlVal);
-        nErr = m_Camera.setGain((long)nCtrlVal);
-        if(!nErr)
+        bIsAuto = dx->isChecked("checkBox");
+        nErr = m_Camera.setGain((long)nCtrlVal, bIsAuto);
+        if(!nErr) {
             m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_GAIN, nCtrlVal);
+            m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_GAIN_AUTO, bIsAuto?1:0);
+        }
 
         dx->propertyInt("Gamma", "value", nCtrlVal);
         nErr = m_Camera.setGamma((long)nCtrlVal);
@@ -347,20 +376,27 @@ int X2Camera::doSVBonyCAmFeatureConfig(bool& bPressedOK)
             m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_GAMMA_CONTRAST, nCtrlVal);
 
         dx->propertyInt("WB_R", "value", nCtrlVal);
-        nErr = m_Camera.setWB_R((long)nCtrlVal);
-        if(!nErr)
+        bIsAuto = dx->isChecked("checkBox_2");
+        nErr = m_Camera.setWB_R((long)nCtrlVal, bIsAuto);
+        if(!nErr) {
             m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_R, nCtrlVal);
+            m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_R_AUTO, bIsAuto?1:0);
+        }
 
         dx->propertyInt("WB_G", "value", nCtrlVal);
-        nErr = m_Camera.setWB_G((long)nCtrlVal);
-        if(!nErr)
+        bIsAuto = dx->isChecked("checkBox_3");
+        nErr = m_Camera.setWB_G((long)nCtrlVal, bIsAuto);
+        if(!nErr){
             m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_G, nCtrlVal);
-
+            m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_G_AUTO, bIsAuto?1:0);
+        }
         dx->propertyInt("WB_B", "value", nCtrlVal);
-        nErr = m_Camera.setWB_B((long)nCtrlVal);
-        if(!nErr)
+        bIsAuto = dx->isChecked("checkBox_4");
+        nErr = m_Camera.setWB_B((long)nCtrlVal, bIsAuto);
+        if(!nErr) {
             m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_B, nCtrlVal);
-
+            m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_B_AUTO, bIsAuto?1:0);
+        }
         nCtrlVal = dx->currentIndex("Flip");
         nErr = m_Camera.setFlip((long)nCtrlVal);
         if(!nErr)
@@ -398,26 +434,54 @@ int X2Camera::doSVBonyCAmFeatureConfig(bool& bPressedOK)
 
 void X2Camera::uiEvent(X2GUIExchangeInterface* uiex, const char* pszEvent)
 {
+    switch(m_nCurrentDialog) {
+        case SELECT:
+            doSelectCamEvent(uiex, pszEvent);
+            break;
+        case SETTINGS:
+            doSettingsCamEvent(uiex, pszEvent);
+            break;
+        default :
+            break;
+    }
+}
 
-    //An example of showing another modal dialog
+void X2Camera::doSelectCamEvent(X2GUIExchangeInterface* uiex, const char* pszEvent)
+{
     if (!strcmp(pszEvent, "on_pushButton_clicked"))
     {
         int nErr=SB_OK;
-        bool bPressedOK = false;
-
-        nErr = doSVBonyCAmFeatureConfig( bPressedOK);
-
-        if (bPressedOK)
-        {
-        }
+        
+        nErr = doSVBonyCAmFeatureConfig();
+        m_nCurrentDialog = SELECT;
     }
-    else
-        if (!strcmp(pszEvent, "on_timer"))
-        {
-        }
-
 }
 
+void X2Camera::doSettingsCamEvent(X2GUIExchangeInterface* uiex, const char* pszEvent)
+{
+    bool bEnable;
+    
+    if (!strcmp(pszEvent, "on_checkBox_stateChanged")) {
+        bEnable = uiex->isChecked("chackBox");
+        uiex->setEnabled("Gain", !bEnable);
+    }
+
+    if (!strcmp(pszEvent, "on_checkBox_2_stateChanged")) {
+        bEnable = uiex->isChecked("chackBox_2");
+        uiex->setEnabled("WB_R", !bEnable);
+    }
+
+    if (!strcmp(pszEvent, "on_checkBox_3_stateChanged")) {
+        bEnable = uiex->isChecked("chackBox_3");
+        uiex->setEnabled("WB_G", !bEnable);
+    }
+
+    if (!strcmp(pszEvent, "on_checkBox_4_stateChanged")) {
+        bEnable = uiex->isChecked("chackBox_4");
+        uiex->setEnabled("WB_B", !bEnable);
+    }
+
+}
 
 #pragma mark DriverInfoInterface
 void X2Camera::driverInfoDetailedInfo(BasicStringInterface& str) const		
@@ -838,7 +902,7 @@ int X2Camera::PixelSize1x1InMicrons(const enumCameraIndex &Camera, const enumWhi
         y = 0.0;
         return ERR_COMMNOLINK;
     }
-
+    X2MutexLocker ml(GetMutex());
     x = m_Camera.getPixelSize();
     y = x;
     return nErr;
@@ -857,10 +921,13 @@ int X2Camera::valueForIntegerField (int nIndex, BasicStringInterface &sFieldName
     long nVal = 0;
     long nMin = 0;
     long nMax = 0;
+    bool bIsAuto;
     
+    X2MutexLocker ml(GetMutex());
+
     switch(nIndex) {
         case F_GAIN :
-            m_Camera.getGain(nMin, nMax, nVal);
+            m_Camera.getGain(nMin, nMax, nVal, bIsAuto);
             sFieldName = "GAIN";
             sFieldComment = "";
             nFieldValue = (int)nVal;
@@ -881,21 +948,21 @@ int X2Camera::valueForIntegerField (int nIndex, BasicStringInterface &sFieldName
             break;
             
         case F_WB_R :
-            m_Camera.getWB_R(nMin, nMax, nVal);
+            m_Camera.getWB_R(nMin, nMax, nVal, bIsAuto);
             sFieldName = "R-WB";
             sFieldComment = "";
             nFieldValue = (int)nVal;
             break;
             
         case F_WB_G :
-            m_Camera.getWB_G(nMin, nMax, nVal);
+            m_Camera.getWB_G(nMin, nMax, nVal, bIsAuto);
             sFieldName = "G-WB";
             sFieldComment = "";
             nFieldValue = (int)nVal;
             break;
             
         case F_WB_B :
-            m_Camera.getWB_B(nMin, nMax, nVal);
+            m_Camera.getWB_B(nMin, nMax, nVal, bIsAuto);
             sFieldName = "B-WB";
             sFieldComment = "";
             nFieldValue = (int)nVal;
@@ -963,6 +1030,9 @@ int X2Camera::valueForStringField (int nIndex, BasicStringInterface &sFieldName,
 {
     int nErr = SB_OK;
     std::string sTmp;
+    
+    X2MutexLocker ml(GetMutex());
+    
     switch(nIndex) {
         case F_BAYER :
             if(m_Camera.isCameraColor()) {

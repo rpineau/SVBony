@@ -35,20 +35,27 @@ class AddFITSKeyInterface;
 //where CoolCompany is your company name.  This is not a requirement.
 
 //For properties that need to be persistent
-#define KEY_X2CAM_ROOT        "SVBony"
-#define KEY_GUID              "SVBony_GUID"
-#define KEY_GAIN              "Gain"
-#define KEY_GAMMA             "Gamma"
-#define KEY_GAMMA_CONTRAST    "GammaContrast"
-#define KEY_WHITE_BALANCE_R   "WB_R"
-#define KEY_WHITE_BALANCE_G   "WB_G"
-#define KEY_WHITE_BALANCE_B   "WB_B"
-#define KEY_FLIP              "Flip"
-#define KEY_SPEED_MODE        "SpeedMode"
-#define KEY_CONTRAST          "Contrast"
-#define KEY_SHARPNESS         "Sharpness"
-#define KEY_SATURATION        "Saturation"
-#define KEY_OFFSET            "Offset"
+#define KEY_X2CAM_ROOT              "SVBony"
+#define KEY_GUID                    "SVBony_GUID"
+#define KEY_GAIN                    "Gain"
+#define KEY_GAIN_AUTO               "GainAuto"
+#define KEY_GAMMA                   "Gamma"
+#define KEY_GAMMA_CONTRAST          "GammaContrast"
+#define KEY_WHITE_BALANCE_R         "WB_R"
+#define KEY_WHITE_BALANCE_R_AUTO    "WB_R_Auto"
+#define KEY_WHITE_BALANCE_G         "WB_G"
+#define KEY_WHITE_BALANCE_G_AUTO    "WB_G_Auto"
+#define KEY_WHITE_BALANCE_B         "WB_B"
+#define KEY_WHITE_BALANCE_B_AUTO    "WB_B_Auto"
+#define KEY_FLIP                    "Flip"
+#define KEY_SPEED_MODE              "SpeedMode"
+#define KEY_CONTRAST                "Contrast"
+#define KEY_SHARPNESS               "Sharpness"
+#define KEY_SATURATION              "Saturation"
+#define KEY_OFFSET                  "Offset"
+
+
+enum DIALOGS {SELECT, SETTINGS };
 
 
 // extra fit heard indexes
@@ -207,6 +214,7 @@ public://Methods
     
 	//Implemenation below here
 private:
+
 	SerXInterface 									*	GetSerX() {return m_pSerX; }		
 	TheSkyXFacadeForDriversInterface				*	GetTheSkyXFacadeForDrivers() {return m_pTheSkyXForMounts;}
 	SleeperInterface								*	GetSleeper() {return m_pSleeper; }
@@ -226,13 +234,13 @@ private:
     double  mPixelSizeX;
     double  mPixelSizeY;
 
-	int m_nPrivateISIndex;
+	int     m_nPrivateISIndex;
 
-	double m_dCurTemp;
-    double m_dCurSetPoint;
-	double m_dCurPower;
+	double  m_dCurTemp;
+    double  m_dCurSetPoint;
+	double  m_dCurPower;
     
-	int doSVBonyCAmFeatureConfig(bool& bPressedOK);
+    int     m_nCurrentDialog;
 
     CSVBony         m_Camera;
     enumCameraIndex m_CameraIdx;
@@ -240,7 +248,10 @@ private:
     char            m_szCameraSerial[128];
     std::vector<camera_info_t>           m_tCameraIdList;
 
-    
+    int doSVBonyCAmFeatureConfig();
+    void doSelectCamEvent(X2GUIExchangeInterface* uiex, const char* pszEvent);
+    void doSettingsCamEvent(X2GUIExchangeInterface* uiex, const char* pszEvent);
+
 };
 
 
