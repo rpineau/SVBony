@@ -40,6 +40,10 @@ DirExistsWarning=no
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
+[Dirs]
+Name: "{app}\Plugins\CameraPlugIns";
+Name: "{app}\Plugins64\CameraPlugIns";
+
 [Files]
 ; WIll also need to customise these!
 Source: "cameralist SVBony.txt";                        DestDir: "{app}\Miscellaneous Files"; Flags: ignoreversion
