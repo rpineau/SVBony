@@ -1431,6 +1431,8 @@ SVB_ERROR_CODE CSVBony::restartCamera()
     if (ret != SVB_SUCCESS)
         m_bConnected = false;
 
+    ret = SVBSetAutoSaveParam(m_nCameraID, SVB_FALSE);
+
     return ret;
 }
 
