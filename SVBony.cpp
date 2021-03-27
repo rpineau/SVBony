@@ -126,6 +126,17 @@ int CSVBony::Connect(int nCameraID)
         return ERR_NORESPONSE;
         }
 
+    ret = SVBSetAutoSaveParam(m_nCameraID, SVB_FALSE);
+    if (ret != SVB_SUCCESS) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CSVBony::Connect] Error seting autosave to false, Error = %d\n", timestamp, ret);
+        fflush(Logfile);
+#endif
+    }
+
     m_bConnected = true;
     getCameraNameFromID(m_nCameraID, m_sCameraName);
 
@@ -1421,4 +1432,41 @@ SVB_ERROR_CODE CSVBony::restartCamera()
         m_bConnected = false;
 
     return ret;
+}
+
+
+int CSVBony::RelayActivate(const int nXPlus, const int nXMinus, const int nYPlus, const int nYMinus, const bool bSynchronous, const bool bAbort)
+{
+    int nErr = PLUGIN_OK;
+    SVB_ERROR_CODE ret;
+    SVB_BOOL bCanPulse;
+    SVB_GUIDE_DIRECTION nDir;
+    int nDurration;
+    
+    ret = SVBCanPulseGuide(m_nCameraID, &bCanPulse);
+    if(bCanPulse) {
+        if(!bAbort) {
+            nDurration = 5000;
+            if(nXPlus != 0 && nXMinus ==0)
+                nDir = SVB_GUIDE_WEST;
+            if(nXPlus == 0 && nXMinus !=0)
+                nDir = SVB_GUIDE_EAST;
+            
+            if(nYPlus != 0 && nYMinus ==0)
+                nDir = SVB_GUIDE_SOUTH;
+            if(nYPlus == 0 && nYMinus !=0)
+                nDir = SVB_GUIDE_NORTH;
+        }
+        else {
+            nDurration = 0; // should stop the pulse
+            nDir = SVB_GUIDE_NORTH;
+        }
+        ret = SVBPulseGuide(m_nCameraID, nDir, nDurration); // hopefully this is not blocking !!! 
+        if(ret!=SVB_SUCCESS)
+            nErr =ERR_CMDFAILED;
+    }
+    else
+        nErr = ERR_NOT_IMPL;
+    return nErr;
+
 }

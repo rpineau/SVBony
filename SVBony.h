@@ -115,6 +115,8 @@ public:
 
     SVB_ERROR_CODE        restartCamera();
 
+    int         RelayActivate(const int nXPlus, const int nXMinus, const int nYPlus, const int nYMinus, const bool bSynchronous, const bool bAbort);
+    
 protected:
     
     SVB_ERROR_CODE          getControlValues(SVB_CONTROL_TYPE nControlType, long &nMin, long &nMax, long &nValue, SVB_BOOL &bIsAuto);

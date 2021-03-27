@@ -741,6 +741,8 @@ int X2Camera::CCSetShutter(bool bOpen)
 int X2Camera::CCActivateRelays(const int& nXPlus, const int& nXMinus, const int& nYPlus, const int& nYMinus, const bool& bSynchronous, const bool& bAbort, const bool& bEndThread)
 {   
 	X2MutexLocker ml(GetMutex());
+    
+    m_Camera.RelayActivate(nXPlus, nXMinus, nYPlus, nYMinus, bSynchronous, bAbort);
 	return SB_OK;
 }
 
