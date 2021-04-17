@@ -29,7 +29,8 @@
 #include "SVBCameraSDK.h"
 #include "StopWatch.h"
 
-#define PLUGIN_DEBUG    3
+// #define PLUGIN_DEBUG    3
+
 #define PLUGIN_VERSION      1.00
 #define BUFFER_LEN 128
 #define PLUGIN_OK   0
