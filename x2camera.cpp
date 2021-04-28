@@ -115,6 +115,8 @@ int	X2Camera::queryAbstraction(const char* pszName, void** ppVal)
         *ppVal = dynamic_cast<PixelSizeInterface*>(this);
     else if (!strcmp(pszName, AddFITSKeyInterface_Name))
         *ppVal = dynamic_cast<AddFITSKeyInterface*>(this);
+    else if (!strcmp(pszName, CameraDependentSettingInterface_Name))
+        *ppVal = dynamic_cast<CameraDependentSettingInterface*>(this);
 
 	return SB_OK;
 }
@@ -1078,3 +1080,57 @@ int X2Camera::valueForStringField (int nIndex, BasicStringInterface &sFieldName,
     return nErr;
 }
 
+int X2Camera::CCGetExtendedSettingName (const enumCameraIndex &Camera, const enumWhichCCD &CCDOrig, BasicStringInterface &sSettingName)
+{
+    int nErr = SB_OK;
+
+    sSettingName="Gain";
+
+    return nErr;
+}
+
+int X2Camera::CCGetExtendedValueCount (const enumCameraIndex &Camera, const enumWhichCCD &CCDOrig, int &nCount)
+{
+    int nErr = SB_OK;
+
+    nCount = m_Camera.getNbGainInList();
+    return nErr;
+}
+
+int X2Camera::CCGetExtendedValueName (const enumCameraIndex &Camera, const enumWhichCCD &CCDOrig, const int nIndex, BasicStringInterface &sName)
+{
+    int nErr = SB_OK;
+
+    sName = m_Camera.getGainFromListAtIndex(nIndex).c_str();
+    return nErr;
+}
+
+int X2Camera::CCStartExposureAdditionalArgInterface (const enumCameraIndex &Cam, const enumWhichCCD CCD, const double &dTime, enumPictureType Type, const int &nABGState, const bool &bLeaveShutterAlone, const int &nIndex)
+{
+    X2MutexLocker ml(GetMutex());
+
+    if (!m_bLinked)
+        return ERR_NOLINK;
+
+    bool bLight = true;
+    int nErr = SB_OK;
+
+
+    nErr = m_Camera.setGain(std::stol(m_Camera.getGainFromListAtIndex(nIndex)));
+    if(nErr)
+        return nErr; // can't set gain !
+
+    switch (Type)
+    {
+        case PT_FLAT:
+        case PT_LIGHT:            bLight = true;    break;
+        case PT_DARK:
+        case PT_AUTODARK:
+        case PT_BIAS:            bLight = false;    break;
+        default:                return ERR_CMDFAILED;
+    }
+
+    nErr = m_Camera.startCaputure(dTime);
+    return nErr;
+
+}

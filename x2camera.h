@@ -17,6 +17,7 @@
 #include "../../licensedinterfaces/x2guiinterface.h"
 #include "../../licensedinterfaces/addfitskeyinterface.h"
 #include "../../licensedinterfaces/subframeinterface.h"
+#include "../../licensedinterfaces/cameradependentsettinginterface.h"
 
 
 #include "SVBony.h"
@@ -88,7 +89,7 @@ enum EXTRA_FIT_INT_SVB {
 
 Use this example to write an X2Camera driver.
 */
-class X2Camera: public CameraDriverInterface, public SubframeInterface, public ModalSettingsDialogInterface, public X2GUIEventInterface, public PixelSizeInterface, public  AddFITSKeyInterface
+class X2Camera: public CameraDriverInterface, public SubframeInterface, public ModalSettingsDialogInterface, public X2GUIEventInterface, public PixelSizeInterface, public  AddFITSKeyInterface, public CameraDependentSettingInterface
 {
 public: 
 	/*!Standard X2 constructor*/
@@ -211,7 +212,13 @@ public://Methods
     
     // SubframeInterface
     virtual int     CCSetBinnedSubFrame3(const enumCameraIndex &Camera, const enumWhichCCD &CCDOrig, const int &nLeft, const int &nTop,  const int &nWidth,  const int &nHeight);
-    
+
+    // CameraDependentSettingInterface
+    virtual int     CCGetExtendedSettingName (const enumCameraIndex &Camera, const enumWhichCCD &CCDOrig, BasicStringInterface &sSettingName);
+    virtual int     CCGetExtendedValueCount (const enumCameraIndex &Camera, const enumWhichCCD &CCDOrig, int &nCount);
+    virtual int     CCGetExtendedValueName (const enumCameraIndex &Camera, const enumWhichCCD &CCDOrig, const int nIndex, BasicStringInterface &sName);
+    virtual int     CCStartExposureAdditionalArgInterface (const enumCameraIndex &Cam, const enumWhichCCD CCD, const double &dTime, enumPictureType Type, const int &nABGState, const bool &bLeaveShutterAlone, const int &nIndex);
+
 	//Implemenation below here
 private:
 

@@ -31,7 +31,7 @@
 
 // #define PLUGIN_DEBUG    3
 
-#define PLUGIN_VERSION      1.00
+#define PLUGIN_VERSION      1.01
 #define BUFFER_LEN 128
 #define PLUGIN_OK   0
 #define MAX_NB_BIN  16
@@ -117,13 +117,18 @@ public:
     SVB_ERROR_CODE        restartCamera();
 
     int         RelayActivate(const int nXPlus, const int nXMinus, const int nYPlus, const int nYMinus, const bool bSynchronous, const bool bAbort);
-    
+
+    int         getNbGainInList();
+    std::string getGainFromListAtIndex(int nIndex);
+    void        rebuildGainList();
+
 protected:
     
     SVB_ERROR_CODE          getControlValues(SVB_CONTROL_TYPE nControlType, long &nMin, long &nMax, long &nValue, SVB_BOOL &bIsAuto);
     SVB_ERROR_CODE          setControlValue(SVB_CONTROL_TYPE nControlType, long nValue, SVB_BOOL bAuto=SVB_FALSE);
-    
-    SleeperInterface    *m_pSleeper;
+
+    void                    buildGainList(long nMin, long nMax, long nValue, bool bIsAuto);
+    SleeperInterface        *m_pSleeper;
 
     
     SVB_CAMERA_INFO         m_CameraInfo;
@@ -131,7 +136,10 @@ protected:
     SVB_IMG_TYPE            m_nVideoMode;
     int                     m_nControlNums;
     std::vector<SVB_CONTROL_CAPS> m_ControlList;
-    
+
+    std::vector<std::string>    m_GainList;
+    int                     m_nNbGainValue;
+
     long                    m_nGain;
     bool                    m_bGainAuto;
     long                    m_nExposureMs;

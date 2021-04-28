@@ -297,7 +297,9 @@ int CSVBony::Connect(int nCameraID)
     setSharpness(m_nSharpness);
     setSaturation(m_nSaturation);
     setBlackLevel(m_nBlackLevel);
-    
+
+    rebuildGainList();
+
     ret = SVBSetOutputImageType(m_nCameraID, m_nVideoMode);
     ret = SVBSetCameraMode(m_nCameraID, SVB_MODE_TRIG_SOFT);
     
@@ -700,6 +702,9 @@ int CSVBony::setGain(long nGain, bool bIsAuto)
     int nErr = PLUGIN_OK;
     SVB_ERROR_CODE ret;
 
+    if( m_nGain == nGain && m_bGainAuto==bIsAuto)
+        return nErr;
+    
     m_nGain = nGain;
     m_bGainAuto = bIsAuto;
 
@@ -1116,12 +1121,12 @@ SVB_ERROR_CODE CSVBony::setControlValue(SVB_CONTROL_TYPE nControlType, long nVal
     timestamp[strlen(timestamp) - 1] = 0;
     fprintf(Logfile, "[%s] [CSVBony::setControlValue] re-reading the value we just set\n", timestamp);
     fflush(Logfile);
-#endif
-
     long a,b,c;
     SVB_BOOL d;
     getControlValues(nControlType, a, b, c, d);
-    
+#endif
+
+
     return ret;
 }
 
@@ -1441,9 +1446,9 @@ int CSVBony::RelayActivate(const int nXPlus, const int nXMinus, const int nYPlus
 {
     int nErr = PLUGIN_OK;
     SVB_ERROR_CODE ret;
-    SVB_BOOL bCanPulse;
-    SVB_GUIDE_DIRECTION nDir;
-    int nDurration;
+    SVB_BOOL bCanPulse = SVB_FALSE;
+    SVB_GUIDE_DIRECTION nDir = SVB_GUIDE_NORTH;
+    int nDurration = 0;
     
     ret = SVBCanPulseGuide(m_nCameraID, &bCanPulse);
     if(bCanPulse) {
@@ -1471,4 +1476,45 @@ int CSVBony::RelayActivate(const int nXPlus, const int nXMinus, const int nYPlus
         nErr = ERR_NOT_IMPL;
     return nErr;
 
+}
+
+void CSVBony::buildGainList(long nMin, long nMax, long nValue, bool bIsAuto)
+{
+    long i = 0;
+    int nStep = 1;
+    m_GainList.clear();
+    m_nNbGainValue = 0;
+
+    if(nMin != nValue) {
+        m_GainList.push_back(std::to_string(nValue));
+        m_nNbGainValue++;
+    }
+
+    nStep = int(float(nMax-nMin)/10);
+    for(i=nMin; i<nMax; i+=nStep) {
+        m_GainList.push_back(std::to_string(i));
+        m_nNbGainValue++;
+    }
+    m_GainList.push_back(std::to_string(nMax));
+    m_nNbGainValue++;
+}
+int CSVBony::getNbGainInList()
+{
+    return m_nNbGainValue;
+}
+
+void CSVBony::rebuildGainList()
+{
+    long nMin, nMax, nVal;
+    bool bIsAuto;
+    getGain(nMin, nMax, nVal, bIsAuto);
+    buildGainList(nMin, nMax, nVal, bIsAuto);
+}
+
+std::string CSVBony::getGainFromListAtIndex(int nIndex)
+{
+    if(nIndex<m_GainList.size())
+        return m_GainList.at(nIndex);
+    else
+        return std::string("N/A");
 }
