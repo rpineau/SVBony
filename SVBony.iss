@@ -52,11 +52,13 @@ Source: "cameralist SVBony.txt";                        DestDir: "{app}\Miscella
 Source: "libSVBony/Win32/Release/libSVBony.dll";        DestDir: "{app}\Plugins\CameraPlugIns"; Flags: ignoreversion
 Source: "SVBonyCamSelect.ui";                           DestDir: "{app}\Plugins\CameraPlugIns"; Flags: ignoreversion
 Source: "SVBonyCamera.ui";                              DestDir: "{app}\Plugins\CameraPlugIns"; Flags: ignoreversion
+Source: "SVBony.png";                                   DestDir: "{app}\Plugins\CameraPlugIns"; Flags: ignoreversion
 Source: "static_libs/Windows/Win32/SVBCameraSDK.dll";   DestDir: "{app}\..\..\"; Flags: ignoreversion
 ; 64 bit
 Source: "libSVBony/x64/Release/libSVBony.dll";          DestDir: "{app}\Plugins64\CameraPlugIns"; Flags: ignoreversion; Check: DirExists(ExpandConstant('{app}\Plugins64\CameraPlugIns'))
 Source: "SVBonyCamSelect.ui";                           DestDir: "{app}\Plugins64\CameraPlugIns"; Flags: ignoreversion; Check: DirExists(ExpandConstant('{app}\Plugins64\CameraPlugIns'))
 Source: "SVBonyCamera.ui";                              DestDir: "{app}\Plugins64\CameraPlugIns"; Flags: ignoreversion; Check: DirExists(ExpandConstant('{app}\Plugins64\CameraPlugIns'))
+Source: "SVBony.png";                                   DestDir: "{app}\Plugins64\CameraPlugIns"; Flags: ignoreversion; Check: DirExists(ExpandConstant('{app}\Plugins64\CameraPlugIns'))
 Source: "static_libs/Windows/x64/SVBCameraSDK.dll";     DestDir: "{app}\..\..\TheSky64"; Flags: ignoreversion; Check: DirExists(ExpandConstant('{app}\..\..\TheSky64'))
 
 

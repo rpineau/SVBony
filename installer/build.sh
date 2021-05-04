@@ -11,6 +11,7 @@ fi
 mkdir -p ROOT/tmp/SVBony_X2/
 cp "../SVBonyCamera.ui" ROOT/tmp/SVBony_X2/
 cp "../SVBonyCamSelect.ui" ROOT/tmp/SVBony_X2/
+cp "../SVBony.png" ROOT/tmp/SVBony_X2/
 cp "../cameralist SVBony.txt" ROOT/tmp/SVBony_X2/
 cp "../build/Release/libSVBony.dylib" ROOT/tmp/SVBony_X2/
 

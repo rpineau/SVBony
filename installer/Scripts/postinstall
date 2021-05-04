@@ -38,6 +38,10 @@ rm -f "$PLUGINS_DIR/CameraPlugIns/SVBonyCamera.ui"
 cp "/tmp/SVBony_X2/SVBonyCamera.ui" "$PLUGINS_DIR/CameraPlugIns/"
 if [ "$?" -ne "0" ]; then exit 1; fi
 
+rm -f "$PLUGINS_DIR/CameraPlugIns/SVBony.png"
+cp "/tmp/SVBony_X2/SVBony.png" "$PLUGINS_DIR/CameraPlugIns/"
+if [ "$?" -ne "0" ]; then exit 1; fi
+
 rm -f "$PLUGINS_DIR/CameraPlugIns/libSVBony.dylib"
 cp "/tmp/SVBony_X2/libSVBony.dylib" "$PLUGINS_DIR/CameraPlugIns/"
 if [ "$?" -ne "0" ]; then exit 1; fi
@@ -47,6 +51,7 @@ if [ ! -z "$app_owner" ]; then
 	chown $app_owner "$TheSkyX_Path/Resources/Common/Miscellaneous Files/cameralist SVBony.txt"
 	chown $app_owner "$PLUGINS_DIR/CameraPlugIns/SVBonyCamSelect.ui"
 	chown $app_owner "$PLUGINS_DIR/CameraPlugIns/SVBonyCamera.ui"
+	chown $app_owner "$PLUGINS_DIR/CameraPlugIns/SVBony.png"
 	chown $app_owner "$PLUGINS_DIR/CameraPlugIns/libSVBony.dylib"
 fi
 
