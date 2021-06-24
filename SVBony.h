@@ -29,13 +29,13 @@
 #include "SVBCameraSDK.h"
 #include "StopWatch.h"
 
-// #define PLUGIN_DEBUG    3
+#define PLUGIN_DEBUG    3
 
 #define PLUGIN_VERSION      1.01
 #define BUFFER_LEN 128
 #define PLUGIN_OK   0
 #define MAX_NB_BIN  16
-typedef struct _camere_info {
+typedef struct _camera_info {
     int     cameraId;
     SVB_SN  Sn;
     char    model[BUFFER_LEN];
