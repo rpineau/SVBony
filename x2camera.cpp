@@ -40,44 +40,54 @@ X2Camera::X2Camera( const char* pszSelection,
         m_Camera.setCameraSerial(std::string(m_szCameraSerial));
         m_Camera.setCameraId(m_nCameraID);
         nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_GAIN, 10);
-        bIsAuto =  (m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_GAIN_AUTO, 0) == 0?false:true);
-        m_Camera.setGain((long)nValue, bIsAuto);
+        m_Camera.setGain((long)nValue);
 
         nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_GAMMA, 100);
-        m_Camera.setGamma((long)nValue);
+        if(nValue!=-1)
+            m_Camera.setGamma((long)nValue);
 
         nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_GAMMA_CONTRAST, 100);
-        m_Camera.setGammaContrast((long)nValue);
+        if(nValue!=-1)
+            m_Camera.setGammaContrast((long)nValue);
 
-        nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_R, 127);
+        nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_R, 180);
         bIsAuto =  (m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_R_AUTO, 0) == 0?false:true);
-        m_Camera.setWB_R((long)nValue, bIsAuto);
+        if(nValue!=-1)
+            m_Camera.setWB_R((long)nValue, bIsAuto);
 
-        nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_G, 80);
+        nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_G, 128);
         bIsAuto =  (m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_G_AUTO, 0) == 0?false:true);
-        m_Camera.setWB_G((long)nValue, bIsAuto);
+        if(nValue!=-1)
+            m_Camera.setWB_G((long)nValue, bIsAuto);
 
-        nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_B, 158);
+        nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_B, 340);
         bIsAuto =  (m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_B_AUTO, 0) == 0?false:true);
-        m_Camera.setWB_B((long)nValue, bIsAuto);
+        if(nValue!=-1)
+            m_Camera.setWB_B((long)nValue, bIsAuto);
 
         nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_FLIP, 0);
-        m_Camera.setFlip((long)nValue);
+        if(nValue!=-1)
+            m_Camera.setFlip((long)nValue);
 
         nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_SPEED_MODE, 0);
-        m_Camera.setSpeedMode((long)nValue);
+        if(nValue!=-1)
+            m_Camera.setSpeedMode((long)nValue);
 
         nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_CONTRAST, 50);
-        m_Camera.setContrast((long)nValue);
+        if(nValue!=-1)
+            m_Camera.setContrast((long)nValue);
 
         nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_SHARPNESS, 0);
-        m_Camera.setSharpness((long)nValue);
+        if(nValue!=-1)
+            m_Camera.setSharpness((long)nValue);
 
-        nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_SATURATION, 150);
-        m_Camera.setSaturation((long)nValue);
+        nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_SATURATION, 100);
+        if(nValue!=-1)
+            m_Camera.setSaturation((long)nValue);
 
         nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_OFFSET, 0);
-        m_Camera.setBlackLevel((long)nValue);
+        if(nValue!=-1)
+            m_Camera.setBlackLevel((long)nValue);
     }
 
 }
@@ -216,17 +226,13 @@ int X2Camera::doSVBonyCAmFeatureConfig()
 
 
     if(m_bLinked){
-        m_Camera.getGain(nMin, nMax, nVal, bIsAuto);
+        m_Camera.getGain(nMin, nMax, nVal);
         if(nMax == -1)
             dx->setEnabled("Gain", false);
         else {
             dx->setPropertyInt("Gain", "minimum", (int)nMin);
             dx->setPropertyInt("Gain", "maximum", (int)nMax);
             dx->setPropertyInt("Gain", "value", (int)nVal);
-            if(bIsAuto) {
-                dx->setEnabled("Gain", false);
-                dx->setChecked("checkBox", 1);
-            }
         }
 
         m_Camera.getGamma(nMin, nMax, nVal);
@@ -359,75 +365,104 @@ int X2Camera::doSVBonyCAmFeatureConfig()
 
     //Retreive values from the user interface
     if (bPressedOK) {
-        dx->propertyInt("Gain", "value", nCtrlVal);
-        bIsAuto = dx->isChecked("checkBox");
-        nErr = m_Camera.setGain((long)nCtrlVal, bIsAuto);
-        if(!nErr) {
-            m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_GAIN, nCtrlVal);
-            m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_GAIN_AUTO, bIsAuto?1:0);
+        if(dx->isEnabled("Gain")) {
+            dx->propertyInt("Gain", "value", nCtrlVal);
+#pragma mark - Setting gain is broken on SDK 1.3.8 and up
+            //nErr = m_Camera.setGain((long)nCtrlVal);
+            //if(!nErr) {
+                m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_GAIN, nCtrlVal);
+            //}
         }
 
-        dx->propertyInt("Gamma", "value", nCtrlVal);
-        nErr = m_Camera.setGamma((long)nCtrlVal);
-        if(!nErr)
-            m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_GAMMA, nCtrlVal);
-
-        dx->propertyInt("GammaContrast", "value", nCtrlVal);
-        nErr = m_Camera.setGammaContrast((long)nCtrlVal);
-        if(!nErr)
-            m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_GAMMA_CONTRAST, nCtrlVal);
-
-        dx->propertyInt("WB_R", "value", nCtrlVal);
-        bIsAuto = dx->isChecked("checkBox_2");
-        nErr = m_Camera.setWB_R((long)nCtrlVal, bIsAuto);
-        if(!nErr) {
-            m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_R, nCtrlVal);
-            m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_R_AUTO, bIsAuto?1:0);
+        if(dx->isEnabled("Gamma")) {
+            dx->propertyInt("Gamma", "value", nCtrlVal);
+            nErr = m_Camera.setGamma((long)nCtrlVal);
+            if(!nErr)
+                m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_GAMMA, nCtrlVal);
         }
 
-        dx->propertyInt("WB_G", "value", nCtrlVal);
-        bIsAuto = dx->isChecked("checkBox_3");
-        nErr = m_Camera.setWB_G((long)nCtrlVal, bIsAuto);
-        if(!nErr){
-            m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_G, nCtrlVal);
-            m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_G_AUTO, bIsAuto?1:0);
+        if(dx->isEnabled("GammaContrast")) {
+            dx->propertyInt("GammaContrast", "value", nCtrlVal);
+            nErr = m_Camera.setGammaContrast((long)nCtrlVal);
+            if(!nErr)
+                m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_GAMMA_CONTRAST, nCtrlVal);
         }
-        dx->propertyInt("WB_B", "value", nCtrlVal);
-        bIsAuto = dx->isChecked("checkBox_4");
-        nErr = m_Camera.setWB_B((long)nCtrlVal, bIsAuto);
-        if(!nErr) {
-            m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_B, nCtrlVal);
-            m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_B_AUTO, bIsAuto?1:0);
+
+        if(dx->isEnabled("WB_R")) {
+            dx->propertyInt("WB_R", "value", nCtrlVal);
+            bIsAuto = dx->isChecked("checkBox_2");
+            nErr = m_Camera.setWB_R((long)nCtrlVal, bIsAuto);
+            if(!nErr) {
+                m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_R, nCtrlVal);
+                m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_R_AUTO, bIsAuto?1:0);
+            }
         }
-        nCtrlVal = dx->currentIndex("Flip");
-        nErr = m_Camera.setFlip((long)nCtrlVal);
-        if(!nErr)
-            m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_FLIP, nCtrlVal);
 
-        nCtrlVal = dx->currentIndex("SpeedMode");
-        nErr = m_Camera.setSpeedMode((long)nCtrlVal);
-        if(!nErr)
-            m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_SPEED_MODE, nCtrlVal);
+        if(dx->isEnabled("WB_G")) {
+            dx->propertyInt("WB_G", "value", nCtrlVal);
+            bIsAuto = dx->isChecked("checkBox_3");
+            nErr = m_Camera.setWB_G((long)nCtrlVal, bIsAuto);
+            if(!nErr){
+                m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_G, nCtrlVal);
+                m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_G_AUTO, bIsAuto?1:0);
+            }
+        }
 
-        dx->propertyInt("Contrast", "value", nCtrlVal);
-        nErr = m_Camera.setContrast((long)nCtrlVal);
-        if(!nErr)
-            m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_CONTRAST, nCtrlVal);
+        if(dx->isEnabled("WB_B")) {
+            dx->propertyInt("WB_B", "value", nCtrlVal);
+            bIsAuto = dx->isChecked("checkBox_4");
+            nErr = m_Camera.setWB_B((long)nCtrlVal, bIsAuto);
+            if(!nErr) {
+                m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_B, nCtrlVal);
+                m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_B_AUTO, bIsAuto?1:0);
+            }
+        }
 
-        dx->propertyInt("Sharpness", "value", nCtrlVal);
-        nErr = m_Camera.setSharpness((long)nCtrlVal);
-        if(!nErr)
-            m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_SHARPNESS, nCtrlVal);
+        if(dx->isEnabled("Flip")) {
+            nCtrlVal = dx->currentIndex("Flip");
+            nErr = m_Camera.setFlip((long)nCtrlVal);
+            if(!nErr)
+                m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_FLIP, nCtrlVal);
+        }
 
-        dx->propertyInt("Saturation", "value", nCtrlVal);
-        nErr = m_Camera.setSaturation((long)nCtrlVal);
-        if(!nErr)
-            m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_SATURATION, nCtrlVal);
+        if(dx->isEnabled("SpeedMode")) {
+            nCtrlVal = dx->currentIndex("SpeedMode");
+            nErr = m_Camera.setSpeedMode((long)nCtrlVal);
+            if(!nErr)
+                m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_SPEED_MODE, nCtrlVal);
+        }
 
-        dx->propertyInt("Offset", "value", nCtrlVal);
-        nErr = m_Camera.setBlackLevel((long)nCtrlVal);
-        if(!nErr)
-            m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_OFFSET, nCtrlVal);
+        if(dx->isEnabled("Contrast")) {
+            dx->propertyInt("Contrast", "value", nCtrlVal);
+            nErr = m_Camera.setContrast((long)nCtrlVal);
+            if(!nErr)
+                m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_CONTRAST, nCtrlVal);
+        }
+
+        if(dx->isEnabled("Sharpness")) {
+            dx->propertyInt("Sharpness", "value", nCtrlVal);
+            nErr = m_Camera.setSharpness((long)nCtrlVal);
+            if(!nErr)
+                m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_SHARPNESS, nCtrlVal);
+        }
+
+        if(dx->isEnabled("Saturation")) {
+            dx->propertyInt("Saturation", "value", nCtrlVal);
+            nErr = m_Camera.setSaturation((long)nCtrlVal);
+            if(!nErr)
+                m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_SATURATION, nCtrlVal);
+        }
+
+        if(dx->isEnabled("Offset")) {
+            dx->propertyInt("Offset", "value", nCtrlVal);
+            nErr = m_Camera.setBlackLevel((long)nCtrlVal);
+            if(!nErr)
+                m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_OFFSET, nCtrlVal);
+        }
+
+        // SDK 1.3.8 is broken so we have to disconnect and reconnect... :(
+        m_Camera.Disconnect();
+        m_Camera.Connect(m_nCameraID);
     }
 
     return nErr;
@@ -931,7 +966,7 @@ int X2Camera::valueForIntegerField (int nIndex, BasicStringInterface &sFieldName
 
     switch(nIndex) {
         case F_GAIN :
-            m_Camera.getGain(nMin, nMax, nVal, bIsAuto);
+            m_Camera.getGain(nMin, nMax, nVal);
             sFieldName = "GAIN";
             sFieldComment = "";
             nFieldValue = (int)nVal;
@@ -1115,11 +1150,11 @@ int X2Camera::CCStartExposureAdditionalArgInterface (const enumCameraIndex &Cam,
     bool bLight = true;
     int nErr = SB_OK;
 
-
-    nErr = m_Camera.setGain(std::stol(m_Camera.getGainFromListAtIndex(nIndex)));
-    if(nErr)
-        return nErr; // can't set gain !
-
+#pragma mark - Set gain is still broken in SDK 1.3.8 and up
+    //nErr = m_Camera.setGain(std::stol(m_Camera.getGainFromListAtIndex(nIndex)));
+    //if(nErr) {
+    //    return nErr; // can't set gain !
+    //}
     switch (Type)
     {
         case PT_FLAT:

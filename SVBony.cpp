@@ -24,33 +24,33 @@ CSVBony::CSVBony()
     m_nNbBin = 1;
     m_SupportedBins[0] = 1;
 
-    m_nROILeft = 0;
-    m_nROITop = 0;
-    m_nROIWidth = 0;
-    m_nROIHeight = 0;
+    m_nROILeft = -1;
+    m_nROITop = -1;
+    m_nROIWidth = -1;
+    m_nROIHeight = -1;
 
-    m_nReqROILeft = 0;
-    m_nReqROITop = 0;
-    m_nReqROIWidth = 0;
-    m_nReqROIHeight = 0;
+    m_nReqROILeft = -1;
+    m_nReqROITop = -1;
+    m_nReqROIWidth = -1;
+    m_nReqROIHeight = -1;
 
-    m_nControlNums = 0;
+    m_nControlNums = -1;
     m_ControlList.clear();
     
-    m_nGain = 10;
+    m_nGain = -1;
     m_nExposureMs = (1 * 1000000);
-    m_nGamma = 100;
-    m_nGammaContrast = 100;
-    m_nWbR = 130;
-    m_nWbG = 80;
-    m_nWbB = 160;
-    m_nFlip = 0;
-    m_nSpeedMode = 0; // low speed
-    m_nContrast = 50;
-    m_nSharpness = 0;
-    m_nSaturation = 150;
-    m_nAutoExposureTarget = 0;
-    m_nBlackLevel = 0;
+    m_nGamma = -1;
+    m_nGammaContrast = 0;
+    m_nWbR = -1;
+    m_nWbG = -1;
+    m_nWbB = -1;
+    m_nFlip = -1;
+    m_nSpeedMode = -1; // low speed
+    m_nContrast = -1;
+    m_nSharpness = -1;
+    m_nSaturation = -1;
+    m_nAutoExposureTarget = -1;
+    m_nBlackLevel = -1;
 
     
     memset(m_szCameraName,0,BUFFER_LEN);
@@ -88,6 +88,8 @@ CSVBony::~CSVBony()
 
 
 }
+
+#pragma mark - Camera access
 
 int CSVBony::Connect(int nCameraID)
 {
@@ -173,8 +175,7 @@ int CSVBony::Connect(int nCameraID)
     m_nNbBin = 0;
     m_nCurrentBin = 0;
     
-    for (i = 0; i < MAX_NB_BIN; i++)
-    {
+    for (i = 0; i < MAX_NB_BIN; i++) {
         m_SupportedBins[i] = m_cameraProperty.SupportedBins[i];
         if (m_cameraProperty.SupportedBins[i] == 0) {
             break;
@@ -274,18 +275,44 @@ int CSVBony::Connect(int nCameraID)
     }
 
     ret = SVBGetNumOfControls(m_nCameraID, &m_nControlNums);
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [CSVBony::Connect] m_nControlNums : %d\n", timestamp, m_nControlNums);
+    fflush(Logfile);
+#endif
 
-    for (i = 0; i < m_nControlNums; i++)
-    {
+    for (i = 0; i < m_nControlNums; i++) {
         ret = SVBGetControlCaps(m_nCameraID, i, &Caps);
         if (ret != SVB_SUCCESS) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            ltime = time(NULL);
+            timestamp = asctime(localtime(&ltime));
+            timestamp[strlen(timestamp) - 1] = 0;
+            fprintf(Logfile, "[%s] [CSVBony::Connect] Error getting caps : %d\n", timestamp, ret);
+            fflush(Logfile);
+#endif
             continue;
         }
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CSVBony::Connect] ********************************************************\n", timestamp);
+        fprintf(Logfile, "[%s] [CSVBony::Connect] ControlCaps Name              : %s\n", timestamp, Caps.Name);
+        fprintf(Logfile, "[%s] [CSVBony::Connect] ControlCaps Description       : %s\n", timestamp, Caps.Description);
+        fprintf(Logfile, "[%s] [CSVBony::Connect] ControlCaps MinValue          : %lu\n", timestamp, Caps.MinValue);
+        fprintf(Logfile, "[%s] [CSVBony::Connect] ControlCaps MaxValue          : %lu\n", timestamp, Caps.MaxValue);
+        fprintf(Logfile, "[%s] [CSVBony::Connect] ControlCaps IsAutoSupported   : %s\n", timestamp, Caps.IsAutoSupported?"Yes":"No");
+        fprintf(Logfile, "[%s] [CSVBony::Connect] ControlCaps IsWritable        : %s\n", timestamp, Caps.IsWritable?"Yes":"No");
+        fflush(Logfile);
+#endif
         m_ControlList.push_back(Caps);
     }
 
     // set default values
-    setGain(m_nGain, m_bGainAuto);
+    setGain(m_nGain);
     setGamma(m_nGamma);
     setGammaContrast(m_nGammaContrast);
     setWB_R(m_nWbR, m_bR_Auto);
@@ -309,6 +336,15 @@ int CSVBony::Connect(int nCameraID)
         nErr =ERR_CMDFAILED;
     }
     m_bCapturerunning = true;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [CSVBony::Connect] Connected : %s\n", timestamp, m_bConnected?"Yes":"No");
+    fflush(Logfile);
+#endif
+
     return nErr;
 }
 
@@ -502,6 +538,7 @@ int CSVBony::listCamera(std::vector<camera_info_t>  &cameraIdList)
     return nErr;
 }
 
+
 int CSVBony::getNumBins()
 {
     return m_nNbBin;
@@ -515,6 +552,7 @@ int CSVBony::getBinFromIndex(int nIndex)
     return m_SupportedBins[nIndex];        
 }
 
+#pragma mark - Camera capture
 
 int CSVBony::startCaputure(double dTime)
 {
@@ -593,6 +631,8 @@ void CSVBony::abortCapture(void)
     m_bAbort = true;
     stopCaputure();
 }
+
+#pragma mark - Camera controls
 
 int CSVBony::getTemperture(double &dTemp, double &dPower, double &dSetPoint, bool &bEnabled)
 {
@@ -681,46 +721,38 @@ void CSVBony::getFlip(std::string &sFlipMode)
 }
 
 
-void CSVBony::getGain(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
+void CSVBony::getGain(long &nMin, long &nMax, long &nValue)
 {
     SVB_BOOL bTmp;
 
     getControlValues(SVB_GAIN, nMin, nMax, nValue, bTmp);
-    bIsAuto = (bool)bTmp;
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
     fprintf(Logfile, "[%s] [CSVBony::getGain] Gain is %ld\n", timestamp, nValue);
-    fprintf(Logfile, "[%s] [CSVBony::getGain] bIsAuto is %s\n", timestamp, bIsAuto?"True":"False");
     fflush(Logfile);
 #endif
 }
 
-int CSVBony::setGain(long nGain, bool bIsAuto)
+int CSVBony::setGain(long nGain)
 {
     int nErr = PLUGIN_OK;
     SVB_ERROR_CODE ret;
 
-    if( m_nGain == nGain && m_bGainAuto==bIsAuto)
-        return nErr;
-    
     m_nGain = nGain;
-    m_bGainAuto = bIsAuto;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
     fprintf(Logfile, "[%s] [CSVBony::setGain] Gain set to %ld\n", timestamp, m_nGain);
-    fprintf(Logfile, "[%s] [CSVBony::setGain] m_bGainAuto is %s\n", timestamp, m_bGainAuto?"True":"False");
     fflush(Logfile);
 #endif
 
-    ret = setControlValue(SVB_GAIN, m_nGain, bIsAuto?SVB_TRUE:SVB_FALSE);
+    ret = setControlValue(SVB_GAIN, m_nGain);
     if(ret != SVB_SUCCESS)
         nErr = ERR_CMDFAILED;
-
 
     return nErr;
 }
@@ -1114,7 +1146,16 @@ SVB_ERROR_CODE CSVBony::setControlValue(SVB_CONTROL_TYPE nControlType, long nVal
 #endif
 
     ret = SVBSetControlValue(m_nCameraID, nControlType, nValue, bAuto);
+    if(ret != SVB_SUCCESS) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CSVBony::setControlValue] Error setting value !!!! : %d\n", timestamp, ret);
+        fflush(Logfile);
+#endif
 
+    }
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
@@ -1168,6 +1209,7 @@ SVB_ERROR_CODE CSVBony::getControlValues(SVB_CONTROL_TYPE nControlType, long &nM
     return ret;
 }
 
+#pragma mark - Camera frame
 
 int CSVBony::setROI(int nLeft, int nTop, int nWidth, int nHeight)
 {
@@ -1441,6 +1483,8 @@ SVB_ERROR_CODE CSVBony::restartCamera()
     return ret;
 }
 
+#pragma mark - Camera relay
+
 
 int CSVBony::RelayActivate(const int nXPlus, const int nXMinus, const int nYPlus, const int nYMinus, const bool bSynchronous, const bool bAbort)
 {
@@ -1478,7 +1522,9 @@ int CSVBony::RelayActivate(const int nXPlus, const int nXMinus, const int nYPlus
 
 }
 
-void CSVBony::buildGainList(long nMin, long nMax, long nValue, bool bIsAuto)
+#pragma mark - helper functions
+
+void CSVBony::buildGainList(long nMin, long nMax, long nValue)
 {
     long i = 0;
     int nStep = 1;
@@ -1506,9 +1552,8 @@ int CSVBony::getNbGainInList()
 void CSVBony::rebuildGainList()
 {
     long nMin, nMax, nVal;
-    bool bIsAuto;
-    getGain(nMin, nMax, nVal, bIsAuto);
-    buildGainList(nMin, nMax, nVal, bIsAuto);
+    getGain(nMin, nMax, nVal);
+    buildGainList(nMin, nMax, nVal);
 }
 
 std::string CSVBony::getGainFromListAtIndex(int nIndex)

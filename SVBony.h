@@ -29,7 +29,7 @@
 #include "SVBCameraSDK.h"
 #include "StopWatch.h"
 
-// #define PLUGIN_DEBUG    3
+#define PLUGIN_DEBUG    3
 
 #define PLUGIN_VERSION      1.02
 #define BUFFER_LEN 128
@@ -81,8 +81,8 @@ public:
     void        getBayerPattern(std::string &sBayerPattern);
     void        getFlip(std::string &sFlipMode);
 
-    void        getGain(long &nMin, long &nMax, long &nValue, bool &bIsAuto);
-    int         setGain(long nGain, bool bIsAuto = SVB_FALSE);
+    void        getGain(long &nMin, long &nMax, long &nValue);
+    int         setGain(long nGain);
     void        getGamma(long &nMin, long &nMax, long &nValue);
     int         setGamma(long nGamma);
     void        getGammaContrast(long &nMin, long &nMax, long &nValue);
@@ -127,7 +127,7 @@ protected:
     SVB_ERROR_CODE          getControlValues(SVB_CONTROL_TYPE nControlType, long &nMin, long &nMax, long &nValue, SVB_BOOL &bIsAuto);
     SVB_ERROR_CODE          setControlValue(SVB_CONTROL_TYPE nControlType, long nValue, SVB_BOOL bAuto=SVB_FALSE);
 
-    void                    buildGainList(long nMin, long nMax, long nValue, bool bIsAuto);
+    void                    buildGainList(long nMin, long nMax, long nValue);
     SleeperInterface        *m_pSleeper;
 
     
@@ -141,7 +141,6 @@ protected:
     int                     m_nNbGainValue;
 
     long                    m_nGain;
-    bool                    m_bGainAuto;
     long                    m_nExposureMs;
     long                    m_nGamma;
     long                    m_nGammaContrast;

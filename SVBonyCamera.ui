@@ -459,19 +459,6 @@
        </property>
       </item>
      </widget>
-     <widget class="QCheckBox" name="checkBox">
-      <property name="geometry">
-       <rect>
-        <x>272</x>
-        <y>90</y>
-        <width>56</width>
-        <height>20</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>Auto</string>
-      </property>
-     </widget>
      <widget class="QCheckBox" name="checkBox_2">
       <property name="geometry">
        <rect>

@@ -36,7 +36,6 @@
 		931844071EEF50D100AE51F8 /* libobjc.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libobjc.tbd; path = usr/lib/libobjc.tbd; sourceTree = SDKROOT; };
 		9390466C25D7101E009D84F1 /* StopWatch.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = StopWatch.h; sourceTree = "<group>"; };
 		93E4668E25C7956C00ECFB9D /* SVBCameraSDK.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SVBCameraSDK.h; sourceTree = "<group>"; };
-		93E47CDF25B3D4DE002EFE61 /* libSVBCameraSDK.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libSVBCameraSDK.a; path = static_libs/x86_64/libSVBCameraSDK.a; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -98,7 +97,6 @@
 		931843F91EEF394F00AE51F8 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				93E47CDF25B3D4DE002EFE61 /* libSVBCameraSDK.a */,
 				931844071EEF50D100AE51F8 /* libobjc.tbd */,
 				931844021EEF500B00AE51F8 /* CoreServices.framework */,
 				931843FC1EEF395D00AE51F8 /* CoreFoundation.framework */,
