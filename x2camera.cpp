@@ -423,7 +423,7 @@ int X2Camera::doSVBonyCAmFeatureConfig()
             if(!nErr)
                 m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_FLIP, nCtrlVal);
         }
-/*
+/* broken in SDK 1,3,8 and up...don't change it or it breaks SVBGetVideoData
         if(dx->isEnabled("SpeedMode")) {
             nCtrlVal = dx->currentIndex("SpeedMode");
             nErr = m_Camera.setSpeedMode((long)nCtrlVal);
