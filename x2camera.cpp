@@ -71,7 +71,7 @@ X2Camera::X2Camera( const char* pszSelection,
 
         nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_SPEED_MODE, 0);
         if(nValue!=-1)
-            m_Camera.setSpeedMode((long)nValue);
+            m_Camera.setSpeedMode(0); // m_Camera.setSpeedMode((long)nValue); // until set speed mode is fixed in SDK.
 
         nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_CONTRAST, 50);
         if(nValue!=-1)
@@ -365,10 +365,6 @@ int X2Camera::doSVBonyCAmFeatureConfig()
 
     //Retreive values from the user interface
     if (bPressedOK) {
-        // SDK 1.3.8 is broken so we have to disconnect and reconnect... :(
-        m_Camera.Disconnect();
-        m_Camera.Connect(m_nCameraID);
-
         if(dx->isEnabled("Gain")) {
             dx->propertyInt("Gain", "value", nCtrlVal);
             nErr = m_Camera.setGain((long)nCtrlVal);
@@ -377,7 +373,6 @@ int X2Camera::doSVBonyCAmFeatureConfig()
                 m_Camera.rebuildGainList();
             }
         }
-
         if(dx->isEnabled("Gamma")) {
             dx->propertyInt("Gamma", "value", nCtrlVal);
             nErr = m_Camera.setGamma((long)nCtrlVal);
@@ -421,21 +416,20 @@ int X2Camera::doSVBonyCAmFeatureConfig()
                 m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_B_AUTO, bIsAuto?1:0);
             }
         }
-
         if(dx->isEnabled("Flip")) {
             nCtrlVal = dx->currentIndex("Flip");
             nErr = m_Camera.setFlip((long)nCtrlVal);
             if(!nErr)
                 m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_FLIP, nCtrlVal);
         }
-
+/*
         if(dx->isEnabled("SpeedMode")) {
             nCtrlVal = dx->currentIndex("SpeedMode");
             nErr = m_Camera.setSpeedMode((long)nCtrlVal);
             if(!nErr)
                 m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_SPEED_MODE, nCtrlVal);
         }
-
+*/
         if(dx->isEnabled("Contrast")) {
             dx->propertyInt("Contrast", "value", nCtrlVal);
             nErr = m_Camera.setContrast((long)nCtrlVal);
@@ -463,7 +457,6 @@ int X2Camera::doSVBonyCAmFeatureConfig()
             if(!nErr)
                 m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_OFFSET, nCtrlVal);
         }
-
     }
 
     return nErr;
