@@ -303,6 +303,7 @@ int X2Camera::doSVBonyCAmFeatureConfig()
         if(nMax == -1)
             dx->setEnabled("SpeedMode", false);
         else {
+            dx->setEnabled("SpeedMode", false); // disabled for now as not working.
             dx->setCurrentIndex("SpeedMode", (int)nVal);
         }
 
