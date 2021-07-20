@@ -365,13 +365,16 @@ int X2Camera::doSVBonyCAmFeatureConfig()
 
     //Retreive values from the user interface
     if (bPressedOK) {
+        // SDK 1.3.8 is broken so we have to disconnect and reconnect... :(
+        m_Camera.Disconnect();
+        m_Camera.Connect(m_nCameraID);
+
         if(dx->isEnabled("Gain")) {
             dx->propertyInt("Gain", "value", nCtrlVal);
-#pragma mark - Setting gain is broken on SDK 1.3.8 and up
-            //nErr = m_Camera.setGain((long)nCtrlVal);
-            //if(!nErr) {
+            nErr = m_Camera.setGain((long)nCtrlVal);
+            if(!nErr) {
                 m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_GAIN, nCtrlVal);
-            //}
+            }
         }
 
         if(dx->isEnabled("Gamma")) {
@@ -460,9 +463,6 @@ int X2Camera::doSVBonyCAmFeatureConfig()
                 m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_OFFSET, nCtrlVal);
         }
 
-        // SDK 1.3.8 is broken so we have to disconnect and reconnect... :(
-        m_Camera.Disconnect();
-        m_Camera.Connect(m_nCameraID);
     }
 
     return nErr;
@@ -1151,10 +1151,10 @@ int X2Camera::CCStartExposureAdditionalArgInterface (const enumCameraIndex &Cam,
     int nErr = SB_OK;
 
 #pragma mark - Set gain is still broken in SDK 1.3.8 and up
-    //nErr = m_Camera.setGain(std::stol(m_Camera.getGainFromListAtIndex(nIndex)));
-    //if(nErr) {
-    //    return nErr; // can't set gain !
-    //}
+    nErr = m_Camera.setGain(std::stol(m_Camera.getGainFromListAtIndex(nIndex)));
+    if(nErr) {
+        return nErr; // can't set gain !
+    }
     switch (Type)
     {
         case PT_FLAT:

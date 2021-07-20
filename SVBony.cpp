@@ -128,6 +128,9 @@ int CSVBony::Connect(int nCameraID)
         return ERR_NORESPONSE;
         }
 
+    // turn off automatic exposure
+    ret = SVBSetControlValue(m_nCameraID, SVB_EXPOSURE , 1000000, SVB_FALSE);
+
     ret = SVBSetAutoSaveParam(m_nCameraID, SVB_FALSE);
     if (ret != SVB_SUCCESS) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -630,6 +633,29 @@ void CSVBony::abortCapture(void)
 {
     m_bAbort = true;
     stopCaputure();
+}
+
+SVB_ERROR_CODE CSVBony::restartCamera()
+{
+    SVB_ERROR_CODE ret;
+
+    SVBStopVideoCapture(m_nCameraID);
+    if(m_pframeBuffer) {
+        free(m_pframeBuffer);
+        m_pframeBuffer = NULL;
+    }
+    SVBCloseCamera(m_nCameraID);
+    m_bCapturerunning = false;
+
+    ret = SVBOpenCamera(m_nCameraID);
+    if (ret != SVB_SUCCESS)
+        m_bConnected = false;
+
+    ret = SVBSetAutoSaveParam(m_nCameraID, SVB_FALSE);
+    // turn off automatic exposure
+    ret = SVBSetControlValue(m_nCameraID, SVB_EXPOSURE , 1000000, SVB_FALSE);
+
+    return ret;
 }
 
 #pragma mark - Camera controls
@@ -1156,6 +1182,7 @@ SVB_ERROR_CODE CSVBony::setControlValue(SVB_CONTROL_TYPE nControlType, long nVal
 #endif
 
     }
+/*
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
@@ -1166,7 +1193,7 @@ SVB_ERROR_CODE CSVBony::setControlValue(SVB_CONTROL_TYPE nControlType, long nVal
     SVB_BOOL d;
     getControlValues(nControlType, a, b, c, d);
 #endif
-
+*/
 
     return ret;
 }
@@ -1462,26 +1489,6 @@ int CSVBony::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
     return nErr;
 }
 
-SVB_ERROR_CODE CSVBony::restartCamera()
-{
-    SVB_ERROR_CODE ret;
-    
-    SVBStopVideoCapture(m_nCameraID);
-    if(m_pframeBuffer) {
-        free(m_pframeBuffer);
-        m_pframeBuffer = NULL;
-    }
-    SVBCloseCamera(m_nCameraID);
-    m_bCapturerunning = false;
-
-    ret = SVBOpenCamera(m_nCameraID);
-    if (ret != SVB_SUCCESS)
-        m_bConnected = false;
-
-    ret = SVBSetAutoSaveParam(m_nCameraID, SVB_FALSE);
-
-    return ret;
-}
 
 #pragma mark - Camera relay
 
