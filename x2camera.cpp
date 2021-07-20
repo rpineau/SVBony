@@ -374,6 +374,7 @@ int X2Camera::doSVBonyCAmFeatureConfig()
             nErr = m_Camera.setGain((long)nCtrlVal);
             if(!nErr) {
                 m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_GAIN, nCtrlVal);
+                m_Camera.rebuildGainList();
             }
         }
 
