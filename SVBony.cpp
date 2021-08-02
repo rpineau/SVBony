@@ -1165,9 +1165,6 @@ SVB_ERROR_CODE CSVBony::setControlValue(SVB_CONTROL_TYPE nControlType, long nVal
     
     if(!m_bConnected)
         return SVB_SUCCESS;
-    
-//    if(m_bCapturerunning)
-//        restartCamera();
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     ltime = time(NULL);
@@ -1331,7 +1328,7 @@ int CSVBony::setROI(int nLeft, int nTop, int nWidth, int nHeight)
     fprintf(Logfile, "[%s] [CSVBony::setROI] Set to    x, y, w, h : %d, %d, %d, %d\n", timestamp, nNewLeft, nNewTop, nNewWidth, nNewHeight);
     fflush(Logfile);
 #endif
-
+#if defined(SB_MAC_BUILD)
     restartCamera();
     
     // set default values
@@ -1348,7 +1345,9 @@ int CSVBony::setROI(int nLeft, int nTop, int nWidth, int nHeight)
     setSaturation(m_nSaturation);
     setBlackLevel(m_nBlackLevel);
 
-     ret = SVBSetOutputImageType(m_nCameraID, m_nVideoMode);
+    ret = SVBSetOutputImageType(m_nCameraID, m_nVideoMode);
+#endif
+
     ret = SVBSetROIFormat(m_nCameraID, nNewLeft, nNewTop, nNewWidth, nNewHeight, m_nCurrentBin);
     if(ret!=SVB_SUCCESS)
         return ERR_CMDFAILED;
