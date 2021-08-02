@@ -31,11 +31,15 @@
 
 #define PLUGIN_DEBUG    3
 
-#define PLUGIN_VERSION      1.02
+#define PLUGIN_VERSION      1.03
 #define BUFFER_LEN 128
 #define PLUGIN_OK   0
 #define MAX_NB_BIN  16
+
+#if defined(SB_MAC_BUILD)
 #define SV_MAC_FIX
+#endif
+
 typedef struct _camera_info {
     int     cameraId;
     SVB_SN  Sn;

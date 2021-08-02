@@ -649,10 +649,10 @@ SVB_ERROR_CODE CSVBony::restartCamera()
     if (ret != SVB_SUCCESS)
         m_bConnected = false;
 
-    ret = SVBSetAutoSaveParam(m_nCameraID, SVB_FALSE);
-    ret = SVBSetCameraMode(m_nCameraID, SVB_MODE_TRIG_SOFT);
     // turn off automatic exposure
     ret = SVBSetControlValue(m_nCameraID, SVB_EXPOSURE , 1000000, SVB_FALSE);
+    ret = SVBSetAutoSaveParam(m_nCameraID, SVB_FALSE);
+    ret = SVBSetCameraMode(m_nCameraID, SVB_MODE_TRIG_SOFT);
 
     return ret;
 }
@@ -1329,6 +1329,14 @@ int CSVBony::setROI(int nLeft, int nTop, int nWidth, int nHeight)
     fflush(Logfile);
 #endif
 #if defined(SV_MAC_FIX)
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [CSVBony::setROI] Fix for macOS\n", timestamp);
+    fflush(Logfile);
+#endif
     restartCamera();
     
     // set default values
@@ -1349,9 +1357,16 @@ int CSVBony::setROI(int nLeft, int nTop, int nWidth, int nHeight)
 #endif
 
     ret = SVBSetROIFormat(m_nCameraID, nNewLeft, nNewTop, nNewWidth, nNewHeight, m_nCurrentBin);
-    if(ret!=SVB_SUCCESS)
+    if(ret!=SVB_SUCCESS) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CSVBony::setROI] Setting new ROI failled\n", timestamp);
+        fflush(Logfile);
+#endif
         return ERR_CMDFAILED;
-
+    }
     m_nROILeft = nNewLeft;
     m_nROITop = nNewTop;
     m_nROIWidth = nNewWidth;
@@ -1365,8 +1380,16 @@ int CSVBony::setROI(int nLeft, int nTop, int nWidth, int nHeight)
 #endif
 #if defined(SV_MAC_FIX)
     ret = SVBStartVideoCapture(m_nCameraID);
-    if(ret!=SVB_SUCCESS)
+    if(ret!=SVB_SUCCESS) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CSVBony::setROI] Restarting capture failled\n", timestamp);
+        fflush(Logfile);
+#endif
         return ERR_CMDFAILED;
+    }
     m_bCapturerunning = true;
 #endif
     return nErr;
