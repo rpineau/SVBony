@@ -372,7 +372,7 @@ int X2Camera::doSVBonyCAmFeatureConfig()
         /* broken in SDK 1,3,8 and up...don't change it or it breaks SVBGetVideoData */
         if(dx->isEnabled("SpeedMode")) {
             nCtrlVal = dx->currentIndex("SpeedMode");
-#if defined(SB_MAC_BUILD)
+#if defined(SV_MAC_FIX)
             if ((long)nCtrlVal != nSpeedMode) {
                 nErr = m_Camera.setSpeedMode((long)nCtrlVal);
                 if(!nErr)

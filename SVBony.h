@@ -35,6 +35,7 @@
 #define BUFFER_LEN 128
 #define PLUGIN_OK   0
 #define MAX_NB_BIN  16
+#define SV_MAC_FIX
 typedef struct _camera_info {
     int     cameraId;
     SVB_SN  Sn;

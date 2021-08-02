@@ -1328,7 +1328,7 @@ int CSVBony::setROI(int nLeft, int nTop, int nWidth, int nHeight)
     fprintf(Logfile, "[%s] [CSVBony::setROI] Set to    x, y, w, h : %d, %d, %d, %d\n", timestamp, nNewLeft, nNewTop, nNewWidth, nNewHeight);
     fflush(Logfile);
 #endif
-#if defined(SB_MAC_BUILD)
+#if defined(SV_MAC_FIX)
     restartCamera();
     
     // set default values
@@ -1363,7 +1363,7 @@ int CSVBony::setROI(int nLeft, int nTop, int nWidth, int nHeight)
         fprintf(Logfile, "[%s] [CSVBony::setROI] new ROI set\n", timestamp);
         fflush(Logfile);
 #endif
-#if defined(SB_MAC_BUILD)
+#if defined(SV_MAC_FIX)
     ret = SVBStartVideoCapture(m_nCameraID);
     if(ret!=SVB_SUCCESS)
         return ERR_CMDFAILED;
