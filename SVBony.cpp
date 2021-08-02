@@ -1346,6 +1346,12 @@ int CSVBony::setROI(int nLeft, int nTop, int nWidth, int nHeight)
     setBlackLevel(m_nBlackLevel);
 
     ret = SVBSetOutputImageType(m_nCameraID, m_nVideoMode);
+#else
+    SVBStopVideoCapture(m_nCameraID);
+    if(m_pframeBuffer) {
+        free(m_pframeBuffer);
+        m_pframeBuffer = NULL;
+    }
 #endif
 
     ret = SVBSetROIFormat(m_nCameraID, nNewLeft, nNewTop, nNewWidth, nNewHeight, m_nCurrentBin);
@@ -1363,11 +1369,12 @@ int CSVBony::setROI(int nLeft, int nTop, int nWidth, int nHeight)
         fprintf(Logfile, "[%s] [CSVBony::setROI] new ROI set\n", timestamp);
         fflush(Logfile);
 #endif
+#if defined(SB_MAC_BUILD)
     ret = SVBStartVideoCapture(m_nCameraID);
     if(ret!=SVB_SUCCESS)
         return ERR_CMDFAILED;
     m_bCapturerunning = true;
-
+#endif
     return nErr;
 }
 
