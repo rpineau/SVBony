@@ -127,6 +127,8 @@ int	X2Camera::queryAbstraction(const char* pszName, void** ppVal)
         *ppVal = dynamic_cast<AddFITSKeyInterface*>(this);
     else if (!strcmp(pszName, CameraDependentSettingInterface_Name))
         *ppVal = dynamic_cast<CameraDependentSettingInterface*>(this);
+    else if (!strcmp(pszName, NoShutterInterface_Name))
+        *ppVal = dynamic_cast<NoShutterInterface*>(this);
 
 	return SB_OK;
 }
@@ -211,6 +213,7 @@ int X2Camera::doSVBonyCAmFeatureConfig()
     X2GUIInterface*                    ui = uiutil.X2UI();
     X2GUIExchangeInterface*            dx = NULL;
     long nVal, nMin, nMax;
+    long nSpeedMode = 0;
     int nCtrlVal;
     bool bIsAuto;
     bool bPressedOK = false;
@@ -299,12 +302,12 @@ int X2Camera::doSVBonyCAmFeatureConfig()
             dx->setCurrentIndex("Flip", (int)nVal);
         }
 
-        m_Camera.getSpeedMode(nMin, nMax, nVal);
+        m_Camera.getSpeedMode(nMin, nMax, nSpeedMode);
         if(nMax == -1)
             dx->setEnabled("SpeedMode", false);
         else {
-            dx->setEnabled("SpeedMode", false); // disabled for now as not working.
-            dx->setCurrentIndex("SpeedMode", (int)nVal);
+            dx->setEnabled("SpeedMode", true); // disabled for now as not working.
+            dx->setCurrentIndex("SpeedMode", (int)nSpeedMode);
         }
 
         m_Camera.getContrast(nMin, nMax, nVal);
@@ -366,6 +369,18 @@ int X2Camera::doSVBonyCAmFeatureConfig()
 
     //Retreive values from the user interface
     if (bPressedOK) {
+        /* broken in SDK 1,3,8 and up...don't change it or it breaks SVBGetVideoData */
+        if(dx->isEnabled("SpeedMode")) {
+            nCtrlVal = dx->currentIndex("SpeedMode");
+            if ((long)nCtrlVal != nSpeedMode) {
+                nErr = m_Camera.setSpeedMode((long)nCtrlVal);
+                if(!nErr)
+                    m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_SPEED_MODE, nCtrlVal);
+                m_Camera.Disconnect();
+                m_Camera.Connect(m_nCameraID);
+            }
+        }
+
         if(dx->isEnabled("Gain")) {
             dx->propertyInt("Gain", "value", nCtrlVal);
             nErr = m_Camera.setGain((long)nCtrlVal);
@@ -423,14 +438,6 @@ int X2Camera::doSVBonyCAmFeatureConfig()
             if(!nErr)
                 m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_FLIP, nCtrlVal);
         }
-/* broken in SDK 1,3,8 and up...don't change it or it breaks SVBGetVideoData
-        if(dx->isEnabled("SpeedMode")) {
-            nCtrlVal = dx->currentIndex("SpeedMode");
-            nErr = m_Camera.setSpeedMode((long)nCtrlVal);
-            if(!nErr)
-                m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_SPEED_MODE, nCtrlVal);
-        }
-*/
         if(dx->isEnabled("Contrast")) {
             dx->propertyInt("Contrast", "value", nCtrlVal);
             nErr = m_Camera.setContrast((long)nCtrlVal);
@@ -1163,4 +1170,19 @@ int X2Camera::CCStartExposureAdditionalArgInterface (const enumCameraIndex &Cam,
     nErr = m_Camera.startCaputure(dTime);
     return nErr;
 
+}
+
+int X2Camera::CCHasShutter (const enumCameraIndex &Camera, const enumWhichCCD &CCDOrig, bool &bHasShutter)
+{
+    X2MutexLocker ml(GetMutex());
+
+    if (!m_bLinked)
+        return ERR_NOLINK;
+
+    int nErr = SB_OK;
+
+    bHasShutter = false;
+    //nErr = m_Camera.startCaputure(CCDOrig);
+
+    return nErr;
 }

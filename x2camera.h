@@ -5,6 +5,7 @@
 
 #include "../../licensedinterfaces/cameradriverinterface.h"
 #include "../../licensedinterfaces/pixelsizeinterface.h"
+#include "../../licensedinterfaces/noshutterinterface.h"
 #include "../../licensedinterfaces/modalsettingsdialoginterface.h"
 #include "../../licensedinterfaces/sberrorx.h"
 #include "../../licensedinterfaces/theskyxfacadefordriversinterface.h"
@@ -89,7 +90,7 @@ enum EXTRA_FIT_INT_SVB {
 
 Use this example to write an X2Camera driver.
 */
-class X2Camera: public CameraDriverInterface, public SubframeInterface, public ModalSettingsDialogInterface, public X2GUIEventInterface, public PixelSizeInterface, public  AddFITSKeyInterface, public CameraDependentSettingInterface
+class X2Camera: public CameraDriverInterface, public SubframeInterface, public  NoShutterInterface, public ModalSettingsDialogInterface, public X2GUIEventInterface, public PixelSizeInterface, public  AddFITSKeyInterface, public CameraDependentSettingInterface
 {
 public: 
 	/*!Standard X2 constructor*/
@@ -219,6 +220,10 @@ public://Methods
     virtual int     CCGetExtendedValueName (const enumCameraIndex &Camera, const enumWhichCCD &CCDOrig, const int nIndex, BasicStringInterface &sName);
     virtual int     CCStartExposureAdditionalArgInterface (const enumCameraIndex &Cam, const enumWhichCCD CCD, const double &dTime, enumPictureType Type, const int &nABGState, const bool &bLeaveShutterAlone, const int &nIndex);
 
+    // NoShutterInterface
+    virtual int     CCHasShutter (const enumCameraIndex &Camera, const enumWhichCCD &CCDOrig, bool &bHasShutter);
+
+    
 	//Implemenation below here
 private:
 

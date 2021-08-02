@@ -561,12 +561,10 @@ int CSVBony::startCaputure(double dTime)
 {
     int nErr = PLUGIN_OK;
     SVB_ERROR_CODE ret;
-    long nValue;
     int nTimeout;
     m_bAbort = false;
 
     nTimeout = 0;
-    nValue = SVB_EXP_WORKING;
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
@@ -652,6 +650,7 @@ SVB_ERROR_CODE CSVBony::restartCamera()
         m_bConnected = false;
 
     ret = SVBSetAutoSaveParam(m_nCameraID, SVB_FALSE);
+    ret = SVBSetCameraMode(m_nCameraID, SVB_MODE_TRIG_SOFT);
     // turn off automatic exposure
     ret = SVBSetControlValue(m_nCameraID, SVB_EXPOSURE , 1000000, SVB_FALSE);
 
@@ -1012,8 +1011,18 @@ int CSVBony::setFlip(long nFlip)
 
 void CSVBony::getSpeedMode(long &nMin, long &nMax, long &nValue)
 {
-    SVB_BOOL bIsAuto;
+    SVB_BOOL bIsAuto = SVB_FALSE;
     getControlValues(SVB_FRAME_SPEED_MODE, nMin, nMax, nValue, bIsAuto);
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [CSVBony::getSpeedMode] speed mode set to %ld\n", timestamp, nValue);
+    fprintf(Logfile, "[%s] [CSVBony::getSpeedMode] speed mode nMin %ld\n", timestamp, nMin);
+    fprintf(Logfile, "[%s] [CSVBony::getSpeedMode] speed mode nMax %ld\n", timestamp, nMax);
+    fflush(Logfile);
+#endif
+
 }
 
 int CSVBony::setSpeedMode(long nSpeed)
@@ -1322,6 +1331,7 @@ int CSVBony::setROI(int nLeft, int nTop, int nWidth, int nHeight)
     fprintf(Logfile, "[%s] [CSVBony::setROI] Set to    x, y, w, h : %d, %d, %d, %d\n", timestamp, nNewLeft, nNewTop, nNewWidth, nNewHeight);
     fflush(Logfile);
 #endif
+
     restartCamera();
     
     // set default values
@@ -1337,10 +1347,8 @@ int CSVBony::setROI(int nLeft, int nTop, int nWidth, int nHeight)
     setSharpness(m_nSharpness);
     setSaturation(m_nSaturation);
     setBlackLevel(m_nBlackLevel);
-    
-    ret = SVBSetOutputImageType(m_nCameraID, m_nVideoMode);
-    ret = SVBSetCameraMode(m_nCameraID, SVB_MODE_TRIG_SOFT);
-    
+
+     ret = SVBSetOutputImageType(m_nCameraID, m_nVideoMode);
     ret = SVBSetROIFormat(m_nCameraID, nNewLeft, nNewTop, nNewWidth, nNewHeight, m_nCurrentBin);
     if(ret!=SVB_SUCCESS)
         return ERR_CMDFAILED;
