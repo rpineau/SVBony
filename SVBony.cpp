@@ -1188,19 +1188,6 @@ SVB_ERROR_CODE CSVBony::setControlValue(SVB_CONTROL_TYPE nControlType, long nVal
 #endif
 
     }
-/*
-#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s] [CSVBony::setControlValue] re-reading the value we just set\n", timestamp);
-    fflush(Logfile);
-    long a,b,c;
-    SVB_BOOL d;
-    getControlValues(nControlType, a, b, c, d);
-#endif
-*/
-
     return ret;
 }
 
@@ -1328,33 +1315,6 @@ int CSVBony::setROI(int nLeft, int nTop, int nWidth, int nHeight)
     fprintf(Logfile, "[%s] [CSVBony::setROI] Set to    x, y, w, h : %d, %d, %d, %d\n", timestamp, nNewLeft, nNewTop, nNewWidth, nNewHeight);
     fflush(Logfile);
 #endif
-#if defined(SV_MAC_FIX)
-
-#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s] [CSVBony::setROI] Fix for macOS\n", timestamp);
-    fflush(Logfile);
-#endif
-    restartCamera();
-    
-    // set default values
-    setGain(m_nGain);
-    setGamma(m_nGamma);
-    setGammaContrast(m_nGammaContrast);
-    setWB_R(m_nWbR);
-    setWB_G(m_nWbG);
-    setWB_B(m_nWbB);
-    setFlip(m_nFlip);
-    setSpeedMode(m_nSpeedMode);
-    setContrast(m_nContrast);
-    setSharpness(m_nSharpness);
-    setSaturation(m_nSaturation);
-    setBlackLevel(m_nBlackLevel);
-
-    ret = SVBSetOutputImageType(m_nCameraID, m_nVideoMode);
-#endif
 
     ret = SVBSetROIFormat(m_nCameraID, nNewLeft, nNewTop, nNewWidth, nNewHeight, m_nCurrentBin);
     if(ret!=SVB_SUCCESS) {
@@ -1377,20 +1337,6 @@ int CSVBony::setROI(int nLeft, int nTop, int nWidth, int nHeight)
         timestamp[strlen(timestamp) - 1] = 0;
         fprintf(Logfile, "[%s] [CSVBony::setROI] new ROI set\n", timestamp);
         fflush(Logfile);
-#endif
-#if defined(SV_MAC_FIX)
-    ret = SVBStartVideoCapture(m_nCameraID);
-    if(ret!=SVB_SUCCESS) {
-#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        ltime = time(NULL);
-        timestamp = asctime(localtime(&ltime));
-        timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s] [CSVBony::setROI] Restarting capture failled\n", timestamp);
-        fflush(Logfile);
-#endif
-        return ERR_CMDFAILED;
-    }
-    m_bCapturerunning = true;
 #endif
     return nErr;
 }

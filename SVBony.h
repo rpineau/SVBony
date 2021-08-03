@@ -36,10 +36,6 @@
 #define PLUGIN_OK   0
 #define MAX_NB_BIN  16
 
-#if defined(SB_MAC_BUILD)
-#define SV_MAC_FIX
-#endif
-
 typedef struct _camera_info {
     int     cameraId;
     SVB_SN  Sn;
