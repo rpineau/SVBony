@@ -1148,7 +1148,6 @@ int X2Camera::CCStartExposureAdditionalArgInterface (const enumCameraIndex &Cam,
     bool bLight = true;
     int nErr = SB_OK;
 
-#pragma mark - Set gain is still broken in SDK 1.3.8 and up
     nErr = m_Camera.setGain(std::stol(m_Camera.getGainFromListAtIndex(nIndex)));
     if(nErr) {
         return nErr; // can't set gain !
