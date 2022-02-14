@@ -94,6 +94,10 @@ X2Camera::X2Camera( const char* pszSelection,
 
 X2Camera::~X2Camera()
 {
+    if(m_bLinked) {
+        m_Camera.Disconnect(true);
+        setLinked(false);
+    }
 	//Delete objects used through composition
 	if (m_pTheSkyXForMounts)
 		delete m_pTheSkyXForMounts;
@@ -581,8 +585,9 @@ void X2Camera::deviceInfoDetailedDescription(BasicStringInterface& str) const
 void X2Camera::deviceInfoFirmwareVersion(BasicStringInterface& str)										
 {
 	X2MutexLocker ml(GetMutex());
-
-	str = "Not available";
+    std::string sVersion;
+    m_Camera.getFirmwareVersion(sVersion);
+    str = sVersion.c_str();
 }
 
 void X2Camera::deviceInfoModel(BasicStringInterface& str)													
@@ -640,7 +645,6 @@ int X2Camera::CCQueryTemperature(double& dCurTemp, double& dCurPower, char* lpsz
     dCurTemp = m_dCurTemp;
 	dCurPower = m_dCurPower;
     dCurSetPoint = m_dCurSetPoint;
-    bCurEnabled = false;
 
     return nErr;
 }
@@ -831,7 +835,7 @@ int X2Camera::CCDisconnect(const bool bShutDownTemp)
 
 	if (m_bLinked)
 	{
-        m_Camera.Disconnect();
+        m_Camera.Disconnect(bShutDownTemp);
 		setLinked(false);
 	}
 

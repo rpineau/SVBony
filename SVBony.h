@@ -31,7 +31,7 @@
 
 // #define PLUGIN_DEBUG    3
 
-#define PLUGIN_VERSION      1.04
+#define PLUGIN_VERSION      1.1
 #define BUFFER_LEN 128
 #define PLUGIN_OK   0
 #define MAX_NB_BIN  16
@@ -51,7 +51,7 @@ public:
     void        setSleeper(SleeperInterface *pSleeper) { m_pSleeper = pSleeper; };
 
     int         Connect(int nCameraId);
-    void        Disconnect(void);
+    void        Disconnect(bool bTrunCoolerOff);
     void        setCameraId(int nCameraId);
     void        getCameraId(int &nCcameraId);
     void        getCameraIdFromSerial(int &nCameraId, std::string sSerial);
@@ -63,6 +63,8 @@ public:
     void        getCameraSerial(std::string &sSerial);
 
     int         listCamera(std::vector<camera_info_t>  &cameraIdList);
+
+    void        getFirmwareVersion(std::string &sVersion);
 
     int         getNumBins();
     int         getBinFromIndex(int nIndex);
@@ -134,6 +136,8 @@ protected:
     
     SVB_CAMERA_INFO         m_CameraInfo;
     SVB_CAMERA_PROPERTY     m_cameraProperty;
+    SVB_CAMERA_PROPERTY_EX  m_CameraPorpertyEx;
+
     SVB_IMG_TYPE            m_nVideoMode;
     int                     m_nControlNums;
     std::vector<SVB_CONTROL_CAPS> m_ControlList;
@@ -196,6 +200,11 @@ protected:
     int                     m_nReqROITop;
     int                     m_nReqROIWidth;
     int                     m_nReqROIHeight;
+
+    // temperature
+    bool                    m_bTempertureSupported;
+    bool                    m_bPulseGuidingSupported;
+
 
 #ifdef PLUGIN_DEBUG
     std::string m_sLogfilePath;

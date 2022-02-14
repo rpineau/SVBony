@@ -52,6 +52,7 @@ CSVBony::CSVBony()
     m_nAutoExposureTarget = -1;
     m_nBlackLevel = -1;
 
+    m_bTempertureSupported = false;
     
     memset(m_szCameraName,0,BUFFER_LEN);
 #ifdef PLUGIN_DEBUG
@@ -98,6 +99,8 @@ int CSVBony::Connect(int nCameraID)
     SVB_ERROR_CODE ret;
     SVB_CONTROL_CAPS    Caps;
 
+    m_bConnected = false;
+
     if(nCameraID)
         m_nCameraID = nCameraID;
     else {
@@ -128,9 +131,6 @@ int CSVBony::Connect(int nCameraID)
         return ERR_NORESPONSE;
         }
 
-    // turn off automatic exposure
-    ret = SVBSetControlValue(m_nCameraID, SVB_EXPOSURE , 1000000, SVB_FALSE);
-
     ret = SVBSetAutoSaveParam(m_nCameraID, SVB_FALSE);
     if (ret != SVB_SUCCESS) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -141,6 +141,9 @@ int CSVBony::Connect(int nCameraID)
         fflush(Logfile);
 #endif
     }
+
+    // turn off automatic exposure
+    ret = SVBSetControlValue(m_nCameraID, SVB_EXPOSURE , 1000000, SVB_FALSE);
 
     m_bConnected = true;
     getCameraNameFromID(m_nCameraID, m_sCameraName);
@@ -314,6 +317,20 @@ int CSVBony::Connect(int nCameraID)
         m_ControlList.push_back(Caps);
     }
 
+    // get Extended properties for newer camera
+    ret = SVBGetCameraPropertyEx(m_nCameraID, &m_CameraPorpertyEx);
+    m_bTempertureSupported = m_CameraPorpertyEx.bSupportControlTemp;
+    m_bPulseGuidingSupported = m_CameraPorpertyEx.bSupportPulseGuide;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [CSVBony::Connect] ********************************************************\n", timestamp);
+    fprintf(Logfile, "[%s] [CSVBony::Connect] m_bTempertureSupported             : %s\n", timestamp, m_bTempertureSupported?"Yes":"No");
+    fprintf(Logfile, "[%s] [CSVBony::Connect] m_bPulseGuidingSupported             : %s\n", timestamp, m_bPulseGuidingSupported?"Yes":"No");
+    fflush(Logfile);
+#endif
+
     // set default values
     setGain(m_nGain);
     setGamma(m_nGamma);
@@ -351,7 +368,7 @@ int CSVBony::Connect(int nCameraID)
     return nErr;
 }
 
-void CSVBony::Disconnect()
+void CSVBony::Disconnect(bool bTrunCoolerOff)
 {
 
     
@@ -359,6 +376,16 @@ void CSVBony::Disconnect()
         free(m_pframeBuffer);
         m_pframeBuffer = NULL;
     }
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s] [Disconnect] Disconnceting from CameraId = %d\n", timestamp, m_nCameraID);
+    fflush(Logfile);
+#endif
+    if(bTrunCoolerOff)
+        setCoolerTemperature(false, 15);
+
     SVBStopVideoCapture(m_nCameraID);
     SVBCloseCamera(m_nCameraID);
     m_bConnected = false;
@@ -541,6 +568,12 @@ int CSVBony::listCamera(std::vector<camera_info_t>  &cameraIdList)
     return nErr;
 }
 
+void CSVBony::getFirmwareVersion(std::string &sVersion)
+{
+    std::string sTmp;
+    sTmp.assign(SVBGetSDKVersion());
+    sVersion = "SDK version " + sTmp;
+}
 
 int CSVBony::getNumBins()
 {
@@ -662,20 +695,65 @@ SVB_ERROR_CODE CSVBony::restartCamera()
 int CSVBony::getTemperture(double &dTemp, double &dPower, double &dSetPoint, bool &bEnabled)
 {
     int nErr = PLUGIN_OK;
-    // no temperature data for now.
-    // this will change for the nex SVB camera as the SV405C seems to have temperature control
-    dTemp = -100;
-    dPower = 0;
-    dSetPoint = dTemp;
-    bEnabled = false;
+    long nMin, nMax, nValue;
+    SVB_BOOL bTmp;
+
+    if(m_bTempertureSupported) {
+        getControlValues(SVB_CURRENT_TEMPERATURE, nMin, nMax, nValue, bTmp);
+        dTemp = double(nValue)/10.0;
+        getControlValues(SVB_TARGET_TEMPERATURE, nMin, nMax, nValue, bTmp);
+        dSetPoint = double(nValue)/10.0;
+        getControlValues(SVB_COOLER_POWER, nMin, nMax, nValue, bTmp);
+        dPower = double(nValue);
+        getControlValues(SVB_COOLER_ENABLE, nMin, nMax, nValue, bTmp);
+        bEnabled = (nValue==1?true:false);
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CSVBony::getTemperture] dTemp = %3.2f\n", timestamp, dTemp);
+        fprintf(Logfile, "[%s] [CSVBony::getTemperture] dSetPoint = %3.2f\n", timestamp, dSetPoint);
+        fprintf(Logfile, "[%s] [CSVBony::getTemperture] dPower = %3.2f\n", timestamp, dPower);
+        fprintf(Logfile, "[%s] [CSVBony::getTemperture] bEnabled = %s\n", timestamp, bEnabled?"Yes":"No");
+        fflush(Logfile);
+#endif
+
+
+    }
+    else {
+        dTemp = -100;
+        dPower = 0;
+        dSetPoint = dTemp;
+        bEnabled = false;
+    }
     return nErr;
 }
 
 int CSVBony::setCoolerTemperature(bool bOn, double dTemp)
 {
     int nErr = PLUGIN_OK;
-    // no option to set the cooler temperature for now
-    // this will change for the nex SVB camera as the SV405C seems to have temperature control
+    SVB_ERROR_CODE  ret;
+    long nTemp;
+
+    if(m_bTempertureSupported) {
+        nTemp = int(dTemp*10);
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        ltime = time(NULL);
+        timestamp = asctime(localtime(&ltime));
+        timestamp[strlen(timestamp) - 1] = 0;
+        fprintf(Logfile, "[%s] [CSVBony::setCoolerTemperature] Setting temperature to %3.2f\n", timestamp, dTemp);
+        fprintf(Logfile, "[%s] [CSVBony::setCoolerTemperature] Converted temperature : %ld\n", timestamp, nTemp);
+        fprintf(Logfile, "[%s] [CSVBony::setCoolerTemperature] Turning cooler %s\n", timestamp, bOn?"On":"Off");
+        fflush(Logfile);
+#endif
+
+        ret = setControlValue(SVB_TARGET_TEMPERATURE, nTemp);
+        if(ret != SVB_SUCCESS)
+            nErr = ERR_CMDFAILED;
+        ret = setControlValue(SVB_COOLER_ENABLE, bOn?1:0);
+        if(ret != SVB_SUCCESS)
+            nErr = ERR_CMDFAILED;
+    }
     return nErr;
 }
 
