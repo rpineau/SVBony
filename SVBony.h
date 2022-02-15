@@ -17,6 +17,7 @@
 #include <sstream>
 #include <iostream>
 #include <map>
+#include <thread>
 
 #ifndef SB_WIN_BUILD
 #include <unistd.h>
@@ -29,12 +30,16 @@
 #include "SVBCameraSDK.h"
 #include "StopWatch.h"
 
-// #define PLUGIN_DEBUG    3
+#define PLUGIN_DEBUG    2
 
 #define PLUGIN_VERSION      1.1
 #define BUFFER_LEN 128
 #define PLUGIN_OK   0
 #define MAX_NB_BIN  16
+
+#define COOLER_SUPPORT
+
+#define MAX_DATA_TIMEOUT    50
 
 typedef struct _camera_info {
     int     cameraId;
@@ -136,7 +141,9 @@ protected:
     
     SVB_CAMERA_INFO         m_CameraInfo;
     SVB_CAMERA_PROPERTY     m_cameraProperty;
+#ifdef COOLER_SUPPORT
     SVB_CAMERA_PROPERTY_EX  m_CameraPorpertyEx;
+#endif
 
     SVB_IMG_TYPE            m_nVideoMode;
     int                     m_nControlNums;
@@ -202,9 +209,15 @@ protected:
     int                     m_nReqROIHeight;
 
     // temperature
+    CStopWatch              m_TemperatureTimer;
     bool                    m_bTempertureSupported;
     bool                    m_bPulseGuidingSupported;
+    double                  m_dTemperature;
+    double                  m_dSetPoint;
+    double                  m_dPower;
+    bool                    m_dCoolerEnabled;
 
+    
 
 #ifdef PLUGIN_DEBUG
     std::string m_sLogfilePath;
