@@ -215,6 +215,20 @@ int CSVBony::Connect(int nCameraID)
     fprintf(Logfile, "[%s] [CSVBony::Connect] m_nNbBin        : %d\n", timestamp, m_nNbBin);
     fflush(Logfile);
 #endif
+    switch(m_nMaxBitDepth) {
+        case 8 :
+            m_nVideoMode = SVB_IMG_RAW8;
+            break;
+        case 12 :
+            m_nVideoMode = SVB_IMG_RAW12;
+            break;
+        case 14 :
+            m_nVideoMode = SVB_IMG_RAW14;
+            break;
+        case 16 :
+            m_nVideoMode = SVB_IMG_RAW16;
+            break;
+    }
 
     float pixelSize;
     ret = SVBGetSensorPixelSize(m_nCameraID, &pixelSize);
