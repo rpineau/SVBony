@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SDK_VERSION=1.6.4
+SDK_VERSION=1.6.5
 
 cp ~/src/Astro/SVBony-SDK-${SDK_VERSION}/SVBCameraSDK_macOS/lib/x64/libSVBCameraSDK.a static_libs/macOS
 cp ~/src/Astro/SVBony-SDK-${SDK_VERSION}/SVBCameraSDK_Linux/lib/x64/libSVBCameraSDK.a static_libs/x86_64
