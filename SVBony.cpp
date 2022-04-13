@@ -639,7 +639,7 @@ int CSVBony::startCaputure(double dTime)
     fflush(Logfile);
 #endif
     // set exposure time (s -> us)
-    ret = SVBSetControlValue(m_nCameraID, SVB_EXPOSURE , (double)(dTime * 1000000), SVB_FALSE);
+    ret = SVBSetControlValue(m_nCameraID, SVB_EXPOSURE , long(dTime * 1000000), SVB_FALSE);
     if(ret!=SVB_SUCCESS)
         return ERR_CMDFAILED;
 
