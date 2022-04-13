@@ -17,6 +17,7 @@
 #include <sstream>
 #include <iostream>
 #include <map>
+#include <thread>
 
 #ifndef SB_WIN_BUILD
 #include <unistd.h>
@@ -29,12 +30,16 @@
 #include "SVBCameraSDK.h"
 #include "StopWatch.h"
 
-// #define PLUGIN_DEBUG    3
+// #define PLUGIN_DEBUG    2
 
-#define PLUGIN_VERSION      1.04
+#define PLUGIN_VERSION      1.1
 #define BUFFER_LEN 128
 #define PLUGIN_OK   0
 #define MAX_NB_BIN  16
+
+#define COOLER_SUPPORT
+
+#define MAX_DATA_TIMEOUT    50
 
 typedef struct _camera_info {
     int     cameraId;
@@ -51,7 +56,7 @@ public:
     void        setSleeper(SleeperInterface *pSleeper) { m_pSleeper = pSleeper; };
 
     int         Connect(int nCameraId);
-    void        Disconnect(void);
+    void        Disconnect(bool bTrunCoolerOff);
     void        setCameraId(int nCameraId);
     void        getCameraId(int &nCcameraId);
     void        getCameraIdFromSerial(int &nCameraId, std::string sSerial);
@@ -63,6 +68,8 @@ public:
     void        getCameraSerial(std::string &sSerial);
 
     int         listCamera(std::vector<camera_info_t>  &cameraIdList);
+
+    void        getFirmwareVersion(std::string &sVersion);
 
     int         getNumBins();
     int         getBinFromIndex(int nIndex);
@@ -134,6 +141,10 @@ protected:
     
     SVB_CAMERA_INFO         m_CameraInfo;
     SVB_CAMERA_PROPERTY     m_cameraProperty;
+#ifdef COOLER_SUPPORT
+    SVB_CAMERA_PROPERTY_EX  m_CameraPorpertyEx;
+#endif
+
     SVB_IMG_TYPE            m_nVideoMode;
     int                     m_nControlNums;
     std::vector<SVB_CONTROL_CAPS> m_ControlList;
@@ -196,6 +207,17 @@ protected:
     int                     m_nReqROITop;
     int                     m_nReqROIWidth;
     int                     m_nReqROIHeight;
+
+    // temperature
+    CStopWatch              m_TemperatureTimer;
+    bool                    m_bTempertureSupported;
+    bool                    m_bPulseGuidingSupported;
+    double                  m_dTemperature;
+    double                  m_dSetPoint;
+    double                  m_dPower;
+    bool                    m_dCoolerEnabled;
+
+    
 
 #ifdef PLUGIN_DEBUG
     std::string m_sLogfilePath;
