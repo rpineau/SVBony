@@ -32,9 +32,6 @@ class MutexInterface;
 class TickCountInterface;
 class AddFITSKeyInterface;
 
-//As far as a naming convention goes, X2 implementors could do a search and
-//replace in all files and change "X2Camera" to "CoolCompanyCamera"
-//where CoolCompany is your company name.  This is not a requirement.
 
 //For properties that need to be persistent
 #define KEY_X2CAM_ROOT              "SVBony"
@@ -82,14 +79,6 @@ enum EXTRA_FIT_INT_SVB {
 };
 
 
-/*!
- \b
- rief The X2Camera example.
-
-\ingroup Example
-
-Use this example to write an X2Camera driver.
-*/
 class X2Camera: public CameraDriverInterface, public SubframeInterface, public  NoShutterInterface, public ModalSettingsDialogInterface, public X2GUIEventInterface, public PixelSizeInterface, public  AddFITSKeyInterface, public CameraDependentSettingInterface
 {
 public: 

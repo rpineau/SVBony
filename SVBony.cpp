@@ -90,11 +90,8 @@ CSVBony::CSVBony()
 
 CSVBony::~CSVBony()
 {
-
     if(m_pframeBuffer)
         free(m_pframeBuffer);
-
-
 }
 
 #pragma mark - Camera access
@@ -394,12 +391,6 @@ int CSVBony::Connect(int nCameraID)
 
 void CSVBony::Disconnect(bool bTrunCoolerOff)
 {
-
-    
-    if(m_pframeBuffer) {
-        free(m_pframeBuffer);
-        m_pframeBuffer = NULL;
-    }
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
@@ -411,9 +402,15 @@ void CSVBony::Disconnect(bool bTrunCoolerOff)
         setCoolerTemperature(false, 15);
 
     SVBStopVideoCapture(m_nCameraID);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
     SVBCloseCamera(m_nCameraID);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
     m_bConnected = false;
 
+    if(m_pframeBuffer) {
+        free(m_pframeBuffer);
+        m_pframeBuffer = NULL;
+    }
 }
 
 void CSVBony::setCameraId(int nCameraId)
@@ -695,12 +692,12 @@ SVB_ERROR_CODE CSVBony::restartCamera()
     SVB_ERROR_CODE ret;
 
     SVBStopVideoCapture(m_nCameraID);
+    SVBCloseCamera(m_nCameraID);
+    m_bCapturerunning = false;
     if(m_pframeBuffer) {
         free(m_pframeBuffer);
         m_pframeBuffer = NULL;
     }
-    SVBCloseCamera(m_nCameraID);
-    m_bCapturerunning = false;
 
     ret = SVBOpenCamera(m_nCameraID);
     if (ret != SVB_SUCCESS)
