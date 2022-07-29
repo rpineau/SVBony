@@ -20,7 +20,6 @@ CSVBony::CSVBony()
     m_nNbBitToShift = 4;
     m_dCaptureLenght = 0;
     m_bCapturerunning = false;
-    m_pSleeper = nullptr;
     m_nNbBin = 1;
     m_SupportedBins[0] = 1;
 
@@ -77,12 +76,16 @@ CSVBony::CSVBony()
     Logfile = fopen(m_sLogfilePath.c_str(), "w");
 #endif
 
+    std::string sSDKVersion;
+    getFirmwareVersion(sSDKVersion);
+
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
     timestamp[strlen(timestamp) - 1] = 0;
     fprintf(Logfile, "[%s] [CSVBony] Version %3.2f build 2021_01_31_1800.\n", timestamp, PLUGIN_VERSION);
     fprintf(Logfile, "[%s] [CSVBony] Constructor Called.\n", timestamp);
+    fprintf(Logfile, "[%s] [CSVBony] %s.\n", timestamp, sSDKVersion.c_str());
     fflush(Logfile);
 #endif
     
@@ -95,6 +98,10 @@ CSVBony::~CSVBony()
 }
 
 #pragma mark - Camera access
+void CSVBony::setUserConf(bool bUserConf)
+{
+    m_bSetUserConf = bUserConf;
+}
 
 int CSVBony::Connect(int nCameraID)
 {
@@ -102,6 +109,7 @@ int CSVBony::Connect(int nCameraID)
     int i;
     SVB_ERROR_CODE ret;
     SVB_CONTROL_CAPS    Caps;
+    long nMin, nMax;
 
     m_bConnected = false;
 
@@ -181,7 +189,29 @@ int CSVBony::Connect(int nCameraID)
     m_bIsColorCam = m_cameraProperty.IsColorCam;
     m_nBayerPattern = m_cameraProperty.BayerPattern;
     m_nMaxBitDepth = m_cameraProperty.MaxBitDepth;
-    m_nNbBitToShift = 16 - m_cameraProperty.MaxBitDepth;
+
+    if(m_cameraProperty.MaxBitDepth >8) {
+        m_nVideoMode = SVB_IMG_RAW12;
+        m_nNbBitToShift = 4;
+        for(i=0; i<8;i++) {
+            if(m_cameraProperty.SupportedVideoFormat[i] == 0)
+                break;
+            if(m_cameraProperty.SupportedVideoFormat[i] == SVB_IMG_RAW14 && m_nVideoMode < SVB_IMG_RAW14 ) {
+                m_nVideoMode = SVB_IMG_RAW14;
+                m_nNbBitToShift = 2;
+            }
+            if(m_cameraProperty.SupportedVideoFormat[i] == SVB_IMG_RAW16 && m_nVideoMode < SVB_IMG_RAW16 ) {
+                m_nVideoMode = SVB_IMG_RAW16;
+                m_nNbBitToShift = 0;
+                break;
+            }
+        }
+    }
+    else {
+        m_nVideoMode = SVB_IMG_RAW8;
+        m_nNbBitToShift = 8;
+    }
+
     m_nNbBin = 0;
     m_nCurrentBin = 0;
     
@@ -352,19 +382,36 @@ int CSVBony::Connect(int nCameraID)
     fflush(Logfile);
 #endif
 
-    // set default values
-    setGain(m_nGain);
-    setGamma(m_nGamma);
-    setGammaContrast(m_nGammaContrast);
-    setWB_R(m_nWbR, m_bR_Auto);
-    setWB_G(m_nWbG, m_bG_Auto);
-    setWB_B(m_nWbB, m_bB_Auto);
-    setFlip(m_nFlip);
-    setSpeedMode(m_nSpeedMode);
-    setContrast(m_nContrast);
-    setSharpness(m_nSharpness);
-    setSaturation(m_nSaturation);
-    setBlackLevel(m_nBlackLevel);
+    if(m_bSetUserConf) {
+        // set default values
+        setGain(m_nGain);
+        setGamma(m_nGamma);
+        setGammaContrast(m_nGammaContrast);
+        setWB_R(m_nWbR, m_bR_Auto);
+        setWB_G(m_nWbG, m_bG_Auto);
+        setWB_B(m_nWbB, m_bB_Auto);
+        setFlip(m_nFlip);
+        setSpeedMode(m_nSpeedMode);
+        setContrast(m_nContrast);
+        setSharpness(m_nSharpness);
+        setSaturation(m_nSaturation);
+        setBlackLevel(m_nBlackLevel);
+    }
+    else
+    {
+        getGain(nMin, nMax, m_nGain);
+        getGamma(nMin, nMax, m_nGamma);
+        getGammaContrast(nMin, nMax, m_nGammaContrast);
+        getWB_R(nMin, nMax,m_nWbR, m_bR_Auto);
+        getWB_G(nMin, nMax,m_nWbG, m_bG_Auto);
+        getWB_B(nMin, nMax,m_nWbB, m_bB_Auto);
+        getFlip(nMin, nMax, m_nFlip);
+        getSpeedMode(nMin, nMax, m_nSpeedMode);
+        getContrast(nMin, nMax, m_nContrast);
+        getSharpness(nMin, nMax, m_nSharpness);
+        getSaturation(nMin, nMax, m_nSaturation);
+        getBlackLevel(nMin, nMax, m_nBlackLevel);
+    }
 
     rebuildGainList();
 
@@ -676,8 +723,8 @@ int CSVBony::stopCaputure()
     fflush(Logfile);
 #endif
 
-    m_pSleeper->sleep(500);
-
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    std::this_thread::yield();
     return nErr;
 }
 
@@ -836,6 +883,8 @@ void CSVBony::getBayerPattern(std::string &sBayerPattern)
                 break;
         }
     }
+    else
+        sBayerPattern.assign("MONO");
 }
 
 void CSVBony::getFlip(std::string &sFlipMode)
@@ -860,11 +909,16 @@ void CSVBony::getFlip(std::string &sFlipMode)
 }
 
 
-void CSVBony::getGain(long &nMin, long &nMax, long &nValue)
+int CSVBony::getGain(long &nMin, long &nMax, long &nValue)
 {
+    int nErr = PLUGIN_OK;
     SVB_BOOL bTmp;
+    SVB_ERROR_CODE ret;
 
-    getControlValues(SVB_GAIN, nMin, nMax, nValue, bTmp);
+    ret = getControlValues(SVB_GAIN, nMin, nMax, nValue, bTmp);
+    if(ret) {
+        return VAL_NOT_AVAILABLE;
+    }
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
@@ -872,6 +926,7 @@ void CSVBony::getGain(long &nMin, long &nMax, long &nValue)
     fprintf(Logfile, "[%s] [CSVBony::getGain] Gain is %ld\n", timestamp, nValue);
     fflush(Logfile);
 #endif
+    return nErr;
 }
 
 int CSVBony::setGain(long nGain)
@@ -896,10 +951,17 @@ int CSVBony::setGain(long nGain)
     return nErr;
 }
 
-void CSVBony::getGamma(long &nMin, long &nMax, long &nValue)
+int CSVBony::getGamma(long &nMin, long &nMax, long &nValue)
 {
+    int nErr = PLUGIN_OK;
+    SVB_ERROR_CODE ret;
     SVB_BOOL bIsAuto;
-    getControlValues(SVB_GAMMA, nMin, nMax, nValue, bIsAuto);
+
+    ret = getControlValues(SVB_GAMMA, nMin, nMax, nValue, bIsAuto);
+    if(ret) {
+        return VAL_NOT_AVAILABLE;
+    }
+    return nErr;
 }
 
 int CSVBony::setGamma(long nGamma)
@@ -924,10 +986,17 @@ int CSVBony::setGamma(long nGamma)
     return nErr;
 }
 
-void CSVBony::getGammaContrast(long &nMin, long &nMax, long &nValue)
+int CSVBony::getGammaContrast(long &nMin, long &nMax, long &nValue)
 {
+    int nErr = PLUGIN_OK;
+    SVB_ERROR_CODE ret;
     SVB_BOOL bIsAuto;
-    getControlValues(SVB_GAMMA_CONTRAST, nMin, nMax, nValue, bIsAuto);
+
+    ret = getControlValues(SVB_GAMMA_CONTRAST, nMin, nMax, nValue, bIsAuto);
+    if(ret) {
+        return VAL_NOT_AVAILABLE;
+    }
+    return nErr;
 }
 
 int CSVBony::setGammaContrast(long nGammaContrast)
@@ -952,10 +1021,17 @@ int CSVBony::setGammaContrast(long nGammaContrast)
     return nErr;
 }
 
-void CSVBony::getWB_R(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
+int CSVBony::getWB_R(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
 {
+    int nErr = PLUGIN_OK;
+    SVB_ERROR_CODE ret;
     SVB_BOOL bTmp;
-    getControlValues(SVB_WB_R, nMin, nMax, nValue, bTmp);
+
+    ret = getControlValues(SVB_WB_R, nMin, nMax, nValue, bTmp);
+    if(ret) {
+        return VAL_NOT_AVAILABLE;
+    }
+
     bIsAuto = (bool)bTmp;
     
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -966,7 +1042,7 @@ void CSVBony::getWB_R(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
     fprintf(Logfile, "[%s] [CSVBony::getWB_R] bIsAuto is %s\n", timestamp, bIsAuto?"True":"False");
     fflush(Logfile);
 #endif
-    
+    return nErr;
 }
 
 int CSVBony::setWB_R(long nWB_R, bool bIsAuto)
@@ -1000,10 +1076,17 @@ int CSVBony::setWB_R(long nWB_R, bool bIsAuto)
     return nErr;
 }
 
-void CSVBony::getWB_G(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
+int CSVBony::getWB_G(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
 {
+    int nErr = PLUGIN_OK;
+    SVB_ERROR_CODE ret;
     SVB_BOOL bTmp;
-    getControlValues(SVB_WB_G, nMin, nMax, nValue, bTmp);
+
+    ret = getControlValues(SVB_WB_G, nMin, nMax, nValue, bTmp);
+    if(ret) {
+        return VAL_NOT_AVAILABLE;
+    }
+
     bIsAuto = (bool)bTmp;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -1014,6 +1097,7 @@ void CSVBony::getWB_G(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
     fprintf(Logfile, "[%s] [CSVBony::getWB_G] bIsAuto is %s\n", timestamp, bIsAuto?"True":"False");
     fflush(Logfile);
 #endif
+    return nErr;
 }
 
 int CSVBony::setWB_G(long nWB_G, bool bIsAuto)
@@ -1047,10 +1131,17 @@ int CSVBony::setWB_G(long nWB_G, bool bIsAuto)
     return nErr;
 }
 
-void CSVBony::getWB_B(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
+int CSVBony::getWB_B(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
 {
+    int nErr = PLUGIN_OK;
+    SVB_ERROR_CODE ret;
     SVB_BOOL bTmp;
-    getControlValues(SVB_WB_B, nMin, nMax, nValue, bTmp);
+
+    ret = getControlValues(SVB_WB_B, nMin, nMax, nValue, bTmp);
+    if(ret) {
+        return VAL_NOT_AVAILABLE;
+    }
+
     bIsAuto = (bool)bTmp;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -1061,6 +1152,7 @@ void CSVBony::getWB_B(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
     fprintf(Logfile, "[%s] [CSVBony::getWB_B] bIsAuto is %s\n", timestamp, bIsAuto?"True":"False");
     fflush(Logfile);
 #endif
+    return nErr;
 }
 
 int CSVBony::setWB_B(long nWB_B, bool bIsAuto)
@@ -1095,10 +1187,17 @@ int CSVBony::setWB_B(long nWB_B, bool bIsAuto)
     return nErr;
 }
 
-void CSVBony::getFlip(long &nMin, long &nMax, long &nValue)
+int CSVBony::getFlip(long &nMin, long &nMax, long &nValue)
 {
+    int nErr = PLUGIN_OK;
+    SVB_ERROR_CODE ret;
     SVB_BOOL bIsAuto;
-    getControlValues(SVB_FLIP, nMin, nMax, nValue, bIsAuto);
+
+    ret = getControlValues(SVB_FLIP, nMin, nMax, nValue, bIsAuto);
+    if(ret) {
+        return VAL_NOT_AVAILABLE;
+    }
+    return nErr;
 }
 
 int CSVBony::setFlip(long nFlip)
@@ -1123,10 +1222,16 @@ int CSVBony::setFlip(long nFlip)
     return nErr;
 }
 
-void CSVBony::getSpeedMode(long &nMin, long &nMax, long &nValue)
+int CSVBony::getSpeedMode(long &nMin, long &nMax, long &nValue)
 {
+    int nErr = PLUGIN_OK;
+    SVB_ERROR_CODE ret;
     SVB_BOOL bIsAuto = SVB_FALSE;
-    getControlValues(SVB_FRAME_SPEED_MODE, nMin, nMax, nValue, bIsAuto);
+
+    ret = getControlValues(SVB_FRAME_SPEED_MODE, nMin, nMax, nValue, bIsAuto);
+    if(ret) {
+        return VAL_NOT_AVAILABLE;
+    }
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
@@ -1136,7 +1241,7 @@ void CSVBony::getSpeedMode(long &nMin, long &nMax, long &nValue)
     fprintf(Logfile, "[%s] [CSVBony::getSpeedMode] speed mode nMax %ld\n", timestamp, nMax);
     fflush(Logfile);
 #endif
-
+    return nErr;
 }
 
 int CSVBony::setSpeedMode(long nSpeed)
@@ -1161,10 +1266,17 @@ int CSVBony::setSpeedMode(long nSpeed)
     return nErr;
 }
 
-void CSVBony::getContrast(long &nMin, long &nMax, long &nValue)
+int CSVBony::getContrast(long &nMin, long &nMax, long &nValue)
 {
-    SVB_BOOL bIsAuto;
-    getControlValues(SVB_CONTRAST, nMin, nMax, nValue, bIsAuto);
+    int nErr = PLUGIN_OK;
+    SVB_ERROR_CODE ret;
+    SVB_BOOL bIsAuto = SVB_FALSE;
+
+    ret = getControlValues(SVB_CONTRAST, nMin, nMax, nValue, bIsAuto);
+    if(ret) {
+        return VAL_NOT_AVAILABLE;
+    }
+    return nErr;
 }
 
 int CSVBony::setContrast(long nContrast)
@@ -1189,10 +1301,17 @@ int CSVBony::setContrast(long nContrast)
     return nErr;
 }
 
-void CSVBony::getSharpness(long &nMin, long &nMax, long &nValue)
+int CSVBony::getSharpness(long &nMin, long &nMax, long &nValue)
 {
-    SVB_BOOL bIsAuto;
-    getControlValues(SVB_SHARPNESS, nMin, nMax, nValue, bIsAuto);
+    int nErr = PLUGIN_OK;
+    SVB_ERROR_CODE ret;
+    SVB_BOOL bIsAuto = SVB_FALSE;
+
+    ret = getControlValues(SVB_SHARPNESS, nMin, nMax, nValue, bIsAuto);
+    if(ret) {
+        return VAL_NOT_AVAILABLE;
+    }
+    return nErr;
 }
 
 int CSVBony::setSharpness(long nSharpness)
@@ -1217,10 +1336,17 @@ int CSVBony::setSharpness(long nSharpness)
     return nErr;
 }
 
-void CSVBony::getSaturation(long &nMin, long &nMax, long &nValue)
+int CSVBony::getSaturation(long &nMin, long &nMax, long &nValue)
 {
-    SVB_BOOL bIsAuto;
-    getControlValues(SVB_SATURATION, nMin, nMax, nValue, bIsAuto);
+    int nErr = PLUGIN_OK;
+    SVB_ERROR_CODE ret;
+    SVB_BOOL bIsAuto = SVB_FALSE;
+
+    ret = getControlValues(SVB_SATURATION, nMin, nMax, nValue, bIsAuto);
+    if(ret) {
+        return VAL_NOT_AVAILABLE;
+    }
+    return nErr;
 }
 
 int CSVBony::setSaturation(long nSaturation)
@@ -1245,10 +1371,17 @@ int CSVBony::setSaturation(long nSaturation)
     return nErr;
 }
 
-void CSVBony::getBlackLevel(long &nMin, long &nMax, long &nValue)
+int CSVBony::getBlackLevel(long &nMin, long &nMax, long &nValue)
 {
-    SVB_BOOL bIsAuto;
-    getControlValues(SVB_BLACK_LEVEL, nMin, nMax, nValue, bIsAuto);
+    int nErr = PLUGIN_OK;
+    SVB_ERROR_CODE ret;
+    SVB_BOOL bIsAuto = SVB_FALSE;
+
+    ret = getControlValues(SVB_BLACK_LEVEL, nMin, nMax, nValue, bIsAuto);
+    if(ret) {
+        return VAL_NOT_AVAILABLE;
+    }
+    return nErr;
 }
 
 int CSVBony::setBlackLevel(long nBlackLevel)
@@ -1311,9 +1444,9 @@ SVB_ERROR_CODE CSVBony::getControlValues(SVB_CONTROL_TYPE nControlType, long &nM
     SVB_ERROR_CODE ret;
     int i;
     
-    nValue = -1;
-    nMin = -1;
-    nMax = -1;
+    nValue = VAL_NOT_AVAILABLE;
+    nMin = VAL_NOT_AVAILABLE;
+    nMax = VAL_NOT_AVAILABLE;
     
     ret = SVBGetControlValue(m_nCameraID, nControlType, &nValue, &bIsAuto);
     if(ret != SVB_SUCCESS)
@@ -1361,19 +1494,19 @@ int CSVBony::setROI(int nLeft, int nTop, int nWidth, int nHeight)
     m_nReqROIHeight = nHeight;
 
     // X
-    if( m_nReqROILeft % 8 != 0)
-        nNewLeft = (m_nReqROILeft/8) * 8;  // round to lower 8 pixel. boundary
+    if( m_nReqROILeft % 4 != 0)
+        nNewLeft = (m_nReqROILeft/4) * 4;  // round to lower 4 pixel. boundary
     else
         nNewLeft = m_nReqROILeft;
 
     // W
-    if( (m_nReqROIWidth % 8 != 0) || (nLeft!=nNewLeft)) {// Adjust width to upper 8 boundary or if the left border changed we need to adjust the width
-        nNewWidth = (( (m_nReqROIWidth + (nNewLeft%8)) /8) + 1) * 8;
-        if ((nNewLeft + nNewWidth) > m_nMaxWidth) {
-            nNewLeft -=8;
+    if( (m_nReqROIWidth % 4 != 0) || (nLeft!=nNewLeft)) {// Adjust width to upper 4 boundary or if the left border changed we need to adjust the width
+        nNewWidth = (( (m_nReqROIWidth + (nNewLeft%4)) /4) + 1) * 4;
+        if ((nNewLeft + nNewWidth) > int(m_nMaxWidth/m_nCurrentBin)) {
+            nNewLeft -=4;
             if(nNewLeft<0) {
                 nNewLeft = 0;
-                nNewWidth = m_nMaxWidth;
+                nNewWidth = nNewWidth - 4;
             }
         }
     }
@@ -1389,11 +1522,11 @@ int CSVBony::setROI(int nLeft, int nTop, int nWidth, int nHeight)
     // H
     if( (m_nReqROIHeight % 2 != 0) || (nTop!=nNewTop)) {// Adjust height to lower 2 boundary or if the top changed we need to adjust the height
         nNewHeight = (((m_nReqROIHeight + (nNewTop%2))/2) + 1) * 2;
-        if((nNewTop + nNewHeight) > m_nMaxHeight) {
+        if((nNewTop + nNewHeight) > int(m_nMaxHeight/m_nCurrentBin)) {
             nNewTop -=2;
             if(nNewTop <0) {
                 nNewTop = 0;
-                nNewHeight = m_nMaxHeight;
+                nNewHeight = nNewHeight - 2;
             }
         }
     }
@@ -1558,9 +1691,11 @@ int CSVBony::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
     }
 
     // shift data
-    buf = (uint16_t *)imgBuffer;
-    for(int i=0; i<sizeReadFromCam/2; i++)
-        buf[i] = buf[i]<<m_nNbBitToShift;
+    if(m_nNbBitToShift) {
+        buf = (uint16_t *)imgBuffer;
+        for(int i=0; i<sizeReadFromCam/2; i++)
+            buf[i] = buf[i]<<m_nNbBitToShift;
+    }
 
     if(imgBuffer != frameBuffer) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2

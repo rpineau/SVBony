@@ -35,6 +35,7 @@ class AddFITSKeyInterface;
 
 //For properties that need to be persistent
 #define KEY_X2CAM_ROOT              "SVBony"
+#define KEY_USER_CONF               "SVBony_User_Conf"
 #define KEY_GUID                    "SVBony_GUID"
 #define KEY_GAIN                    "Gain"
 #define KEY_GAIN_AUTO               "GainAuto"
