@@ -778,7 +778,7 @@ int CSVBony::getTemperture(double &dTemp, double &dPower, double &dSetPoint, boo
     int nErr = PLUGIN_OK;
     long nMin, nMax, nValue;
     SVB_BOOL bTmp;
-
+    SVB_ERROR_CODE  ret;
     if(m_TemperatureTimer.GetElapsedSeconds()<1) {
         dTemp = m_dTemperature;
         dPower = m_dPower;
@@ -787,17 +787,24 @@ int CSVBony::getTemperture(double &dTemp, double &dPower, double &dSetPoint, boo
         return nErr;
     }
     m_TemperatureTimer.Reset();
+    ret = getControlValues(SVB_CURRENT_TEMPERATURE, nMin, nMax, nValue, bTmp);
+    if(ret != SVB_SUCCESS) {
+        dTemp = -100;
+        dPower = 0;
+        dSetPoint = dTemp;
+        bEnabled = false;
+        return nErr;
+    }
+    m_dTemperature = double(nValue)/10.0;
+    dTemp = m_dTemperature;
     if(m_bTempertureSupported) {
 #ifdef COOLER_SUPPORT
-        getControlValues(SVB_CURRENT_TEMPERATURE, nMin, nMax, nValue, bTmp);
-        m_dTemperature = double(nValue)/10.0;
         getControlValues(SVB_TARGET_TEMPERATURE, nMin, nMax, nValue, bTmp);
         m_dSetPoint = double(nValue)/10.0;
         getControlValues(SVB_COOLER_POWER, nMin, nMax, nValue, bTmp);
         m_dPower = double(nValue);
         getControlValues(SVB_COOLER_ENABLE, nMin, nMax, nValue, bTmp);
         m_dCoolerEnabled = (nValue==1?true:false);
-        dTemp = m_dTemperature;
         dPower = m_dPower;
         dSetPoint = m_dSetPoint;
         bEnabled = m_dCoolerEnabled;
@@ -815,7 +822,6 @@ int CSVBony::getTemperture(double &dTemp, double &dPower, double &dSetPoint, boo
 
     }
     else {
-        dTemp = -100;
         dPower = 0;
         dSetPoint = dTemp;
         bEnabled = false;
