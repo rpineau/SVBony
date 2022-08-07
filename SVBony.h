@@ -16,6 +16,9 @@
 #include <vector>
 #include <sstream>
 #include <iostream>
+#include <sstream>
+#include <iomanip>
+#include <fstream>
 #include <map>
 #include <thread>
 
@@ -132,7 +135,7 @@ public:
     int         getNbGainInList();
     std::string getGainFromListAtIndex(int nIndex);
     void        rebuildGainList();
-
+    void        log(std::string logString);
 protected:
     
     SVB_ERROR_CODE          getControlValues(SVB_CONTROL_TYPE nControlType, long &nMin, long &nMax, long &nValue, SVB_BOOL &bIsAuto);
@@ -141,7 +144,8 @@ protected:
     void                    buildGainList(long nMin, long nMax, long nValue);
 
     bool                    m_bSetUserConf;
-    
+    int                     m_nCameraNum;
+
     SVB_CAMERA_INFO         m_CameraInfo;
     SVB_CAMERA_PROPERTY     m_cameraProperty;
 #ifdef COOLER_SUPPORT

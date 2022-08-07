@@ -231,7 +231,7 @@ int X2Camera::doSVBonyCAmFeatureConfig()
     int nCtrlVal;
     bool bIsAuto;
     bool bPressedOK = false;
-    
+    std::string logString;
     if (NULL == ui)
         return ERR_POINTER;
 
@@ -383,6 +383,8 @@ int X2Camera::doSVBonyCAmFeatureConfig()
 
     //Retreive values from the user interface
     if (bPressedOK) {
+        m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_USER_CONF, 1);
+
         /* broken in SDK 1,3,8 and up...don't change it or it breaks SVBGetVideoData */
         if(dx->isEnabled("SpeedMode")) {
             nCtrlVal = dx->currentIndex("SpeedMode");
