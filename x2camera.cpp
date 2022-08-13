@@ -163,6 +163,7 @@ int X2Camera::execModalSettingsDialog()
     }
 
     X2GUIExchangeInterface*            dx = NULL;//Comes after ui is loaded
+
     X2ModalUIUtil uiutil(this, GetTheSkyXFacadeForDrivers());
     X2GUIInterface*                    ui = uiutil.X2UI();
 
