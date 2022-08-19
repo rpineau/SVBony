@@ -89,7 +89,9 @@ CSVBony::CSVBony()
     fprintf(Logfile, "[%s][CSVBony] %s.\n", timestamp, sSDKVersion.c_str());
     fflush(Logfile);
 #endif
-    
+
+    std::vector<camera_info_t> tCameraIdList;
+    listCamera(tCameraIdList);
 }
 
 CSVBony::~CSVBony()
@@ -114,6 +116,14 @@ int CSVBony::Connect(int nCameraID)
 
     m_bConnected = false;
 
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s][Connect] Connect called\n", timestamp);
+    fflush(Logfile);
+#endif
+
     if(nCameraID)
         m_nCameraID = nCameraID;
     else {
@@ -131,7 +141,15 @@ int CSVBony::Connect(int nCameraID)
         else
             return ERR_NODEVICESELECTED;
     }
-    
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s][Connect] Connecting to camera ID %d serial %s\n", timestamp, m_nCameraID, m_sCameraSerial.c_str());
+    fflush(Logfile);
+#endif
+
     ret = SVBOpenCamera(m_nCameraID);
     if (ret != SVB_SUCCESS) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -144,6 +162,15 @@ int CSVBony::Connect(int nCameraID)
         return ERR_NORESPONSE;
         }
 
+    m_bConnected = true;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s][Connect] Disabling autosave params\n", timestamp);
+    fflush(Logfile);
+#endif
     ret = SVBSetAutoSaveParam(m_nCameraID, SVB_FALSE);
     if (ret != SVB_SUCCESS) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -155,10 +182,15 @@ int CSVBony::Connect(int nCameraID)
 #endif
     }
 
-    // turn off automatic exposure
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s][Connect] Turn off autoexposure\n", timestamp);
+    fflush(Logfile);
+#endif
     ret = SVBSetControlValue(m_nCameraID, SVB_EXPOSURE , 1000000, SVB_FALSE);
 
-    m_bConnected = true;
     getCameraNameFromID(m_nCameraID, m_sCameraName);
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -1766,9 +1798,10 @@ int CSVBony::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
     int srcMemWidth;
     int timeout = 0;
 
-    if(!frameBuffer)
+    if(!frameBuffer) {
+        stopCaputure();
         return ERR_POINTER;
-
+    }
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     ltime = time(NULL);
     timestamp = asctime(localtime(&ltime));
@@ -1821,6 +1854,7 @@ int CSVBony::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
                 fprintf(Logfile, "[%s][getFrame] SVBGetVideoData error %d\n", timestamp, ret);
                 fflush(Logfile);
 #endif
+                stopCaputure();
                 return ERR_RXTIMEOUT;
             }
             continue;
@@ -1855,6 +1889,7 @@ int CSVBony::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
         }
         free(imgBuffer);
     }
+    stopCaputure();
     return nErr;
 }
 

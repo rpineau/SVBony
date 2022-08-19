@@ -31,7 +31,8 @@ X2Camera::X2Camera( const char* pszSelection,
 
     mPixelSizeX = 0.0;
     mPixelSizeY = 0.0;
-        
+    m_nCameraID = 0;
+
     // Read in settings
     if (m_pIniUtil) {
 
@@ -100,6 +101,7 @@ X2Camera::X2Camera( const char* pszSelection,
             m_Camera.setCameraId(m_nCameraID);
         }
     }
+
 }
 
 X2Camera::~X2Camera()
