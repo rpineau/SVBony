@@ -1892,7 +1892,7 @@ int CSVBony::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
         fflush(Logfile);
 #endif
         // copy every line from source buffer newly aligned into TSX buffer cutting at nMemWidth or srcMemWidth depdning on which one is bigger
-        for(i=0; i<nHeight; i++) {
+        for(i=0; i<m_nROIHeight; i++) {
             memcpy(frameBuffer+(i*nMemWidth), imgBuffer+(i*srcMemWidth), copyWidth);
         }
         free(imgBuffer);
