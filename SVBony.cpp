@@ -1799,7 +1799,7 @@ int CSVBony::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
     int i = 0;
     uint16_t *buf;
     int srcMemWidth;
-    int copyWidth;
+    int copyWidth = 0;
     int timeout = 0;
 
     if(!frameBuffer) {
@@ -1884,7 +1884,7 @@ int CSVBony::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
                                                                                             m_nROILeft,    m_nROITop,    m_nROIWidth,    m_nROIHeight,
                                                                                             m_nReqROILeft, m_nReqROITop, m_nReqROIWidth, m_nReqROIHeight);
         fprintf(Logfile, "[%s][getFrame] srcMemWidth        : %d\n", timestamp, srcMemWidth, nMemWidth);
-        fprintf(Logfile, "[%s][getFrame] nMemWidth          : %d => %d\n", timestamp, nMemWidth);
+        fprintf(Logfile, "[%s][getFrame] nMemWidth          : %d\n", timestamp, nMemWidth);
         fprintf(Logfile, "[%s][getFrame] copyWidth          : %d\n", timestamp, copyWidth);
 
         fprintf(Logfile, "[%s][getFrame] sizeReadFromCam    : %d\n", timestamp, sizeReadFromCam);
