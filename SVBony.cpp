@@ -1668,19 +1668,19 @@ int CSVBony::setROI(int nLeft, int nTop, int nWidth, int nHeight)
     m_nReqROIHeight = nHeight;
 
     // X
-    if( m_nReqROILeft % 4 != 0)
-        nNewLeft = (m_nReqROILeft/4) * 4;  // round to lower 4 pixel. boundary
+    if( m_nReqROILeft % 8 != 0)
+        nNewLeft = (m_nReqROILeft/8) * 8;  // round to lower 8 pixel. boundary
     else
         nNewLeft = m_nReqROILeft;
 
     // W
-    if( (m_nReqROIWidth % 4 != 0) || (nLeft!=nNewLeft)) {// Adjust width to upper 4 boundary or if the left border changed we need to adjust the width
-        nNewWidth = (( (m_nReqROIWidth + (nNewLeft%4)) /4) + 1) * 4;
+    if( (m_nReqROIWidth % 8 != 0) || (nLeft!=nNewLeft)) {// Adjust width to upper 4 boundary or if the left border changed we need to adjust the width
+        nNewWidth = (( (m_nReqROIWidth + (nNewLeft%4)) /8) + 1) * 8;
         if ((nNewLeft + nNewWidth) > int(m_nMaxWidth/m_nCurrentBin)) {
-            nNewLeft -=4;
+            nNewLeft -=8;
             if(nNewLeft<0) {
                 nNewLeft = 0;
-                nNewWidth = nNewWidth - 4;
+                nNewWidth = nNewWidth - 8;
             }
         }
     }
