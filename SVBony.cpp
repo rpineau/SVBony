@@ -1800,6 +1800,8 @@ int CSVBony::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
     uint16_t *buf;
     int srcMemWidth;
     int copyWidth = 0;
+    int copyHeight = 0;
+
     int timeout = 0;
 
     if(!frameBuffer) {
@@ -1876,6 +1878,7 @@ int CSVBony::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
 
     if(imgBuffer != frameBuffer) {
         copyWidth = srcMemWidth>nMemWidth?nMemWidth:srcMemWidth;
+        copyHeight = m_nROIHeight>nHeight?nHeight:m_nROIHeight;
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
         ltime = time(NULL);
         timestamp = asctime(localtime(&ltime));
@@ -1885,14 +1888,15 @@ int CSVBony::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
                                                                                             m_nReqROILeft, m_nReqROITop, m_nReqROIWidth, m_nReqROIHeight);
         fprintf(Logfile, "[%s][getFrame] srcMemWidth        : %d\n", timestamp, srcMemWidth);
         fprintf(Logfile, "[%s][getFrame] nMemWidth          : %d\n", timestamp, nMemWidth);
+        fprintf(Logfile, "[%s][getFrame] copyHeight         : %d\n", timestamp, copyHeight);
         fprintf(Logfile, "[%s][getFrame] copyWidth          : %d\n", timestamp, copyWidth);
 
         fprintf(Logfile, "[%s][getFrame] sizeReadFromCam    : %d\n", timestamp, sizeReadFromCam);
         fprintf(Logfile, "[%s][getFrame] size to TSX        : %d\n", timestamp, nHeight * nMemWidth);
         fflush(Logfile);
 #endif
-        // copy every line from source buffer newly aligned into TSX buffer cutting at nMemWidth or srcMemWidth depdning on which one is bigger
-        for(i=0; i<m_nROIHeight; i++) {
+        // copy every line from source buffer newly aligned into TSX buffer cutting at copyWidth
+        for(i=0; i<copyHeight; i++) {
             memcpy(frameBuffer+(i*nMemWidth), imgBuffer+(i*srcMemWidth), copyWidth);
         }
         free(imgBuffer);
