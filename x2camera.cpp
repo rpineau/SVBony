@@ -750,8 +750,8 @@ int X2Camera::CCGetChipSize(const enumCameraIndex& Camera, const enumWhichCCD& C
 {
 	X2MutexLocker ml(GetMutex());
 
-	nW = m_Camera.getWidth()/nXBin;
-    nH = m_Camera.getHeight()/nYBin;
+    nW = (m_Camera.getWidth()/nXBin);
+    nH = (m_Camera.getHeight()/nYBin);
     nReadOut = CameraDriverInterface::rm_Image;
 
     m_Camera.setBinSize(nXBin);
@@ -890,6 +890,7 @@ int X2Camera::CCSetBinnedSubFrame(const enumCameraIndex& Camera, const enumWhich
 {
     int nErr = SB_OK;
 	X2MutexLocker ml(GetMutex());
+
 
     nErr = m_Camera.setROI(nLeft, nTop, (nRight-nLeft)+1, (nBottom-nTop)+1);
     return nErr;

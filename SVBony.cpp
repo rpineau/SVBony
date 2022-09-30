@@ -304,7 +304,7 @@ int CSVBony::Connect(int nCameraID)
     fprintf(Logfile, "[%s][Connect] m_dPixelSize    : Unknown !!!!!!! \n", timestamp);
     fflush(Logfile);
 #endif
-
+        m_dPixelSize = 0;
     }
     else {
         m_dPixelSize = (double)pixelSize;
@@ -695,9 +695,12 @@ int CSVBony::getNumBins()
 
 int CSVBony::getBinFromIndex(int nIndex)
 {
+    if(!m_bConnected)
+        return 1;
+
     if(nIndex>(m_nNbBin-1))
         return 1;
-    
+
     return m_SupportedBins[nIndex];        
 }
 
