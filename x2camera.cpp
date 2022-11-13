@@ -646,7 +646,7 @@ int X2Camera::CCEstablishLink(const enumLPTPort portLPT, const enumWhichCCD& CCD
         // store camera ID
         m_pIniUtil->writeString(KEY_X2CAM_ROOT, KEY_GUID, sCameraSerial.c_str());
     }
-    
+    m_Camera.rebuildGainList();
     return nErr;
 }
 

@@ -1954,6 +1954,14 @@ void CSVBony::buildGainList(long nMin, long nMax, long nValue)
     m_GainList.clear();
     m_nNbGainValue = 0;
 
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s][buildGainList] Rebuilding gain list\n", timestamp);
+    fflush(Logfile);
+#endif
+
     if(nMin != nValue) {
         m_GainList.push_back(std::to_string(nValue));
         m_nNbGainValue++;
@@ -1966,9 +1974,25 @@ void CSVBony::buildGainList(long nMin, long nMax, long nValue)
     }
     m_GainList.push_back(std::to_string(nMax));
     m_nNbGainValue++;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s][buildGainList] m_nNbGainValue : %d\n", timestamp, m_nNbGainValue);
+    fflush(Logfile);
+#endif
+
 }
 int CSVBony::getNbGainInList()
 {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    ltime = time(NULL);
+    timestamp = asctime(localtime(&ltime));
+    timestamp[strlen(timestamp) - 1] = 0;
+    fprintf(Logfile, "[%s][getNbGainInList] m_nNbGainValue : %d\n", timestamp, m_nNbGainValue);
+    fflush(Logfile);
+#endif
     return m_nNbGainValue;
 }
 
