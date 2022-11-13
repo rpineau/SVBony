@@ -16,6 +16,9 @@
 #include <vector>
 #include <sstream>
 #include <iostream>
+#include <sstream>
+#include <iomanip>
+#include <fstream>
 #include <map>
 #include <thread>
 
@@ -32,10 +35,12 @@
 
 // #define PLUGIN_DEBUG    2
 
-#define PLUGIN_VERSION      1.1
+#define PLUGIN_VERSION      1.4
 #define BUFFER_LEN 128
 #define PLUGIN_OK   0
 #define MAX_NB_BIN  16
+
+#define VAL_NOT_AVAILABLE           0xDEADBEEF
 
 #define COOLER_SUPPORT
 
@@ -53,7 +58,8 @@ public:
     CSVBony();
     ~CSVBony();
 
-    void        setSleeper(SleeperInterface *pSleeper) { m_pSleeper = pSleeper; };
+
+    void        setUserConf(bool bUserConf);
 
     int         Connect(int nCameraId);
     void        Disconnect(bool bTrunCoolerOff);
@@ -89,29 +95,29 @@ public:
     void        getBayerPattern(std::string &sBayerPattern);
     void        getFlip(std::string &sFlipMode);
 
-    void        getGain(long &nMin, long &nMax, long &nValue);
+    int         getGain(long &nMin, long &nMax, long &nValue);
     int         setGain(long nGain);
-    void        getGamma(long &nMin, long &nMax, long &nValue);
+    int         getGamma(long &nMin, long &nMax, long &nValue);
     int         setGamma(long nGamma);
-    void        getGammaContrast(long &nMin, long &nMax, long &nValue);
+    int         getGammaContrast(long &nMin, long &nMax, long &nValue);
     int         setGammaContrast(long nGammaContrast);
-    void        getWB_R(long &nMin, long &nMax, long &nValue, bool &bIsAuto);
+    int         getWB_R(long &nMin, long &nMax, long &nValue, bool &bIsAuto);
     int         setWB_R(long nWB_R, bool bIsAuto = SVB_FALSE);
-    void        getWB_G(long &nMin, long &nMax, long &nValue, bool &bIsAuto);
+    int         getWB_G(long &nMin, long &nMax, long &nValue, bool &bIsAuto);
     int         setWB_G(long nWB_G, bool bIsAuto = SVB_FALSE);
-    void        getWB_B(long &nMin, long &nMax, long &nValue, bool &bIsAuto);
+    int         getWB_B(long &nMin, long &nMax, long &nValue, bool &bIsAuto);
     int         setWB_B(long nWB_B, bool bIsAuto = SVB_FALSE);
-    void        getFlip(long &nMin, long &nMax, long &nValue);
+    int         getFlip(long &nMin, long &nMax, long &nValue);
     int         setFlip(long nFlip);
-    void        getSpeedMode(long &nMin, long &nMax, long &nValue);
+    int         getSpeedMode(long &nMin, long &nMax, long &nValue);
     int         setSpeedMode(long nFlip);
-    void        getContrast(long &nMin, long &nMax, long &nValue);
+    int         getContrast(long &nMin, long &nMax, long &nValue);
     int         setContrast(long nContrast);
-    void        getSharpness(long &nMin, long &nMax, long &nValue);
+    int         getSharpness(long &nMin, long &nMax, long &nValue);
     int         setSharpness(long nSharpness);
-    void        getSaturation(long &nMin, long &nMax, long &nValue);
+    int         getSaturation(long &nMin, long &nMax, long &nValue);
     int         setSaturation(long nSaturation);
-    void        getBlackLevel(long &nMin, long &nMax, long &nValue);
+    int         getBlackLevel(long &nMin, long &nMax, long &nValue);
     int         setBlackLevel(long nBlackLevel);
 
     int         setROI(int nLeft, int nTop, int nWidth, int nHeight);
@@ -129,16 +135,17 @@ public:
     int         getNbGainInList();
     std::string getGainFromListAtIndex(int nIndex);
     void        rebuildGainList();
-
+    void        log(std::string logString);
 protected:
     
     SVB_ERROR_CODE          getControlValues(SVB_CONTROL_TYPE nControlType, long &nMin, long &nMax, long &nValue, SVB_BOOL &bIsAuto);
     SVB_ERROR_CODE          setControlValue(SVB_CONTROL_TYPE nControlType, long nValue, SVB_BOOL bAuto=SVB_FALSE);
 
     void                    buildGainList(long nMin, long nMax, long nValue);
-    SleeperInterface        *m_pSleeper;
 
-    
+    bool                    m_bSetUserConf;
+    int                     m_nCameraNum;
+
     SVB_CAMERA_INFO         m_CameraInfo;
     SVB_CAMERA_PROPERTY     m_cameraProperty;
 #ifdef COOLER_SUPPORT

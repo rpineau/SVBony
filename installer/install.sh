@@ -49,5 +49,7 @@ if [ ! -z "$app_owner" ]; then
 	chown $app_owner "$TheSkyX_Path/Resources/Common/$PLUGINS_DIR/CameraPlugIns/libSVBony.so"
 fi
 chmod  755 "$TheSkyX_Path/Resources/Common/$PLUGINS_DIR/CameraPlugIns/libSVBony.so"
-sudo systemctl restart udev
+sudo udevadm control --reload
+sudo udevadm trigger
+
 

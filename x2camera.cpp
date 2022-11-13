@@ -16,7 +16,8 @@ X2Camera::X2Camera( const char* pszSelection,
 {
     int nValue = 0;
     bool bIsAuto;
-    
+    bool bUserConf = false;
+
 	m_nPrivateISIndex				= nISIndex;
 	m_pTheSkyXForMounts				= pTheSkyXForMounts;
 	m_pSleeper						= pSleeper;
@@ -30,64 +31,75 @@ X2Camera::X2Camera( const char* pszSelection,
 
     mPixelSizeX = 0.0;
     mPixelSizeY = 0.0;
+    m_nCameraID = 0;
 
-    m_Camera.setSleeper(m_pSleeper);
-        
-    // Read in settings, default values were chosen based on test with a SV305
+    // Read in settings
     if (m_pIniUtil) {
-        m_pIniUtil->readString(KEY_X2CAM_ROOT, KEY_GUID, "0", m_szCameraSerial, 128);
-        m_Camera.getCameraIdFromSerial(m_nCameraID, std::string(m_szCameraSerial));
-        m_Camera.setCameraSerial(std::string(m_szCameraSerial));
-        m_Camera.setCameraId(m_nCameraID);
-        nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_GAIN, 10);
-        m_Camera.setGain((long)nValue);
 
-        nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_GAMMA, 100);
-        if(nValue!=-1)
-            m_Camera.setGamma((long)nValue);
+        bUserConf = (m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_USER_CONF, 0) == 0?false:true);
+        m_Camera.setUserConf(bUserConf);
 
-        nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_GAMMA_CONTRAST, 100);
-        if(nValue!=-1)
-            m_Camera.setGammaContrast((long)nValue);
+        if(bUserConf) {
+            m_pIniUtil->readString(KEY_X2CAM_ROOT, KEY_GUID, "0", m_szCameraSerial, 128);
+            m_Camera.getCameraIdFromSerial(m_nCameraID, std::string(m_szCameraSerial));
+            m_Camera.setCameraSerial(std::string(m_szCameraSerial));
+            m_Camera.setCameraId(m_nCameraID);
 
-        nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_R, 180);
-        bIsAuto =  (m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_R_AUTO, 0) == 0?false:true);
-        if(nValue!=-1)
-            m_Camera.setWB_R((long)nValue, bIsAuto);
+            nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_GAIN, VAL_NOT_AVAILABLE);
+            if(nValue!=VAL_NOT_AVAILABLE)
+                m_Camera.setGain((long)nValue);
 
-        nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_G, 128);
-        bIsAuto =  (m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_G_AUTO, 0) == 0?false:true);
-        if(nValue!=-1)
-            m_Camera.setWB_G((long)nValue, bIsAuto);
+            nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_GAMMA, VAL_NOT_AVAILABLE);
+            if(nValue!=VAL_NOT_AVAILABLE)
+                m_Camera.setGamma((long)nValue);
 
-        nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_B, 340);
-        bIsAuto =  (m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_B_AUTO, 0) == 0?false:true);
-        if(nValue!=-1)
-            m_Camera.setWB_B((long)nValue, bIsAuto);
+            nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_GAMMA_CONTRAST, VAL_NOT_AVAILABLE);
+            if(nValue!=VAL_NOT_AVAILABLE)
+                m_Camera.setGammaContrast((long)nValue);
 
-        nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_FLIP, 0);
-        if(nValue!=-1)
-            m_Camera.setFlip((long)nValue);
+            nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_R, VAL_NOT_AVAILABLE);
+            bIsAuto =  (m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_R_AUTO, 0) == 0?false:true);
+            if(nValue!=VAL_NOT_AVAILABLE)
+                m_Camera.setWB_R((long)nValue, bIsAuto);
 
-        nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_SPEED_MODE, 0);
-        if(nValue!=-1)
-            m_Camera.setSpeedMode(0); // m_Camera.setSpeedMode((long)nValue); // until set speed mode is fixed in SDK.
+            nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_G, VAL_NOT_AVAILABLE);
+            bIsAuto =  (m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_G_AUTO, 0) == 0?false:true);
+            if(nValue!=VAL_NOT_AVAILABLE)
+                m_Camera.setWB_G((long)nValue, bIsAuto);
 
-        nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_CONTRAST, 50);
-        if(nValue!=-1)
-            m_Camera.setContrast((long)nValue);
+            nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_B, VAL_NOT_AVAILABLE);
+            bIsAuto =  (m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_B_AUTO, 0) == 0?false:true);
+            if(nValue!=VAL_NOT_AVAILABLE)
+                m_Camera.setWB_B((long)nValue, bIsAuto);
 
-        nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_SHARPNESS, 0);
-        if(nValue!=-1)
-            m_Camera.setSharpness((long)nValue);
+            nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_FLIP, 0);
+            if(nValue!=VAL_NOT_AVAILABLE)
+                m_Camera.setFlip((long)nValue);
 
-        nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_SATURATION, 100);
-        if(nValue!=-1)
-            m_Camera.setSaturation((long)nValue);
+            nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_SPEED_MODE, 0);
+            if(nValue!=VAL_NOT_AVAILABLE)
+                m_Camera.setSpeedMode((long)nValue);
 
-        nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_OFFSET, 0);
-        if(nValue!=-1)
-            m_Camera.setBlackLevel((long)nValue);
+            nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_CONTRAST, VAL_NOT_AVAILABLE);
+            if(nValue!=VAL_NOT_AVAILABLE)
+                m_Camera.setContrast((long)nValue);
+
+            nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_SHARPNESS, VAL_NOT_AVAILABLE);
+            if(nValue!=VAL_NOT_AVAILABLE)
+                m_Camera.setSharpness((long)nValue);
+
+            nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_SATURATION, VAL_NOT_AVAILABLE);
+            if(nValue!=VAL_NOT_AVAILABLE)
+                m_Camera.setSaturation((long)nValue);
+
+            nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_OFFSET, VAL_NOT_AVAILABLE);
+            if(nValue!=VAL_NOT_AVAILABLE)
+                m_Camera.setBlackLevel((long)nValue);
+        }
+        else {
+            m_nCameraID = 0;
+            m_Camera.setCameraId(m_nCameraID);
+        }
     }
 
 }
@@ -141,17 +153,25 @@ int	X2Camera::queryAbstraction(const char* pszName, void** ppVal)
 int X2Camera::execModalSettingsDialog()
 {
     int nErr = SB_OK;
-    X2ModalUIUtil uiutil(this, GetTheSkyXFacadeForDrivers());
-    X2GUIInterface*                    ui = uiutil.X2UI();
-    X2GUIExchangeInterface*            dx = NULL;//Comes after ui is loaded
     bool bPressedOK = false;
     int i;
     char tmpBuffer[128];
     int nCamIndex;
     bool bCameraFoud = false;
-    
+
+    if(m_bLinked) {
+        nErr = doSVBonyCAmFeatureConfig();
+        return nErr;
+    }
+
+    X2GUIExchangeInterface*            dx = NULL;//Comes after ui is loaded
+
+    X2ModalUIUtil uiutil(this, GetTheSkyXFacadeForDrivers());
+    X2GUIInterface*                    ui = uiutil.X2UI();
+
     if (NULL == ui)
         return ERR_POINTER;
+
     nErr = ui->loadUserInterface("SVBonyCamSelect.ui", deviceType(), m_nPrivateISIndex);
     if (nErr)
         return nErr;
@@ -213,15 +233,17 @@ int X2Camera::execModalSettingsDialog()
 int X2Camera::doSVBonyCAmFeatureConfig()
 {
     int nErr = SB_OK;
-    X2ModalUIUtil uiutil(this, GetTheSkyXFacadeForDrivers());
-    X2GUIInterface*                    ui = uiutil.X2UI();
-    X2GUIExchangeInterface*            dx = NULL;
     long nVal, nMin, nMax;
     long nSpeedMode = 0;
     int nCtrlVal;
     bool bIsAuto;
     bool bPressedOK = false;
-    
+    std::string logString;
+    X2GUIExchangeInterface*            dx = NULL;
+
+    X2ModalUIUtil uiutil(this, GetTheSkyXFacadeForDrivers());
+    X2GUIInterface*                    ui = uiutil.X2UI();
+
     if (NULL == ui)
         return ERR_POINTER;
 
@@ -233,8 +255,8 @@ int X2Camera::doSVBonyCAmFeatureConfig()
 
 
     if(m_bLinked){
-        m_Camera.getGain(nMin, nMax, nVal);
-        if(nMax == -1)
+        nErr = m_Camera.getGain(nMin, nMax, nVal);
+        if(nErr == VAL_NOT_AVAILABLE)
             dx->setEnabled("Gain", false);
         else {
             dx->setPropertyInt("Gain", "minimum", (int)nMin);
@@ -242,8 +264,8 @@ int X2Camera::doSVBonyCAmFeatureConfig()
             dx->setPropertyInt("Gain", "value", (int)nVal);
         }
 
-        m_Camera.getGamma(nMin, nMax, nVal);
-        if(nMax == -1)
+        nErr = m_Camera.getGamma(nMin, nMax, nVal);
+        if(nErr == VAL_NOT_AVAILABLE)
             dx->setEnabled("Gamma", false);
         else {
             dx->setPropertyInt("Gamma", "minimum", (int)nMin);
@@ -251,8 +273,8 @@ int X2Camera::doSVBonyCAmFeatureConfig()
             dx->setPropertyInt("Gamma", "value", (int)nVal);
         }
 
-        m_Camera.getGammaContrast(nMin, nMax, nVal);
-        if(nMax == -1)
+        nErr = m_Camera.getGammaContrast(nMin, nMax, nVal);
+        if(nErr == VAL_NOT_AVAILABLE)
             dx->setEnabled("GammaContrast", false);
         else {
             dx->setPropertyInt("GammaContrast", "minimum", (int)nMin);
@@ -260,8 +282,8 @@ int X2Camera::doSVBonyCAmFeatureConfig()
             dx->setPropertyInt("GammaContrast", "value", (int)nVal);
         }
 
-        m_Camera.getWB_R(nMin, nMax, nVal, bIsAuto);
-        if(nMax == -1)
+        nErr = m_Camera.getWB_R(nMin, nMax, nVal, bIsAuto);
+        if(nErr == VAL_NOT_AVAILABLE)
             dx->setEnabled("WB_R", false);
         else {
             dx->setPropertyInt("WB_R", "minimum", (int)nMin);
@@ -273,8 +295,8 @@ int X2Camera::doSVBonyCAmFeatureConfig()
             }
         }
 
-        m_Camera.getWB_G(nMin, nMax, nVal, bIsAuto);
-        if(nMax == -1)
+        nErr = m_Camera.getWB_G(nMin, nMax, nVal, bIsAuto);
+        if(nErr == VAL_NOT_AVAILABLE)
             dx->setEnabled("WB_G", false);
         else {
             dx->setPropertyInt("WB_G", "minimum", (int)nMin);
@@ -286,8 +308,8 @@ int X2Camera::doSVBonyCAmFeatureConfig()
             }
         }
 
-        m_Camera.getWB_B(nMin, nMax, nVal, bIsAuto);
-        if(nMax == -1)
+        nErr = m_Camera.getWB_B(nMin, nMax, nVal, bIsAuto);
+        if(nErr == VAL_NOT_AVAILABLE)
             dx->setEnabled("WB_B", false);
         else {
             dx->setPropertyInt("WB_B", "minimum", (int)nMin);
@@ -299,23 +321,23 @@ int X2Camera::doSVBonyCAmFeatureConfig()
             }
         }
 
-        m_Camera.getFlip(nMin, nMax, nVal);
-        if(nMax == -1)
+        nErr = m_Camera.getFlip(nMin, nMax, nVal);
+        if(nErr == VAL_NOT_AVAILABLE)
             dx->setEnabled("Flip", false);
         else {
             dx->setCurrentIndex("Flip", (int)nVal);
         }
 
-        m_Camera.getSpeedMode(nMin, nMax, nSpeedMode);
-        if(nMax == -1)
+        nErr = m_Camera.getSpeedMode(nMin, nMax, nSpeedMode);
+        if(nErr == VAL_NOT_AVAILABLE)
             dx->setEnabled("SpeedMode", false);
         else {
             dx->setEnabled("SpeedMode", true); // disabled for now as not working.
             dx->setCurrentIndex("SpeedMode", (int)nSpeedMode);
         }
 
-        m_Camera.getContrast(nMin, nMax, nVal);
-        if(nMax == -1)
+        nErr = m_Camera.getContrast(nMin, nMax, nVal);
+        if(nErr == VAL_NOT_AVAILABLE)
             dx->setEnabled("Contrast", false);
         else {
             dx->setPropertyInt("Contrast", "minimum", (int)nMin);
@@ -323,8 +345,8 @@ int X2Camera::doSVBonyCAmFeatureConfig()
             dx->setPropertyInt("Contrast", "value", (int)nVal);
         }
         
-        m_Camera.getSharpness(nMin, nMax, nVal);
-        if(nMax == -1)
+        nErr = m_Camera.getSharpness(nMin, nMax, nVal);
+        if(nErr == VAL_NOT_AVAILABLE)
             dx->setEnabled("Sharpness", false);
         else {
             dx->setPropertyInt("Sharpness", "minimum", (int)nMin);
@@ -332,8 +354,8 @@ int X2Camera::doSVBonyCAmFeatureConfig()
             dx->setPropertyInt("Sharpness", "value", (int)nVal);
         }
 
-        m_Camera.getSaturation(nMin, nMax, nVal);
-        if(nMax == -1)
+        nErr = m_Camera.getSaturation(nMin, nMax, nVal);
+        if(nErr == VAL_NOT_AVAILABLE)
             dx->setEnabled("Saturation", false);
         else {
             dx->setPropertyInt("Saturation", "minimum", (int)nMin);
@@ -341,8 +363,8 @@ int X2Camera::doSVBonyCAmFeatureConfig()
             dx->setPropertyInt("Saturation", "value", (int)nVal);
         }
 
-        m_Camera.getBlackLevel(nMin, nMax, nVal);
-        if(nMax == -1)
+        nErr = m_Camera.getBlackLevel(nMin, nMax, nVal);
+        if(nErr == VAL_NOT_AVAILABLE)
             dx->setEnabled("Offset", false);
         else {
             dx->setPropertyInt("Offset", "minimum", (int)nMin);
@@ -373,6 +395,8 @@ int X2Camera::doSVBonyCAmFeatureConfig()
 
     //Retreive values from the user interface
     if (bPressedOK) {
+        m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_USER_CONF, 1);
+
         /* broken in SDK 1,3,8 and up...don't change it or it breaks SVBGetVideoData */
         if(dx->isEnabled("SpeedMode")) {
             nCtrlVal = dx->currentIndex("SpeedMode");
@@ -487,36 +511,30 @@ void X2Camera::uiEvent(X2GUIExchangeInterface* uiex, const char* pszEvent)
 
 void X2Camera::doSelectCamEvent(X2GUIExchangeInterface* uiex, const char* pszEvent)
 {
-    if (!strcmp(pszEvent, "on_pushButton_clicked"))
-    {
-        int nErr=SB_OK;
-        
-        nErr = doSVBonyCAmFeatureConfig();
-        m_nCurrentDialog = SELECT;
-    }
 }
 
 void X2Camera::doSettingsCamEvent(X2GUIExchangeInterface* uiex, const char* pszEvent)
 {
     bool bEnable;
-    
+
+
     if (!strcmp(pszEvent, "on_checkBox_stateChanged")) {
-        bEnable = uiex->isChecked("chackBox");
+        bEnable = uiex->isChecked("checkBox");
         uiex->setEnabled("Gain", !bEnable);
     }
 
     if (!strcmp(pszEvent, "on_checkBox_2_stateChanged")) {
-        bEnable = uiex->isChecked("chackBox_2");
+        bEnable = uiex->isChecked("checkBox_2");
         uiex->setEnabled("WB_R", !bEnable);
     }
 
     if (!strcmp(pszEvent, "on_checkBox_3_stateChanged")) {
-        bEnable = uiex->isChecked("chackBox_3");
+        bEnable = uiex->isChecked("checkBox_3");
         uiex->setEnabled("WB_G", !bEnable);
     }
 
     if (!strcmp(pszEvent, "on_checkBox_4_stateChanged")) {
-        bEnable = uiex->isChecked("chackBox_4");
+        bEnable = uiex->isChecked("checkBox_4");
         uiex->setEnabled("WB_B", !bEnable);
     }
 
@@ -628,7 +646,7 @@ int X2Camera::CCEstablishLink(const enumLPTPort portLPT, const enumWhichCCD& CCD
         // store camera ID
         m_pIniUtil->writeString(KEY_X2CAM_ROOT, KEY_GUID, sCameraSerial.c_str());
     }
-    
+    m_Camera.rebuildGainList();
     return nErr;
 }
 
@@ -732,8 +750,8 @@ int X2Camera::CCGetChipSize(const enumCameraIndex& Camera, const enumWhichCCD& C
 {
 	X2MutexLocker ml(GetMutex());
 
-	nW = m_Camera.getWidth()/nXBin;
-    nH = m_Camera.getHeight()/nYBin;
+    nW = (m_Camera.getWidth()/nXBin);
+    nH = (m_Camera.getHeight()/nYBin);
     nReadOut = CameraDriverInterface::rm_Image;
 
     m_Camera.setBinSize(nXBin);
@@ -873,6 +891,7 @@ int X2Camera::CCSetBinnedSubFrame(const enumCameraIndex& Camera, const enumWhich
     int nErr = SB_OK;
 	X2MutexLocker ml(GetMutex());
 
+
     nErr = m_Camera.setROI(nLeft, nTop, (nRight-nLeft)+1, (nBottom-nTop)+1);
     return nErr;
 }
@@ -952,7 +971,7 @@ int X2Camera::PixelSize1x1InMicrons(const enumCameraIndex &Camera, const enumWhi
 int X2Camera::countOfIntegerFields (int &nCount)
 {
     int nErr = SB_OK;
-    nCount = 12;
+    nCount = 11;
     return nErr;
 }
 
@@ -968,73 +987,133 @@ int X2Camera::valueForIntegerField (int nIndex, BasicStringInterface &sFieldName
 
     switch(nIndex) {
         case F_GAIN :
-            m_Camera.getGain(nMin, nMax, nVal);
             sFieldName = "GAIN";
-            sFieldComment = "";
-            nFieldValue = (int)nVal;
+            nErr = m_Camera.getGain(nMin, nMax, nVal);
+            if(nErr == VAL_NOT_AVAILABLE) {
+                sFieldComment = "not available";
+                nFieldValue = 0;
+            }
+            else {
+                sFieldComment = "";
+                nFieldValue = (int)nVal;
+            }
             break;
             
         case F_GAMMA :
-            m_Camera.getGamma(nMin, nMax, nVal);
             sFieldName = "GAMMA";
-            sFieldComment = "";
-            nFieldValue = (int)nVal;
+            nErr = m_Camera.getGamma(nMin, nMax, nVal);
+            if(nErr == VAL_NOT_AVAILABLE) {
+                sFieldComment = "not available";
+                nFieldValue = 0;
+            }
+            else {
+                sFieldComment = "";
+                nFieldValue = (int)nVal;
+            }
             break;
             
         case F_GAMMA_CONTRAST :
-            m_Camera.getGammaContrast(nMin, nMax, nVal);
             sFieldName = "GAMMACONTRAST";
-            sFieldComment = "";
-            nFieldValue = (int)nVal;
+            nErr = m_Camera.getGammaContrast(nMin, nMax, nVal);
+            if(nErr == VAL_NOT_AVAILABLE) {
+                sFieldComment = "not available";
+                nFieldValue = 0;
+            }
+            else {
+                sFieldComment = "";
+                nFieldValue = (int)nVal;
+            }
             break;
             
         case F_WB_R :
-            m_Camera.getWB_R(nMin, nMax, nVal, bIsAuto);
             sFieldName = "R-WB";
-            sFieldComment = "";
-            nFieldValue = (int)nVal;
+            nErr = m_Camera.getWB_R(nMin, nMax, nVal, bIsAuto);
+            if(nErr == VAL_NOT_AVAILABLE) {
+                sFieldComment = "not available";
+                nFieldValue = 0;
+            }
+            else {
+                sFieldComment = "";
+                nFieldValue = (int)nVal;
+            }
             break;
             
         case F_WB_G :
-            m_Camera.getWB_G(nMin, nMax, nVal, bIsAuto);
             sFieldName = "G-WB";
-            sFieldComment = "";
-            nFieldValue = (int)nVal;
+            nErr = m_Camera.getWB_G(nMin, nMax, nVal, bIsAuto);
+            if(nErr == VAL_NOT_AVAILABLE) {
+                sFieldComment = "not available";
+                nFieldValue = 0;
+            }
+            else {
+                sFieldComment = "";
+                nFieldValue = (int)nVal;
+            }
             break;
             
         case F_WB_B :
-            m_Camera.getWB_B(nMin, nMax, nVal, bIsAuto);
             sFieldName = "B-WB";
-            sFieldComment = "";
-            nFieldValue = (int)nVal;
+            nErr = m_Camera.getWB_B(nMin, nMax, nVal, bIsAuto);
+            if(nErr == VAL_NOT_AVAILABLE) {
+                sFieldComment = "not available";
+                nFieldValue = 0;
+            }
+            else {
+                sFieldComment = "";
+                nFieldValue = (int)nVal;
+            }
             break;
                         
         case F_CONTRAST :
-            m_Camera.getContrast(nMin, nMax, nVal);
             sFieldName = "CONTRAST";
-            sFieldComment = "";
-            nFieldValue = (int)nVal;
+            nErr = m_Camera.getContrast(nMin, nMax, nVal);
+            if(nErr == VAL_NOT_AVAILABLE) {
+                sFieldComment = "not available";
+                nFieldValue = 0;
+            }
+            else {
+                sFieldComment = "";
+                nFieldValue = (int)nVal;
+            }
             break;
             
         case F_SHARPNESS :
-            m_Camera.getSharpness(nMin, nMax, nVal);
             sFieldName = "SHARPNESS";
-            sFieldComment = "";
-            nFieldValue = (int)nVal;
+            nErr = m_Camera.getSharpness(nMin, nMax, nVal);
+            if(nErr == VAL_NOT_AVAILABLE) {
+                sFieldComment = "not available";
+                nFieldValue = 0;
+            }
+            else {
+                sFieldComment = "";
+                nFieldValue = (int)nVal;
+            }
             break;
             
         case F_SATURATION :
-            m_Camera.getSaturation(nMin, nMax, nVal);
             sFieldName = "SATURATIOM";
-            sFieldComment = "";
-            nFieldValue = (int)nVal;
+            nErr = m_Camera.getSaturation(nMin, nMax, nVal);
+            if(nErr == VAL_NOT_AVAILABLE) {
+                sFieldComment = "not available";
+                nFieldValue = 0;
+            }
+            else {
+                sFieldComment = "";
+                nFieldValue = (int)nVal;
+            }
             break;
             
         case F_BLACK_LEVEL :
-            m_Camera.getBlackLevel(nMin, nMax, nVal);
             sFieldName = "BLACK-OFFSET";
-            sFieldComment = "";
-            nFieldValue = (int)nVal;
+            nErr = m_Camera.getBlackLevel(nMin, nMax, nVal);
+            if(nErr == VAL_NOT_AVAILABLE) {
+                sFieldComment = "not available";
+                nFieldValue = 0;
+            }
+            else {
+                sFieldComment = "";
+                nFieldValue = (int)nVal;
+            }
             break;
             
         default :
@@ -1181,7 +1260,6 @@ int X2Camera::CCHasShutter (const enumCameraIndex &Camera, const enumWhichCCD &C
     int nErr = SB_OK;
 
     bHasShutter = false;
-    //nErr = m_Camera.startCaputure(CCDOrig);
 
     return nErr;
 }
