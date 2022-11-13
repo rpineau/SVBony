@@ -971,7 +971,7 @@ int X2Camera::PixelSize1x1InMicrons(const enumCameraIndex &Camera, const enumWhi
 int X2Camera::countOfIntegerFields (int &nCount)
 {
     int nErr = SB_OK;
-    nCount = 12;
+    nCount = 11;
     return nErr;
 }
 
