@@ -35,14 +35,12 @@
 
 // #define PLUGIN_DEBUG    2
 
-#define PLUGIN_VERSION      1.4
+#define PLUGIN_VERSION      1.6
 #define BUFFER_LEN 128
 #define PLUGIN_OK   0
 #define MAX_NB_BIN  16
 
 #define VAL_NOT_AVAILABLE           0xDEADBEEF
-
-#define COOLER_SUPPORT
 
 #define MAX_DATA_TIMEOUT    50
 
@@ -119,6 +117,9 @@ public:
     int         setSaturation(long nSaturation);
     int         getBlackLevel(long &nMin, long &nMax, long &nValue);
     int         setBlackLevel(long nBlackLevel);
+    int         getBadPixelCorrection(bool &bEnabled);
+    int         setBadPixelCorrection(bool bEnbaled);
+
 
     int         setROI(int nLeft, int nTop, int nWidth, int nHeight);
     int         clearROI(void);
@@ -148,9 +149,7 @@ protected:
 
     SVB_CAMERA_INFO         m_CameraInfo;
     SVB_CAMERA_PROPERTY     m_cameraProperty;
-#ifdef COOLER_SUPPORT
     SVB_CAMERA_PROPERTY_EX  m_CameraPorpertyEx;
-#endif
 
     SVB_IMG_TYPE            m_nVideoMode;
     int                     m_nControlNums;
@@ -176,7 +175,7 @@ protected:
     long                    m_nSaturation;
     long                    m_nAutoExposureTarget;
     long                    m_nBlackLevel;
-
+    bool                    m_bBadPixelCorrectionEnabled;
     double                  m_dPixelSize;
     int                     m_nMaxWidth;
     int                     m_nMaxHeight;
@@ -227,11 +226,10 @@ protected:
     
 
 #ifdef PLUGIN_DEBUG
-    std::string m_sLogfilePath;
     // timestamp for logs
-    char *timestamp;
-    time_t ltime;
-    FILE *Logfile;      // LogFile
+    const std::string getTimeStamp();
+    std::ofstream m_sLogFile;
+    std::string m_sLogfilePath;
 #endif
 
 };

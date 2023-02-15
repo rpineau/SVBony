@@ -95,6 +95,10 @@ X2Camera::X2Camera( const char* pszSelection,
             nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_OFFSET, VAL_NOT_AVAILABLE);
             if(nValue!=VAL_NOT_AVAILABLE)
                 m_Camera.setBlackLevel((long)nValue);
+
+            nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_BAD_PIXEL_CORRECTION, VAL_NOT_AVAILABLE);
+            if(nValue!=VAL_NOT_AVAILABLE)
+                m_Camera.setBadPixelCorrection(nValue==1?true:false);
         }
         else {
             m_nCameraID = 0;
@@ -238,6 +242,7 @@ int X2Camera::doSVBonyCAmFeatureConfig()
     int nCtrlVal;
     bool bIsAuto;
     bool bPressedOK = false;
+    bool bEnabled = false;
     std::string logString;
     X2GUIExchangeInterface*            dx = NULL;
 
@@ -372,6 +377,12 @@ int X2Camera::doSVBonyCAmFeatureConfig()
             dx->setPropertyInt("Offset", "value", (int)nVal);
         }
 
+        nErr = m_Camera.getBadPixelCorrection(bEnabled);
+        if(nErr == VAL_NOT_AVAILABLE)
+            dx->setEnabled("BadPixel", false);
+        else {
+            dx->setCurrentIndex("BadPixel", (bEnabled?1:0));
+        }
     }
     else {
         dx->setEnabled("Gain", false);
@@ -489,6 +500,13 @@ int X2Camera::doSVBonyCAmFeatureConfig()
             if(!nErr)
                 m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_OFFSET, nCtrlVal);
         }
+        if(dx->isEnabled("BadPixel")) {
+            nCtrlVal = dx->currentIndex("BadPixel");
+            nErr = m_Camera.setBadPixelCorrection(nCtrlVal==0?false:true);
+            if(!nErr)
+                m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_BAD_PIXEL_CORRECTION, nCtrlVal);
+        }
+
     }
 
     return nErr;
