@@ -113,9 +113,10 @@ int CSVBony::Connect(int nCameraID)
 {
     int nErr = PLUGIN_OK;
     int i;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
     SVB_CONTROL_CAPS    Caps;
     long nMin, nMax;
+    SVB_BOOL bNeedUpgrade;
 
     m_bConnected = false;
 
@@ -158,6 +159,13 @@ int CSVBony::Connect(int nCameraID)
         }
 
     m_bConnected = true;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    //char minVersion[1024];
+    //SVBIsCameraNeedToUpgrade(m_nCameraID, &bNeedUpgrade, minVersion);
+    //m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] bNeedUpgrade : " << (bNeedUpgrade?"Yes":"No") << " , min Version " << minVersion << std::endl;
+    //m_sLogFile.flush();
+#endif
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Disabling autosave params" << std::endl;
@@ -458,7 +466,7 @@ void CSVBony::getCameraId(int &nCameraId)
 
 void CSVBony::getCameraIdFromSerial(int &nCameraId, std::string sSerial)
 {
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getCameraIdFromSerial] sSerial ID : " << sSerial << std::endl;
     m_sLogFile.flush();
@@ -490,7 +498,7 @@ void CSVBony::getCameraIdFromSerial(int &nCameraId, std::string sSerial)
 void CSVBony::getCameraSerialFromID(int nCameraId, std::string &sSerial)
 {
 
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getCameraSerialFromID] nCameraId : " << nCameraId << std::endl;
     m_sLogFile.flush();
@@ -522,7 +530,7 @@ void CSVBony::getCameraSerialFromID(int nCameraId, std::string &sSerial)
 void CSVBony::getCameraNameFromID(int nCameraId, std::string &sName)
 {
 
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getCameraNameFromID] nCameraId : " << nCameraId << std::endl;
     m_sLogFile.flush();
@@ -574,7 +582,7 @@ int CSVBony::listCamera(std::vector<camera_info_t>  &cameraIdList)
 {
     int nErr = PLUGIN_OK;
     camera_info_t   tCameraInfo;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [listCamera] called" << std::endl;
     m_sLogFile.flush();
@@ -621,12 +629,23 @@ void CSVBony::getFirmwareVersion(std::string &sVersion)
     std::string sTmp;
     char szFirmware[256];
 
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFirmwareVersion] called " << std::endl;
+    m_sLogFile.flush();
+#endif
+
     ssTmp << "SDK "<<SVBGetSDKVersion();
-    if(m_bConnected) {
-        SVBGetCameraFirmwareVersion(m_nCameraID,szFirmware);
-        ssTmp << ", Firmware " << szFirmware;
-    }
+    //if(m_bConnected) {
+    //    SVBGetCameraFirmwareVersion(m_nCameraID,szFirmware);
+    //    ssTmp << ", Firmware " << szFirmware;
+    // }
     sVersion.assign(ssTmp.str());
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFirmwareVersion] Firmware : " << szFirmware << std::endl;
+    m_sLogFile.flush();
+#endif
+
 }
 
 int CSVBony::getNumBins()
@@ -650,7 +669,7 @@ int CSVBony::getBinFromIndex(int nIndex)
 int CSVBony::startCaputure(double dTime)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
     int nTimeout;
     m_bAbort = false;
 
@@ -685,7 +704,7 @@ int CSVBony::startCaputure(double dTime)
 int CSVBony::stopCaputure()
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
 
     ret = SVBStopVideoCapture(m_nCameraID);
     if(ret!=SVB_SUCCESS)
@@ -710,7 +729,7 @@ void CSVBony::abortCapture(void)
 
 SVB_ERROR_CODE CSVBony::restartCamera()
 {
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
 
     SVBStopVideoCapture(m_nCameraID);
     SVBCloseCamera(m_nCameraID);
@@ -881,7 +900,7 @@ int CSVBony::getGain(long &nMin, long &nMax, long &nValue)
 {
     int nErr = PLUGIN_OK;
     SVB_BOOL bTmp;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getGain] Called"<< std::endl;
@@ -902,7 +921,7 @@ int CSVBony::getGain(long &nMin, long &nMax, long &nValue)
 int CSVBony::setGain(long nGain)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
 
     m_nGain = nGain;
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -919,7 +938,7 @@ int CSVBony::setGain(long nGain)
 int CSVBony::getGamma(long &nMin, long &nMax, long &nValue)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
     SVB_BOOL bIsAuto;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -936,7 +955,7 @@ int CSVBony::getGamma(long &nMin, long &nMax, long &nValue)
 int CSVBony::setGamma(long nGamma)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
     
     m_nGamma = nGamma;
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -954,7 +973,7 @@ int CSVBony::setGamma(long nGamma)
 int CSVBony::getGammaContrast(long &nMin, long &nMax, long &nValue)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
     SVB_BOOL bIsAuto;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -972,7 +991,7 @@ int CSVBony::getGammaContrast(long &nMin, long &nMax, long &nValue)
 int CSVBony::setGammaContrast(long nGammaContrast)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
 
     m_nGammaContrast = nGammaContrast;
 
@@ -990,7 +1009,7 @@ int CSVBony::setGammaContrast(long nGammaContrast)
 int CSVBony::getWB_R(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
     SVB_BOOL bTmp;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -1016,7 +1035,7 @@ int CSVBony::getWB_R(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
 int CSVBony::setWB_R(long nWB_R, bool bIsAuto)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
     
     m_nWbR = nWB_R;
     m_bR_Auto = bIsAuto;
@@ -1040,7 +1059,7 @@ int CSVBony::setWB_R(long nWB_R, bool bIsAuto)
 int CSVBony::getWB_G(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
     SVB_BOOL bTmp;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -1065,7 +1084,7 @@ int CSVBony::getWB_G(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
 int CSVBony::setWB_G(long nWB_G, bool bIsAuto)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
 
     m_nWbG = nWB_G;
     m_bG_Auto = bIsAuto;
@@ -1089,7 +1108,7 @@ int CSVBony::setWB_G(long nWB_G, bool bIsAuto)
 int CSVBony::getWB_B(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
     SVB_BOOL bTmp;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -1114,7 +1133,7 @@ int CSVBony::getWB_B(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
 int CSVBony::setWB_B(long nWB_B, bool bIsAuto)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
 
     m_nWbB = nWB_B;
     m_bB_Auto = bIsAuto;
@@ -1139,7 +1158,7 @@ int CSVBony::setWB_B(long nWB_B, bool bIsAuto)
 int CSVBony::getFlip(long &nMin, long &nMax, long &nValue)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
     SVB_BOOL bIsAuto;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -1156,7 +1175,7 @@ int CSVBony::getFlip(long &nMin, long &nMax, long &nValue)
 int CSVBony::setFlip(long nFlip)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
     
     m_nFlip = nFlip;
 
@@ -1174,7 +1193,7 @@ int CSVBony::setFlip(long nFlip)
 int CSVBony::getSpeedMode(long &nMin, long &nMax, long &nValue)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
     SVB_BOOL bIsAuto = SVB_FALSE;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -1197,7 +1216,7 @@ int CSVBony::getSpeedMode(long &nMin, long &nMax, long &nValue)
 int CSVBony::setSpeedMode(long nSpeed)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
     
     m_nSpeedMode = nSpeed;
 
@@ -1216,7 +1235,7 @@ int CSVBony::setSpeedMode(long nSpeed)
 int CSVBony::getContrast(long &nMin, long &nMax, long &nValue)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
     SVB_BOOL bIsAuto = SVB_FALSE;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -1233,7 +1252,7 @@ int CSVBony::getContrast(long &nMin, long &nMax, long &nValue)
 int CSVBony::setContrast(long nContrast)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
     
     m_nContrast = nContrast;
 
@@ -1252,7 +1271,7 @@ int CSVBony::setContrast(long nContrast)
 int CSVBony::getSharpness(long &nMin, long &nMax, long &nValue)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
     SVB_BOOL bIsAuto = SVB_FALSE;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -1269,7 +1288,7 @@ int CSVBony::getSharpness(long &nMin, long &nMax, long &nValue)
 int CSVBony::setSharpness(long nSharpness)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
 
     m_nSharpness = nSharpness;
 
@@ -1288,7 +1307,7 @@ int CSVBony::setSharpness(long nSharpness)
 int CSVBony::getSaturation(long &nMin, long &nMax, long &nValue)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
     SVB_BOOL bIsAuto = SVB_FALSE;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -1305,7 +1324,7 @@ int CSVBony::getSaturation(long &nMin, long &nMax, long &nValue)
 int CSVBony::setSaturation(long nSaturation)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
 
     m_nSaturation = nSaturation;
 
@@ -1324,7 +1343,7 @@ int CSVBony::setSaturation(long nSaturation)
 int CSVBony::getBlackLevel(long &nMin, long &nMax, long &nValue)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
     SVB_BOOL bIsAuto = SVB_FALSE;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -1341,7 +1360,7 @@ int CSVBony::getBlackLevel(long &nMin, long &nMax, long &nValue)
 int CSVBony::setBlackLevel(long nBlackLevel)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
     
     m_nBlackLevel = nBlackLevel;
 
@@ -1361,14 +1380,19 @@ int CSVBony::setBlackLevel(long nBlackLevel)
 int CSVBony::getBadPixelCorrection(bool &bEnabled)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
     SVB_BOOL bIsAuto = SVB_FALSE;
     long nMin, nMax, nValue;
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getBadPixelCorrection] Called"<< std::endl;
     m_sLogFile.flush();
 #endif
-    ret = getControlValues(SVB_BAD_PIXEL_CORRECTION_ENABLE, nMin, nMax, nValue, bIsAuto);
+
+    // older SDK
+    bEnabled = false;
+    return nErr;
+    // newer SDK
+    // ret = getControlValues(SVB_BAD_PIXEL_CORRECTION_ENABLE, nMin, nMax, nValue, bIsAuto);
     if(ret != SVB_SUCCESS) {
         return VAL_NOT_AVAILABLE;
     }
@@ -1380,16 +1404,19 @@ int CSVBony::getBadPixelCorrection(bool &bEnabled)
 int CSVBony::setBadPixelCorrection(bool bEnabled)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
 
     m_bBadPixelCorrectionEnabled = bEnabled;
+    // old SDK
+    return nErr;
 
+    // new SDK
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setBadPixelCorrection] Called"<< std::endl;
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setBadPixelCorrection] Bad pixel correction " << (bEnabled == SVB_TRUE? "Enabled":"Disabled") << std::endl;
     m_sLogFile.flush();
 #endif
-    ret = setControlValue(SVB_BAD_PIXEL_CORRECTION_ENABLE, m_bBadPixelCorrectionEnabled?1:0);
+    // ret = setControlValue(SVB_BAD_PIXEL_CORRECTION_ENABLE, m_bBadPixelCorrectionEnabled?1:0);
     if(ret != SVB_SUCCESS)
         nErr = ERR_CMDFAILED;
 
@@ -1399,7 +1426,7 @@ int CSVBony::setBadPixelCorrection(bool bEnabled)
 
 SVB_ERROR_CODE CSVBony::setControlValue(SVB_CONTROL_TYPE nControlType, long nValue, SVB_BOOL bAuto)
 {
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
     
     if(!m_bConnected)
         return SVB_SUCCESS;
@@ -1426,7 +1453,7 @@ SVB_ERROR_CODE CSVBony::setControlValue(SVB_CONTROL_TYPE nControlType, long nVal
 
 SVB_ERROR_CODE CSVBony::getControlValues(SVB_CONTROL_TYPE nControlType, long &nMin, long &nMax, long &nValue, SVB_BOOL &bIsAuto)
 {
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
     int nControlID;
     bool bControlAvailable = false;
 
@@ -1478,7 +1505,7 @@ SVB_ERROR_CODE CSVBony::getControlValues(SVB_CONTROL_TYPE nControlType, long &nM
 int CSVBony::setROI(int nLeft, int nTop, int nWidth, int nHeight)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
     int nNewLeft = 0;
     int nNewTop = 0;
     int nNewWidth = 0;
@@ -1575,7 +1602,7 @@ int CSVBony::setROI(int nLeft, int nTop, int nWidth, int nHeight)
 int CSVBony::clearROI()
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
     
     ret = SVBSetROIFormat(m_nCameraID, 0, 0, m_nMaxWidth/m_nCurrentBin, m_nMaxHeight/m_nCurrentBin, m_nCurrentBin);
     if(ret!=SVB_SUCCESS)
@@ -1603,7 +1630,7 @@ uint32_t CSVBony::getBitDepth()
 int CSVBony::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
     int sizeReadFromCam;
     unsigned char* imgBuffer = nullptr;
     int i = 0;
@@ -1713,7 +1740,7 @@ int CSVBony::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
 int CSVBony::RelayActivate(const int nXPlus, const int nXMinus, const int nYPlus, const int nYMinus, const bool bSynchronous, const bool bAbort)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
     SVB_BOOL bCanPulse = SVB_FALSE;
     SVB_GUIDE_DIRECTION nDir = SVB_GUIDE_NORTH;
     int nDurration = 0;
