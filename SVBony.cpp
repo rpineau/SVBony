@@ -1695,6 +1695,8 @@ int CSVBony::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
                 m_sLogFile.flush();
 #endif
                 stopCaputure();
+                if(imgBuffer != frameBuffer)
+                    free(imgBuffer);
                 return ERR_RXTIMEOUT;
             }
             continue;
