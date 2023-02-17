@@ -161,10 +161,10 @@ int CSVBony::Connect(int nCameraID)
     m_bConnected = true;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    //char minVersion[1024];
-    //SVBIsCameraNeedToUpgrade(m_nCameraID, &bNeedUpgrade, minVersion);
-    //m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] bNeedUpgrade : " << (bNeedUpgrade?"Yes":"No") << " , min Version " << minVersion << std::endl;
-    //m_sLogFile.flush();
+    char minVersion[1024];
+    SVBIsCameraNeedToUpgrade(m_nCameraID, &bNeedUpgrade, minVersion);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] bNeedUpgrade : " << (bNeedUpgrade?"Yes":"No") << " , min Version " << minVersion << std::endl;
+    m_sLogFile.flush();
 #endif
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -635,10 +635,10 @@ void CSVBony::getFirmwareVersion(std::string &sVersion)
 #endif
 
     ssTmp << "SDK "<<SVBGetSDKVersion();
-    //if(m_bConnected) {
-    //    SVBGetCameraFirmwareVersion(m_nCameraID,szFirmware);
-    //    ssTmp << ", Firmware " << szFirmware;
-    // }
+    if(m_bConnected) {
+        SVBGetCameraFirmwareVersion(m_nCameraID,szFirmware);
+        ssTmp << ", Firmware " << szFirmware;
+    }
     sVersion.assign(ssTmp.str());
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -1389,10 +1389,10 @@ int CSVBony::getBadPixelCorrection(bool &bEnabled)
 #endif
 
     // older SDK
-    bEnabled = false;
-    return nErr;
+    //bEnabled = false;
+    //return nErr;
     // newer SDK
-    // ret = getControlValues(SVB_BAD_PIXEL_CORRECTION_ENABLE, nMin, nMax, nValue, bIsAuto);
+    ret = getControlValues(SVB_BAD_PIXEL_CORRECTION_ENABLE, nMin, nMax, nValue, bIsAuto);
     if(ret != SVB_SUCCESS) {
         return VAL_NOT_AVAILABLE;
     }
@@ -1408,7 +1408,7 @@ int CSVBony::setBadPixelCorrection(bool bEnabled)
 
     m_bBadPixelCorrectionEnabled = bEnabled;
     // old SDK
-    return nErr;
+    // return nErr;
 
     // new SDK
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -1416,7 +1416,7 @@ int CSVBony::setBadPixelCorrection(bool bEnabled)
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setBadPixelCorrection] Bad pixel correction " << (bEnabled == SVB_TRUE? "Enabled":"Disabled") << std::endl;
     m_sLogFile.flush();
 #endif
-    // ret = setControlValue(SVB_BAD_PIXEL_CORRECTION_ENABLE, m_bBadPixelCorrectionEnabled?1:0);
+    ret = setControlValue(SVB_BAD_PIXEL_CORRECTION_ENABLE, m_bBadPixelCorrectionEnabled?1:0);
     if(ret != SVB_SUCCESS)
         nErr = ERR_CMDFAILED;
 
