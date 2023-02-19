@@ -464,16 +464,19 @@ void CSVBony::getCameraId(int &nCameraId)
     nCameraId = m_nCameraID;
 }
 
-void CSVBony::getCameraIdFromSerial(int &nCameraId, std::string sSerial)
+int CSVBony::getCameraIdFromSerial(int &nCameraId, std::string sSerial)
 {
+    int nErr = PLUGIN_OK;
     SVB_ERROR_CODE ret = SVB_SUCCESS;
+
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getCameraIdFromSerial] sSerial ID : " << sSerial << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getCameraIdFromSerial] sSerial : " << sSerial << std::endl;
     m_sLogFile.flush();
 #endif
 
+    nCameraId = -1;
+
     if(!m_bConnected) {
-        nCameraId = 0;
         m_nCameraNum = SVBGetNumOfConnectedCameras();
         for (int i = 0; i < m_nCameraNum; i++)
         {
@@ -482,10 +485,6 @@ void CSVBony::getCameraIdFromSerial(int &nCameraId, std::string sSerial)
             {
                 if(sSerial==m_CameraInfo.CameraSN) {
                     nCameraId = m_CameraInfo.CameraID;
-#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-                    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getCameraIdFromSerial] nCameraId : " << nCameraId << std::endl;
-                    m_sLogFile.flush();
-#endif
                 }
             }
         }
@@ -493,16 +492,30 @@ void CSVBony::getCameraIdFromSerial(int &nCameraId, std::string sSerial)
     else {
         nCameraId = m_CameraInfo.CameraID;
     }
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getCameraIdFromSerial] nCameraId : " << nCameraId << std::endl;
+    m_sLogFile.flush();
+#endif
+
+    if(nCameraId<0)
+        nErr = ERR_NODEVICESELECTED;
+    return nErr;
 }
 
-void CSVBony::getCameraSerialFromID(int nCameraId, std::string &sSerial)
+int CSVBony::getCameraSerialFromID(int nCameraId, std::string &sSerial)
 {
 
+    int nErr = PLUGIN_OK;
     SVB_ERROR_CODE ret = SVB_SUCCESS;
+
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getCameraSerialFromID] nCameraId : " << nCameraId << std::endl;
     m_sLogFile.flush();
 #endif
+    if(nCameraId<0)
+        return ERR_NODEVICESELECTED;
+    sSerial.clear();
     if(!m_bConnected) {
         m_nCameraNum = SVBGetNumOfConnectedCameras();
         for (int i = 0; i < m_nCameraNum; i++)
@@ -522,9 +535,15 @@ void CSVBony::getCameraSerialFromID(int nCameraId, std::string &sSerial)
     }
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getCameraSerialFromID] camera id " << nCameraId << " SN : " << sSerial << std::endl;
+    if(sSerial.size()) {
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getCameraSerialFromID] camera id  = " << nCameraId <<" SN: "<< sSerial << std::endl;
+    }
+    else {
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getCameraSerialFromID] camera serial  not found for id: "<< nCameraId << std::endl;
+    }
     m_sLogFile.flush();
 #endif
+    return nErr;
 }
 
 void CSVBony::getCameraNameFromID(int nCameraId, std::string &sName)

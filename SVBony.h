@@ -63,8 +63,8 @@ public:
     void        Disconnect(bool bTrunCoolerOff);
     void        setCameraId(int nCameraId);
     void        getCameraId(int &nCcameraId);
-    void        getCameraIdFromSerial(int &nCameraId, std::string sSerial);
-    void        getCameraSerialFromID(int nCameraId, std::string &sSerial);
+    int         getCameraIdFromSerial(int &nCameraId, std::string sSerial);
+    int         getCameraSerialFromID(int nCameraId, std::string &sSerial);
     void        getCameraNameFromID(int nCameraId, std::string &sName);
     
     void        getCameraName(std::string &sName);
@@ -136,7 +136,10 @@ public:
     int         getNbGainInList();
     std::string getGainFromListAtIndex(int nIndex);
     void        rebuildGainList();
+#ifdef PLUGIN_DEBUG
     void        log(std::string logString);
+#endif
+    
 protected:
     
     SVB_ERROR_CODE          getControlValues(SVB_CONTROL_TYPE nControlType, long &nMin, long &nMax, long &nValue, SVB_BOOL &bIsAuto);

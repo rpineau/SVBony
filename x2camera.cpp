@@ -14,9 +14,8 @@ X2Camera::X2Camera( const char* pszSelection,
 					MutexInterface*						pIOMutex,
 					TickCountInterface*					pTickCount)
 {
-    int nValue = 0;
-    bool bIsAuto;
-    bool bUserConf = false;
+    int  nErr = PLUGIN_OK;
+    char szCameraSerial[128];
 
 	m_nPrivateISIndex				= nISIndex;
 	m_pTheSkyXForMounts				= pTheSkyXForMounts;
@@ -26,86 +25,27 @@ X2Camera::X2Camera( const char* pszSelection,
 	m_pIOMutex						= pIOMutex;
 	m_pTickCount					= pTickCount;
 
-	m_dCurTemp = -100.0;
-	m_dCurPower = 0;
+    m_dCurTemp = -100.0;
+    m_dCurPower = 0;
 
     mPixelSizeX = 0.0;
     mPixelSizeY = 0.0;
-    m_nCameraID = 0;
 
     // Read in settings
     if (m_pIniUtil) {
-
-        bUserConf = (m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_USER_CONF, 0) == 0?false:true);
-        m_Camera.setUserConf(bUserConf);
-
-        if(bUserConf) {
-            m_pIniUtil->readString(KEY_X2CAM_ROOT, KEY_GUID, "0", m_szCameraSerial, 128);
-            m_Camera.getCameraIdFromSerial(m_nCameraID, std::string(m_szCameraSerial));
-            m_Camera.setCameraSerial(std::string(m_szCameraSerial));
-            m_Camera.setCameraId(m_nCameraID);
-
-            nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_GAIN, VAL_NOT_AVAILABLE);
-            if(nValue!=VAL_NOT_AVAILABLE)
-                m_Camera.setGain((long)nValue);
-
-            nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_GAMMA, VAL_NOT_AVAILABLE);
-            if(nValue!=VAL_NOT_AVAILABLE)
-                m_Camera.setGamma((long)nValue);
-
-            nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_GAMMA_CONTRAST, VAL_NOT_AVAILABLE);
-            if(nValue!=VAL_NOT_AVAILABLE)
-                m_Camera.setGammaContrast((long)nValue);
-
-            nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_R, VAL_NOT_AVAILABLE);
-            bIsAuto =  (m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_R_AUTO, 0) == 0?false:true);
-            if(nValue!=VAL_NOT_AVAILABLE)
-                m_Camera.setWB_R((long)nValue, bIsAuto);
-
-            nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_G, VAL_NOT_AVAILABLE);
-            bIsAuto =  (m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_G_AUTO, 0) == 0?false:true);
-            if(nValue!=VAL_NOT_AVAILABLE)
-                m_Camera.setWB_G((long)nValue, bIsAuto);
-
-            nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_B, VAL_NOT_AVAILABLE);
-            bIsAuto =  (m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_B_AUTO, 0) == 0?false:true);
-            if(nValue!=VAL_NOT_AVAILABLE)
-                m_Camera.setWB_B((long)nValue, bIsAuto);
-
-            nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_FLIP, 0);
-            if(nValue!=VAL_NOT_AVAILABLE)
-                m_Camera.setFlip((long)nValue);
-
-            nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_SPEED_MODE, 0);
-            if(nValue!=VAL_NOT_AVAILABLE)
-                m_Camera.setSpeedMode((long)nValue);
-
-            nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_CONTRAST, VAL_NOT_AVAILABLE);
-            if(nValue!=VAL_NOT_AVAILABLE)
-                m_Camera.setContrast((long)nValue);
-
-            nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_SHARPNESS, VAL_NOT_AVAILABLE);
-            if(nValue!=VAL_NOT_AVAILABLE)
-                m_Camera.setSharpness((long)nValue);
-
-            nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_SATURATION, VAL_NOT_AVAILABLE);
-            if(nValue!=VAL_NOT_AVAILABLE)
-                m_Camera.setSaturation((long)nValue);
-
-            nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_OFFSET, VAL_NOT_AVAILABLE);
-            if(nValue!=VAL_NOT_AVAILABLE)
-                m_Camera.setBlackLevel((long)nValue);
-
-            nValue = m_pIniUtil->readInt(KEY_X2CAM_ROOT, KEY_BAD_PIXEL_CORRECTION, VAL_NOT_AVAILABLE);
-            if(nValue!=VAL_NOT_AVAILABLE)
-                m_Camera.setBadPixelCorrection(nValue==1?true:false);
-        }
-        else {
+        m_pIniUtil->readString(KEY_X2CAM_ROOT, KEY_GUID, "0", szCameraSerial, 128);
+        m_sCameraSerial.assign(szCameraSerial);
+        nErr = m_Camera.getCameraIdFromSerial(m_nCameraID, m_sCameraSerial);
+        if(nErr) { // we don't know that camera, we'll use the default from the camera
             m_nCameraID = 0;
             m_Camera.setCameraId(m_nCameraID);
+            m_Camera.setUserConf(false);
+            return;
         }
+        m_Camera.setCameraSerial(m_sCameraSerial);
+        m_Camera.setCameraId(m_nCameraID);
+        nErr = loadCameraSettings(m_sCameraSerial);
     }
-
 }
 
 X2Camera::~X2Camera()
@@ -152,6 +92,80 @@ int	X2Camera::queryAbstraction(const char* pszName, void** ppVal)
 
 	return SB_OK;
 }
+
+int X2Camera::loadCameraSettings(std::string sSerial)
+{
+    int nErr = SB_OK;
+    int nValue = 0;
+    bool bIsAuto;
+
+    nValue = m_pIniUtil->readInt(sSerial.c_str(), KEY_GAIN, VAL_NOT_AVAILABLE);
+    if(nValue!=VAL_NOT_AVAILABLE)
+        m_Camera.setGain((long)nValue);
+    else {
+        m_Camera.setUserConf(false); // better not set any bad value and read defaults from camera
+        return VAL_NOT_AVAILABLE;
+    }
+
+    nValue = m_pIniUtil->readInt(sSerial.c_str(), KEY_GAMMA, VAL_NOT_AVAILABLE);
+    if(nValue!=VAL_NOT_AVAILABLE)
+        m_Camera.setGamma((long)nValue);
+
+    nValue = m_pIniUtil->readInt(sSerial.c_str(), KEY_GAMMA_CONTRAST, VAL_NOT_AVAILABLE);
+    if(nValue!=VAL_NOT_AVAILABLE)
+        m_Camera.setGammaContrast((long)nValue);
+
+    nValue = m_pIniUtil->readInt(sSerial.c_str(), KEY_GAMMA_CONTRAST, VAL_NOT_AVAILABLE);
+    if(nValue!=VAL_NOT_AVAILABLE)
+        m_Camera.setGammaContrast((long)nValue);
+
+    nValue = m_pIniUtil->readInt(sSerial.c_str(), KEY_WHITE_BALANCE_R, VAL_NOT_AVAILABLE);
+    bIsAuto =  (m_pIniUtil->readInt(sSerial.c_str(), KEY_WHITE_BALANCE_R_AUTO, 0) == 0?false:true);
+    if(nValue!=VAL_NOT_AVAILABLE)
+        m_Camera.setWB_R((long)nValue, bIsAuto);
+
+    nValue = m_pIniUtil->readInt(sSerial.c_str(), KEY_WHITE_BALANCE_G, VAL_NOT_AVAILABLE);
+    bIsAuto =  (m_pIniUtil->readInt(sSerial.c_str(), KEY_WHITE_BALANCE_G_AUTO, 0) == 0?false:true);
+    if(nValue!=VAL_NOT_AVAILABLE)
+        m_Camera.setWB_G((long)nValue, bIsAuto);
+
+    nValue = m_pIniUtil->readInt(sSerial.c_str(), KEY_WHITE_BALANCE_B, VAL_NOT_AVAILABLE);
+    bIsAuto =  (m_pIniUtil->readInt(sSerial.c_str(), KEY_WHITE_BALANCE_B_AUTO, 0) == 0?false:true);
+    if(nValue!=VAL_NOT_AVAILABLE)
+        m_Camera.setWB_B((long)nValue, bIsAuto);
+
+    nValue = m_pIniUtil->readInt(sSerial.c_str(), KEY_FLIP, 0);
+    if(nValue!=VAL_NOT_AVAILABLE)
+        m_Camera.setFlip((long)nValue);
+
+    nValue = m_pIniUtil->readInt(sSerial.c_str(), KEY_SPEED_MODE, 0);
+    if(nValue!=VAL_NOT_AVAILABLE)
+        m_Camera.setSpeedMode((long)nValue);
+
+    nValue = m_pIniUtil->readInt(sSerial.c_str(), KEY_CONTRAST, VAL_NOT_AVAILABLE);
+    if(nValue!=VAL_NOT_AVAILABLE)
+        m_Camera.setContrast((long)nValue);
+
+    nValue = m_pIniUtil->readInt(sSerial.c_str(), KEY_SHARPNESS, VAL_NOT_AVAILABLE);
+    if(nValue!=VAL_NOT_AVAILABLE)
+        m_Camera.setSharpness((long)nValue);
+
+    nValue = m_pIniUtil->readInt(sSerial.c_str(), KEY_SATURATION, VAL_NOT_AVAILABLE);
+    if(nValue!=VAL_NOT_AVAILABLE)
+        m_Camera.setSaturation((long)nValue);
+
+    nValue = m_pIniUtil->readInt(sSerial.c_str(), KEY_OFFSET, VAL_NOT_AVAILABLE);
+    if(nValue!=VAL_NOT_AVAILABLE)
+        m_Camera.setBlackLevel((long)nValue);
+
+    nValue = m_pIniUtil->readInt(sSerial.c_str(), KEY_BAD_PIXEL_CORRECTION, VAL_NOT_AVAILABLE);
+    if(nValue!=VAL_NOT_AVAILABLE)
+        m_Camera.setBadPixelCorrection(nValue==1?true:false);
+
+    m_Camera.setUserConf(true);
+    return nErr;
+}
+
 
 #pragma mark UI bindings
 int X2Camera::execModalSettingsDialog()
@@ -228,6 +242,8 @@ int X2Camera::execModalSettingsDialog()
             m_Camera.setCameraSerial(sCameraSerial);
             // store camera ID
             m_pIniUtil->writeString(KEY_X2CAM_ROOT, KEY_GUID, sCameraSerial.c_str());
+            m_sCameraSerial.assign(sCameraSerial);
+            loadCameraSettings(m_sCameraSerial);
         }
     }
 
@@ -243,7 +259,8 @@ int X2Camera::doSVBonyCAmFeatureConfig()
     bool bIsAuto;
     bool bPressedOK = false;
     bool bEnabled = false;
-    std::string logString;
+    std::stringstream ssTmp;
+
     X2GUIExchangeInterface*            dx = NULL;
 
     X2ModalUIUtil uiutil(this, GetTheSkyXFacadeForDrivers());
@@ -261,35 +278,52 @@ int X2Camera::doSVBonyCAmFeatureConfig()
 
     if(m_bLinked){
         nErr = m_Camera.getGain(nMin, nMax, nVal);
-        if(nErr == VAL_NOT_AVAILABLE)
+        if(nErr == VAL_NOT_AVAILABLE) {
             dx->setEnabled("Gain", false);
+            dx->setText("gainRange", "");
+        }
         else {
             dx->setPropertyInt("Gain", "minimum", (int)nMin);
             dx->setPropertyInt("Gain", "maximum", (int)nMax);
             dx->setPropertyInt("Gain", "value", (int)nVal);
+            ssTmp << nMin << " to " << nMax;
+            dx->setText("gainRange", ssTmp.str().c_str());
+            std::stringstream().swap(ssTmp);
         }
 
         nErr = m_Camera.getGamma(nMin, nMax, nVal);
-        if(nErr == VAL_NOT_AVAILABLE)
+        if(nErr == VAL_NOT_AVAILABLE) {
             dx->setEnabled("Gamma", false);
+            dx->setText("gammaRange", "");
+        }
         else {
             dx->setPropertyInt("Gamma", "minimum", (int)nMin);
             dx->setPropertyInt("Gamma", "maximum", (int)nMax);
             dx->setPropertyInt("Gamma", "value", (int)nVal);
+            ssTmp << nMin << " to " << nMax;
+            dx->setText("gammaRange", ssTmp.str().c_str());
+            std::stringstream().swap(ssTmp);
         }
 
         nErr = m_Camera.getGammaContrast(nMin, nMax, nVal);
-        if(nErr == VAL_NOT_AVAILABLE)
+        if(nErr == VAL_NOT_AVAILABLE) {
             dx->setEnabled("GammaContrast", false);
+            dx->setText("gammaContrastRange", "");
+        }
         else {
             dx->setPropertyInt("GammaContrast", "minimum", (int)nMin);
             dx->setPropertyInt("GammaContrast", "maximum", (int)nMax);
             dx->setPropertyInt("GammaContrast", "value", (int)nVal);
+            ssTmp << nMin << " to " << nMax;
+            dx->setText("gammaContrastRange", ssTmp.str().c_str());
+            std::stringstream().swap(ssTmp);
         }
 
         nErr = m_Camera.getWB_R(nMin, nMax, nVal, bIsAuto);
-        if(nErr == VAL_NOT_AVAILABLE)
+        if(nErr == VAL_NOT_AVAILABLE) {
             dx->setEnabled("WB_R", false);
+            dx->setText("RwbRange", "");
+        }
         else {
             dx->setPropertyInt("WB_R", "minimum", (int)nMin);
             dx->setPropertyInt("WB_R", "maximum", (int)nMax);
@@ -298,11 +332,16 @@ int X2Camera::doSVBonyCAmFeatureConfig()
                 dx->setEnabled("WB_R", false);
                 dx->setChecked("checkBox_2", 1);
             }
+            ssTmp << nMin << " to " << nMax;
+            dx->setText("RwbRange", ssTmp.str().c_str());
+            std::stringstream().swap(ssTmp);
         }
 
         nErr = m_Camera.getWB_G(nMin, nMax, nVal, bIsAuto);
-        if(nErr == VAL_NOT_AVAILABLE)
+        if(nErr == VAL_NOT_AVAILABLE) {
             dx->setEnabled("WB_G", false);
+            dx->setText("GwbRange", "");
+        }
         else {
             dx->setPropertyInt("WB_G", "minimum", (int)nMin);
             dx->setPropertyInt("WB_G", "maximum", (int)nMax);
@@ -311,11 +350,16 @@ int X2Camera::doSVBonyCAmFeatureConfig()
                 dx->setEnabled("WB_G", false);
                 dx->setChecked("checkBox_3", 1);
             }
+            ssTmp << nMin << " to " << nMax;
+            dx->setText("GwbRange", ssTmp.str().c_str());
+            std::stringstream().swap(ssTmp);
         }
 
         nErr = m_Camera.getWB_B(nMin, nMax, nVal, bIsAuto);
-        if(nErr == VAL_NOT_AVAILABLE)
+        if(nErr == VAL_NOT_AVAILABLE) {
             dx->setEnabled("WB_B", false);
+            dx->setText("BwbRange", "");
+        }
         else {
             dx->setPropertyInt("WB_B", "minimum", (int)nMin);
             dx->setPropertyInt("WB_B", "maximum", (int)nMax);
@@ -324,6 +368,9 @@ int X2Camera::doSVBonyCAmFeatureConfig()
                 dx->setEnabled("WB_B", false);
                 dx->setChecked("checkBox_4", 1);
             }
+            ssTmp << nMin << " to " << nMax;
+            dx->setText("BwbRange", ssTmp.str().c_str());
+            std::stringstream().swap(ssTmp);
         }
 
         nErr = m_Camera.getFlip(nMin, nMax, nVal);
@@ -342,39 +389,59 @@ int X2Camera::doSVBonyCAmFeatureConfig()
         }
 
         nErr = m_Camera.getContrast(nMin, nMax, nVal);
-        if(nErr == VAL_NOT_AVAILABLE)
+        if(nErr == VAL_NOT_AVAILABLE) {
             dx->setEnabled("Contrast", false);
+            dx->setText("contrastRange", "");
+        }
         else {
             dx->setPropertyInt("Contrast", "minimum", (int)nMin);
             dx->setPropertyInt("Contrast", "maximum", (int)nMax);
             dx->setPropertyInt("Contrast", "value", (int)nVal);
+            ssTmp << nMin << " to " << nMax;
+            dx->setText("contrastRange", ssTmp.str().c_str());
+            std::stringstream().swap(ssTmp);
         }
         
         nErr = m_Camera.getSharpness(nMin, nMax, nVal);
-        if(nErr == VAL_NOT_AVAILABLE)
+        if(nErr == VAL_NOT_AVAILABLE) {
             dx->setEnabled("Sharpness", false);
+            dx->setText("sharpnessRange", "");
+        }
         else {
             dx->setPropertyInt("Sharpness", "minimum", (int)nMin);
             dx->setPropertyInt("Sharpness", "maximum", (int)nMax);
             dx->setPropertyInt("Sharpness", "value", (int)nVal);
+            ssTmp << nMin << " to " << nMax;
+            dx->setText("sharpnessRange", ssTmp.str().c_str());
+            std::stringstream().swap(ssTmp);
         }
 
         nErr = m_Camera.getSaturation(nMin, nMax, nVal);
-        if(nErr == VAL_NOT_AVAILABLE)
+        if(nErr == VAL_NOT_AVAILABLE) {
             dx->setEnabled("Saturation", false);
+            dx->setText("saturationRange", "");
+        }
         else {
             dx->setPropertyInt("Saturation", "minimum", (int)nMin);
             dx->setPropertyInt("Saturation", "maximum", (int)nMax);
             dx->setPropertyInt("Saturation", "value", (int)nVal);
+            ssTmp << nMin << " to " << nMax;
+            dx->setText("saturationRange", ssTmp.str().c_str());
+            std::stringstream().swap(ssTmp);
         }
 
         nErr = m_Camera.getBlackLevel(nMin, nMax, nVal);
-        if(nErr == VAL_NOT_AVAILABLE)
+        if(nErr == VAL_NOT_AVAILABLE) {
             dx->setEnabled("Offset", false);
+            dx->setText("offsetRange", "");
+        }
         else {
             dx->setPropertyInt("Offset", "minimum", (int)nMin);
             dx->setPropertyInt("Offset", "maximum", (int)nMax);
             dx->setPropertyInt("Offset", "value", (int)nVal);
+            ssTmp << nMin << " to " << nMax;
+            dx->setText("offsetRange", ssTmp.str().c_str());
+            std::stringstream().swap(ssTmp);
         }
 
         nErr = m_Camera.getBadPixelCorrection(bEnabled);
@@ -406,21 +473,19 @@ int X2Camera::doSVBonyCAmFeatureConfig()
 
     //Retreive values from the user interface
     if (bPressedOK) {
-        m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_USER_CONF, 1);
-
         /* broken in SDK 1,3,8 and up...don't change it or it breaks SVBGetVideoData */
         if(dx->isEnabled("SpeedMode")) {
             nCtrlVal = dx->currentIndex("SpeedMode");
             nErr = m_Camera.setSpeedMode((long)nCtrlVal);
             if(!nErr)
-                m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_SPEED_MODE, nCtrlVal);
+                m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_SPEED_MODE, nCtrlVal);
         }
 
         if(dx->isEnabled("Gain")) {
             dx->propertyInt("Gain", "value", nCtrlVal);
             nErr = m_Camera.setGain((long)nCtrlVal);
             if(!nErr) {
-                m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_GAIN, nCtrlVal);
+                m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_GAIN, nCtrlVal);
                 m_Camera.rebuildGainList();
             }
         }
@@ -428,14 +493,14 @@ int X2Camera::doSVBonyCAmFeatureConfig()
             dx->propertyInt("Gamma", "value", nCtrlVal);
             nErr = m_Camera.setGamma((long)nCtrlVal);
             if(!nErr)
-                m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_GAMMA, nCtrlVal);
+                m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_GAMMA, nCtrlVal);
         }
 
         if(dx->isEnabled("GammaContrast")) {
             dx->propertyInt("GammaContrast", "value", nCtrlVal);
             nErr = m_Camera.setGammaContrast((long)nCtrlVal);
             if(!nErr)
-                m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_GAMMA_CONTRAST, nCtrlVal);
+                m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_GAMMA_CONTRAST, nCtrlVal);
         }
 
         if(dx->isEnabled("WB_R") || dx->isEnabled("checkBox_2")) {
@@ -443,8 +508,8 @@ int X2Camera::doSVBonyCAmFeatureConfig()
             bIsAuto = dx->isChecked("checkBox_2");
             nErr = m_Camera.setWB_R((long)nCtrlVal, bIsAuto);
             if(!nErr) {
-                m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_R, nCtrlVal);
-                m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_R_AUTO, bIsAuto?1:0);
+                m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_WHITE_BALANCE_R, nCtrlVal);
+                m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_WHITE_BALANCE_R_AUTO, bIsAuto?1:0);
             }
         }
 
@@ -453,8 +518,8 @@ int X2Camera::doSVBonyCAmFeatureConfig()
             bIsAuto = dx->isChecked("checkBox_3");
             nErr = m_Camera.setWB_G((long)nCtrlVal, bIsAuto);
             if(!nErr){
-                m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_G, nCtrlVal);
-                m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_G_AUTO, bIsAuto?1:0);
+                m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_WHITE_BALANCE_G, nCtrlVal);
+                m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_WHITE_BALANCE_G_AUTO, bIsAuto?1:0);
             }
         }
 
@@ -463,48 +528,48 @@ int X2Camera::doSVBonyCAmFeatureConfig()
             bIsAuto = dx->isChecked("checkBox_4");
             nErr = m_Camera.setWB_B((long)nCtrlVal, bIsAuto);
             if(!nErr) {
-                m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_B, nCtrlVal);
-                m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_WHITE_BALANCE_B_AUTO, bIsAuto?1:0);
+                m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_WHITE_BALANCE_B, nCtrlVal);
+                m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_WHITE_BALANCE_B_AUTO, bIsAuto?1:0);
             }
         }
         if(dx->isEnabled("Flip")) {
             nCtrlVal = dx->currentIndex("Flip");
             nErr = m_Camera.setFlip((long)nCtrlVal);
             if(!nErr)
-                m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_FLIP, nCtrlVal);
+                m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_FLIP, nCtrlVal);
         }
         if(dx->isEnabled("Contrast")) {
             dx->propertyInt("Contrast", "value", nCtrlVal);
             nErr = m_Camera.setContrast((long)nCtrlVal);
             if(!nErr)
-                m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_CONTRAST, nCtrlVal);
+                m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_CONTRAST, nCtrlVal);
         }
 
         if(dx->isEnabled("Sharpness")) {
             dx->propertyInt("Sharpness", "value", nCtrlVal);
             nErr = m_Camera.setSharpness((long)nCtrlVal);
             if(!nErr)
-                m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_SHARPNESS, nCtrlVal);
+                m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_SHARPNESS, nCtrlVal);
         }
 
         if(dx->isEnabled("Saturation")) {
             dx->propertyInt("Saturation", "value", nCtrlVal);
             nErr = m_Camera.setSaturation((long)nCtrlVal);
             if(!nErr)
-                m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_SATURATION, nCtrlVal);
+                m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_SATURATION, nCtrlVal);
         }
 
         if(dx->isEnabled("Offset")) {
             dx->propertyInt("Offset", "value", nCtrlVal);
             nErr = m_Camera.setBlackLevel((long)nCtrlVal);
             if(!nErr)
-                m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_OFFSET, nCtrlVal);
+                m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_OFFSET, nCtrlVal);
         }
         if(dx->isEnabled("BadPixel")) {
             nCtrlVal = dx->currentIndex("BadPixel");
             nErr = m_Camera.setBadPixelCorrection(nCtrlVal==0?false:true);
             if(!nErr)
-                m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_BAD_PIXEL_CORRECTION, nCtrlVal);
+                m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_BAD_PIXEL_CORRECTION, nCtrlVal);
         }
 
     }
@@ -652,19 +717,17 @@ int X2Camera::CCEstablishLink(const enumLPTPort portLPT, const enumWhichCCD& CCD
 
     m_dCurTemp = -100.0;
     nErr = m_Camera.Connect(m_nCameraID);
-    if(nErr)
+    if(nErr) {
         m_bLinked = false;
+        return nErr;
+    }
     else
         m_bLinked = true;
 
-    if(!m_nCameraID) {
-        m_Camera.getCameraId(m_nCameraID);
-        std::string sCameraSerial;
-        m_Camera.getCameraSerialFromID(m_nCameraID, sCameraSerial);
-        // store camera ID
-        m_pIniUtil->writeString(KEY_X2CAM_ROOT, KEY_GUID, sCameraSerial.c_str());
-    }
-    m_Camera.rebuildGainList();
+    m_Camera.getCameraId(m_nCameraID);
+    m_Camera.getCameraSerialFromID(m_nCameraID, m_sCameraSerial);
+    // store camera ID
+    m_pIniUtil->writeString(KEY_X2CAM_ROOT, KEY_GUID, m_sCameraSerial.c_str());
     return nErr;
 }
 
