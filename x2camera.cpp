@@ -438,7 +438,7 @@ int X2Camera::doSVBonyCAmFeatureConfig()
                 m_pIniUtil->writeInt(KEY_X2CAM_ROOT, KEY_GAMMA_CONTRAST, nCtrlVal);
         }
 
-        if(dx->isEnabled("WB_R")) {
+        if(dx->isEnabled("WB_R") || dx->isEnabled("checkBox_2")) {
             dx->propertyInt("WB_R", "value", nCtrlVal);
             bIsAuto = dx->isChecked("checkBox_2");
             nErr = m_Camera.setWB_R((long)nCtrlVal, bIsAuto);
@@ -448,7 +448,7 @@ int X2Camera::doSVBonyCAmFeatureConfig()
             }
         }
 
-        if(dx->isEnabled("WB_G")) {
+        if(dx->isEnabled("WB_G") || dx->isEnabled("checkBox_3")) {
             dx->propertyInt("WB_G", "value", nCtrlVal);
             bIsAuto = dx->isChecked("checkBox_3");
             nErr = m_Camera.setWB_G((long)nCtrlVal, bIsAuto);
@@ -458,7 +458,7 @@ int X2Camera::doSVBonyCAmFeatureConfig()
             }
         }
 
-        if(dx->isEnabled("WB_B")) {
+        if(dx->isEnabled("WB_B") || dx->isEnabled("checkBox_4")) {
             dx->propertyInt("WB_B", "value", nCtrlVal);
             bIsAuto = dx->isChecked("checkBox_4");
             nErr = m_Camera.setWB_B((long)nCtrlVal, bIsAuto);

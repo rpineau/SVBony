@@ -116,7 +116,6 @@ int CSVBony::Connect(int nCameraID)
     SVB_ERROR_CODE ret = SVB_SUCCESS;
     SVB_CONTROL_CAPS    Caps;
     long nMin, nMax;
-    SVB_BOOL bNeedUpgrade;
 
     m_bConnected = false;
 
@@ -161,6 +160,7 @@ int CSVBony::Connect(int nCameraID)
     m_bConnected = true;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    SVB_BOOL bNeedUpgrade;
     char minVersion[1024];
     SVBIsCameraNeedToUpgrade(m_nCameraID, &bNeedUpgrade, minVersion);
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] bNeedUpgrade : " << (bNeedUpgrade?"Yes":"No") << " , min Version " << minVersion << std::endl;
@@ -1489,12 +1489,12 @@ SVB_ERROR_CODE CSVBony::getControlValues(SVB_CONTROL_TYPE nControlType, long &nM
     nMax = m_ControlList.at(nControlID).MaxValue;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setControlValue] nControlType = " << nControlType << std::endl;
-    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setControlValue] nMin         = " << nMin << std::endl;
-    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setControlValue] nMax         = " << nMax << std::endl;
-    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setControlValue] nValue       = " << nValue << std::endl;
-    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setControlValue] bIsAuto      = " << (bIsAuto == SVB_TRUE? "Yes":"No") << std::endl;
-    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setControlValue] ************************" << std::endl<< std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getControlValues] nControlType = " << nControlType << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getControlValues] nMin         = " << nMin << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getControlValues] nMax         = " << nMax << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getControlValues] nValue       = " << nValue << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getControlValues] bIsAuto      = " << (bIsAuto == SVB_TRUE? "Yes":"No") << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getControlValues] ************************" << std::endl<< std::endl;
     m_sLogFile.flush();
 #endif
     return ret;
