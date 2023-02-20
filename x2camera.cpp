@@ -645,12 +645,9 @@ void X2Camera::deviceInfoNameShort(BasicStringInterface& str) const
     X2MutexLocker ml(pMe->GetMutex());
     
     if(m_bLinked) {
-        char cDevName[BUFFER_LEN];
-        std::string sCameraSerial;
         std::string sCameraName;
         pMe->m_Camera.getCameraName(sCameraName);
-        snprintf(cDevName, BUFFER_LEN, "%s", sCameraName.c_str());
-        str = cDevName;
+        str = sCameraName.c_str();
     }
     else {
         str = "";
@@ -661,15 +658,10 @@ void X2Camera::deviceInfoNameLong(BasicStringInterface& str) const
 {
     X2Camera* pMe = (X2Camera*)this;
     X2MutexLocker ml(pMe->GetMutex());
-
     if(m_bLinked) {
-        char cDevName[BUFFER_LEN];
-        std::string sCameraSerial;
         std::string sCameraName;
         pMe->m_Camera.getCameraName(sCameraName);
-        pMe->m_Camera.getCameraSerial(sCameraSerial);
-        snprintf(cDevName, BUFFER_LEN, "%s (%s)", sCameraName.c_str(), sCameraSerial.c_str() );
-        str = cDevName;
+        str = sCameraName.c_str();
     }
     else {
         str = "";
@@ -696,12 +688,9 @@ void X2Camera::deviceInfoModel(BasicStringInterface& str)
 	X2MutexLocker ml(GetMutex());
 
     if(m_bLinked) {
-        char cDevName[BUFFER_LEN];
-        std::string sCameraSerial;
         std::string sCameraName;
         m_Camera.getCameraName(sCameraName);
-        snprintf(cDevName, BUFFER_LEN, "%s", sCameraName.c_str());
-        str = cDevName;
+        str = sCameraName.c_str();
     }
     else {
         str = "";
