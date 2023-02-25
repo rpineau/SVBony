@@ -1407,10 +1407,6 @@ int CSVBony::getBadPixelCorrection(bool &bEnabled)
     m_sLogFile.flush();
 #endif
 
-    // older SDK
-    //bEnabled = false;
-    //return nErr;
-    // newer SDK
     ret = getControlValues(SVB_BAD_PIXEL_CORRECTION_ENABLE, nMin, nMax, nValue, bIsAuto);
     if(ret != SVB_SUCCESS) {
         return VAL_NOT_AVAILABLE;
@@ -1426,10 +1422,7 @@ int CSVBony::setBadPixelCorrection(bool bEnabled)
     SVB_ERROR_CODE ret = SVB_SUCCESS;
 
     m_bBadPixelCorrectionEnabled = bEnabled;
-    // old SDK
-    // return nErr;
 
-    // new SDK
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setBadPixelCorrection] Called"<< std::endl;
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setBadPixelCorrection] Bad pixel correction " << (bEnabled == SVB_TRUE? "Enabled":"Disabled") << std::endl;
