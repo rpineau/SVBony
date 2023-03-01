@@ -716,7 +716,6 @@ int X2Camera::CCEstablishLink(const enumLPTPort portLPT, const enumWhichCCD& CCD
     m_Camera.getCameraId(m_nCameraID);
     m_Camera.getCameraSerialFromID(m_nCameraID, m_sCameraSerial);
     // store camera ID
-    m_Camera.log(m_sCameraSerial);
     m_pIniUtil->writeString(KEY_X2CAM_ROOT, KEY_GUID, m_sCameraSerial.c_str());
     return nErr;
 }
