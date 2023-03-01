@@ -35,7 +35,7 @@
 
 // #define PLUGIN_DEBUG    2
 
-#define PLUGIN_VERSION      1.6
+#define PLUGIN_VERSION      1.7
 #define BUFFER_LEN 128
 #define PLUGIN_OK   0
 #define MAX_NB_BIN  16
@@ -150,7 +150,6 @@ protected:
     bool                    m_bSetUserConf;
     int                     m_nCameraNum;
 
-    SVB_CAMERA_INFO         m_CameraInfo;
     SVB_CAMERA_PROPERTY     m_cameraProperty;
     SVB_CAMERA_PROPERTY_EX  m_CameraPorpertyEx;
 
@@ -216,6 +215,7 @@ protected:
     int                     m_nReqROITop;
     int                     m_nReqROIWidth;
     int                     m_nReqROIHeight;
+    SVB_GUIDE_DIRECTION     m_confGuideDir;
 
     // temperature
     CStopWatch              m_TemperatureTimer;

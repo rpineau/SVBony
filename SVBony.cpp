@@ -62,6 +62,8 @@ CSVBony::CSVBony()
     m_dSetPoint = m_dTemperature;
     m_dCoolerEnabled = false;
 
+    m_confGuideDir = SVB_GUIDE_NORTH;
+
     memset(m_szCameraName,0,BUFFER_LEN);
 
 #ifdef PLUGIN_DEBUG
@@ -468,6 +470,7 @@ int CSVBony::getCameraIdFromSerial(int &nCameraId, std::string sSerial)
 {
     int nErr = PLUGIN_OK;
     SVB_ERROR_CODE ret = SVB_SUCCESS;
+    SVB_CAMERA_INFO CameraInfo;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getCameraIdFromSerial] sSerial : " << sSerial << std::endl;
@@ -476,21 +479,16 @@ int CSVBony::getCameraIdFromSerial(int &nCameraId, std::string sSerial)
 
     nCameraId = -1;
 
-    if(!m_bConnected) {
-        m_nCameraNum = SVBGetNumOfConnectedCameras();
-        for (int i = 0; i < m_nCameraNum; i++)
+    m_nCameraNum = SVBGetNumOfConnectedCameras();
+    for (int i = 0; i < m_nCameraNum; i++)
+    {
+        ret = SVBGetCameraInfo(&CameraInfo, i);
+        if (ret == SVB_SUCCESS)
         {
-            ret = SVBGetCameraInfo(&m_CameraInfo, i);
-            if (ret == SVB_SUCCESS)
-            {
-                if(sSerial==m_CameraInfo.CameraSN) {
-                    nCameraId = m_CameraInfo.CameraID;
-                }
+            if(sSerial==CameraInfo.CameraSN) {
+                nCameraId = CameraInfo.CameraID;
             }
         }
-    }
-    else {
-        nCameraId = m_CameraInfo.CameraID;
     }
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -508,6 +506,7 @@ int CSVBony::getCameraSerialFromID(int nCameraId, std::string &sSerial)
 
     int nErr = PLUGIN_OK;
     SVB_ERROR_CODE ret = SVB_SUCCESS;
+    SVB_CAMERA_INFO CameraInfo;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getCameraSerialFromID] nCameraId : " << nCameraId << std::endl;
@@ -516,22 +515,17 @@ int CSVBony::getCameraSerialFromID(int nCameraId, std::string &sSerial)
     if(nCameraId<0)
         return ERR_NODEVICESELECTED;
     sSerial.clear();
-    if(!m_bConnected) {
-        m_nCameraNum = SVBGetNumOfConnectedCameras();
-        for (int i = 0; i < m_nCameraNum; i++)
+    m_nCameraNum = SVBGetNumOfConnectedCameras();
+    for (int i = 0; i < m_nCameraNum; i++)
+    {
+        ret = SVBGetCameraInfo(&CameraInfo, i);
+        if (ret == SVB_SUCCESS)
         {
-            ret = SVBGetCameraInfo(&m_CameraInfo, i);
-            if (ret == SVB_SUCCESS)
-            {
-                if(nCameraId==m_CameraInfo.CameraID) {
-                    sSerial.assign(m_CameraInfo.CameraSN);
-                    break;
-                }
+            if(nCameraId==CameraInfo.CameraID) {
+                sSerial.assign(CameraInfo.CameraSN);
+                break;
             }
         }
-    }
-    else {
-        sSerial.assign(m_CameraInfo.CameraSN);
     }
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -550,26 +544,23 @@ void CSVBony::getCameraNameFromID(int nCameraId, std::string &sName)
 {
 
     SVB_ERROR_CODE ret = SVB_SUCCESS;
+    SVB_CAMERA_INFO CameraInfo;
+
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getCameraNameFromID] nCameraId : " << nCameraId << std::endl;
     m_sLogFile.flush();
 #endif
-    if(!m_bConnected) {
-        m_nCameraNum = SVBGetNumOfConnectedCameras();
-        for (int i = 0; i < m_nCameraNum; i++)
+    m_nCameraNum = SVBGetNumOfConnectedCameras();
+    for (int i = 0; i < m_nCameraNum; i++)
+    {
+        ret = SVBGetCameraInfo(&CameraInfo, i);
+        if (ret == SVB_SUCCESS)
         {
-            ret = SVBGetCameraInfo(&m_CameraInfo, i);
-            if (ret == SVB_SUCCESS)
-            {
-                if(nCameraId==m_CameraInfo.CameraID) {
-                    sName.assign(m_CameraInfo.FriendlyName);
-                    break;
-                }
+            if(nCameraId==CameraInfo.CameraID) {
+                sName.assign(CameraInfo.FriendlyName);
+                break;
             }
         }
-    }
-    else {
-        sName.assign(m_CameraInfo.FriendlyName);
     }
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
@@ -602,6 +593,7 @@ int CSVBony::listCamera(std::vector<camera_info_t>  &cameraIdList)
     int nErr = PLUGIN_OK;
     camera_info_t   tCameraInfo;
     SVB_ERROR_CODE ret = SVB_SUCCESS;
+    SVB_CAMERA_INFO CameraInfo;
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
     m_sLogFile << "["<<getTimeStamp()<<"]"<< " [listCamera] called" << std::endl;
     m_sLogFile.flush();
@@ -614,29 +606,29 @@ int CSVBony::listCamera(std::vector<camera_info_t>  &cameraIdList)
         m_nCameraNum = SVBGetNumOfConnectedCameras();
         for (int i = 0; i < m_nCameraNum; i++)
         {
-            ret = SVBGetCameraInfo(&m_CameraInfo, i);
+            ret = SVBGetCameraInfo(&CameraInfo, i);
             if (ret == SVB_SUCCESS)
             {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-                m_sLogFile << "["<<getTimeStamp()<<"]"<< " [listCamera] Friendly name : " << m_CameraInfo.FriendlyName << std::endl;
-                m_sLogFile << "["<<getTimeStamp()<<"]"<< " [listCamera] Port type     : " << m_CameraInfo.PortType << std::endl;
-                m_sLogFile << "["<<getTimeStamp()<<"]"<< " [listCamera] SN            : " << m_CameraInfo.CameraSN << std::endl;
-                m_sLogFile << "["<<getTimeStamp()<<"]"<< " [listCamera] Device ID     : " << m_CameraInfo.DeviceID << std::endl;
-                m_sLogFile << "["<<getTimeStamp()<<"]"<< " [listCamera] Camera ID     : " << m_CameraInfo.CameraID << std::endl;
+                m_sLogFile << "["<<getTimeStamp()<<"]"<< " [listCamera] Friendly name : " << CameraInfo.FriendlyName << std::endl;
+                m_sLogFile << "["<<getTimeStamp()<<"]"<< " [listCamera] Port type     : " << CameraInfo.PortType << std::endl;
+                m_sLogFile << "["<<getTimeStamp()<<"]"<< " [listCamera] SN            : " << CameraInfo.CameraSN << std::endl;
+                m_sLogFile << "["<<getTimeStamp()<<"]"<< " [listCamera] Device ID     : " << CameraInfo.DeviceID << std::endl;
+                m_sLogFile << "["<<getTimeStamp()<<"]"<< " [listCamera] Camera ID     : " << CameraInfo.CameraID << std::endl;
                 m_sLogFile.flush();
 #endif
-                tCameraInfo.cameraId = m_CameraInfo.CameraID;
-                strncpy(tCameraInfo.model, m_CameraInfo.FriendlyName, BUFFER_LEN);
-                strncpy((char *)tCameraInfo.Sn.id, m_CameraInfo.CameraSN, sizeof(SVB_ID));
+                tCameraInfo.cameraId = CameraInfo.CameraID;
+                strncpy(tCameraInfo.model, CameraInfo.FriendlyName, BUFFER_LEN);
+                strncpy((char *)tCameraInfo.Sn.id, CameraInfo.CameraSN, sizeof(SVB_ID));
 
                 cameraIdList.push_back(tCameraInfo);
             }
         }
     }
     else {
-        tCameraInfo.cameraId = m_CameraInfo.CameraID;
-        strncpy(tCameraInfo.model, m_CameraInfo.FriendlyName, BUFFER_LEN);
-        strncpy((char *)tCameraInfo.Sn.id, m_CameraInfo.CameraSN, sizeof(SVB_ID));
+        tCameraInfo.cameraId = CameraInfo.CameraID;
+        strncpy(tCameraInfo.model, CameraInfo.FriendlyName, BUFFER_LEN);
+        strncpy((char *)tCameraInfo.Sn.id, CameraInfo.CameraSN, sizeof(SVB_ID));
         cameraIdList.push_back(tCameraInfo);
     }
     return nErr;
@@ -661,7 +653,7 @@ void CSVBony::getFirmwareVersion(std::string &sVersion)
     sVersion.assign(ssTmp.str());
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFirmwareVersion] Firmware : " << szFirmware << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFirmwareVersion] Firmware : " << sVersion << std::endl;
     m_sLogFile.flush();
 #endif
 
@@ -1756,33 +1748,283 @@ int CSVBony::RelayActivate(const int nXPlus, const int nXMinus, const int nYPlus
     int nErr = PLUGIN_OK;
     SVB_ERROR_CODE ret = SVB_SUCCESS;
     SVB_BOOL bCanPulse = SVB_FALSE;
-    SVB_GUIDE_DIRECTION nDir = SVB_GUIDE_NORTH;
     int nDurration = 0;
-    
+    int netX;
+    int netY;
+    bool bNorth, bSouth, bEast, bWest;
+    float timeToWait =0.0;
+    CStopWatch pulseTimer;
+
     ret = SVBCanPulseGuide(m_nCameraID, &bCanPulse);
-    if(bCanPulse) {
-        if(!bAbort) {
-            nDurration = 5000;
-            if(nXPlus != 0 && nXMinus ==0)
-                nDir = SVB_GUIDE_WEST;
-            if(nXPlus == 0 && nXMinus !=0)
-                nDir = SVB_GUIDE_EAST;
-            
-            if(nYPlus != 0 && nYMinus ==0)
-                nDir = SVB_GUIDE_SOUTH;
-            if(nYPlus == 0 && nYMinus !=0)
-                nDir = SVB_GUIDE_NORTH;
+    if(!bCanPulse)
+        return ERR_COMMANDNOTSUPPORTED;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] nXPlus       : " << nXPlus << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] nXMinus      : " << nXMinus << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] nYPlus       : " << nYPlus << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] nYMinus      : " << nYMinus << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] bSynchronous : " << (bSynchronous?"True":"False") << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] bAbort       : " << (bAbort?"True":"False") << std::endl;
+    m_sLogFile.flush();
+#endif
+
+    if(bAbort) {
+        ret = SVBPulseGuide(m_nCameraID, SVB_GUIDE_NORTH, 0);
+        ret = SVBPulseGuide(m_nCameraID, SVB_GUIDE_SOUTH, 0);
+        ret = SVBPulseGuide(m_nCameraID, SVB_GUIDE_EAST, 0);
+        ret = SVBPulseGuide(m_nCameraID, SVB_GUIDE_WEST, 0);
+        return nErr;
+    }
+
+    if(!bSynchronous) { // done for the GUI
+        if(nXPlus == 0 && nXMinus ==0 && nYPlus == 0 && nYMinus ==0) {
+            nDurration = 0;
         }
         else {
-            nDurration = 0; // should stop the pulse
-            nDir = SVB_GUIDE_NORTH;
+            if(nXPlus != 0 && nXMinus ==0) {
+                nDurration = int(float(nXPlus)/100.0f * 1000); // in ms
+                m_confGuideDir = SVB_GUIDE_EAST;
+            }
+            if(nXPlus == 0 && nXMinus !=0) {
+                nDurration = int(float(nXMinus)/100.0f * 1000); // in ms
+                m_confGuideDir = SVB_GUIDE_WEST;
+            }
+            if(nYPlus != 0 && nYMinus ==0) {
+                nDurration = int(float(nYPlus)/100.0f * 1000); // in ms
+                m_confGuideDir = SVB_GUIDE_NORTH;
+            }
+            if(nYPlus == 0 && nYMinus !=0) {
+                nDurration = int(float(nYMinus)/100.0f * 1000); // in ms
+                m_confGuideDir = SVB_GUIDE_SOUTH;
+            }
         }
-        ret = SVBPulseGuide(m_nCameraID, nDir, nDurration); // hopefully this is not blocking !!! 
-        if(ret!=SVB_SUCCESS)
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] GUI move m_confGuideDir    : " << m_confGuideDir << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] GUI move nDurration : " << nDurration << std::endl;
+        m_sLogFile.flush();
+#endif
+        ret = SVBPulseGuide(m_nCameraID, m_confGuideDir, nDurration); // hopefully this is not blocking !!!
+        if(ret!=SVB_SUCCESS) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] GUI move POASetConfig error :  " << ret << std::endl;
+            m_sLogFile.flush();
+#endif
             nErr =ERR_CMDFAILED;
+        }
+        return nErr;
     }
-    else
-        nErr = ERR_NOT_IMPL;
+
+    // start guiding / calibrating
+    bEast = false;
+    bWest = false;
+    bNorth = false;
+    bSouth = false;
+    // East/West
+    if(nXPlus != 0 && nXMinus ==0) {
+        nDurration = int(float(nXPlus)/100.0f) * 1000; // in ms
+        ret = SVBPulseGuide(m_nCameraID, SVB_GUIDE_EAST, nDurration);
+        if(ret!=SVB_SUCCESS) {
+    #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] AutoGuide move SVBPulseGuide error :  " << ret << std::endl;
+            m_sLogFile.flush();
+    #endif
+            nErr = ERR_CMDFAILED;
+        }
+        bEast = true;
+    }
+    if(nXPlus == 0 && nXMinus !=0) {
+        nDurration = int(float(nXMinus)/100.0f * 1000); // in ms
+        ret = SVBPulseGuide(m_nCameraID, SVB_GUIDE_WEST, nDurration);
+        if(ret!=SVB_SUCCESS) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] AutoGuide move SVBPulseGuide error :  " << ret << std::endl;
+            m_sLogFile.flush();
+#endif
+            nErr = ERR_CMDFAILED;
+        }
+        bWest = true;
+    }
+    // North/South
+    if(nYPlus != 0 && nYMinus ==0) {
+        nDurration = int(float(nYPlus)/100.0f * 1000); // in ms
+        ret = SVBPulseGuide(m_nCameraID, SVB_GUIDE_NORTH, nDurration);
+        if(ret!=SVB_SUCCESS) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] AutoGuide move SVBPulseGuide error :  " << ret << std::endl;
+            m_sLogFile.flush();
+#endif
+            nErr = ERR_CMDFAILED;
+        }
+        bNorth = true;
+    }
+
+    if(nYPlus == 0 && nYMinus !=0) {
+        nDurration = int(float(nYMinus)/100.0f * 1000); // in ms
+        ret = SVBPulseGuide(m_nCameraID, SVB_GUIDE_SOUTH, nDurration);
+        if(ret!=SVB_SUCCESS) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] AutoGuide move SVBPulseGuide error :  " << ret << std::endl;
+            m_sLogFile.flush();
+#endif
+            nErr = ERR_CMDFAILED;
+        }
+        bSouth = true;
+    }
+
+    pulseTimer.Reset();
+    // One of these will always be zero, so this gives me the net
+    // plus or minus movement
+    netX = nXPlus - nXMinus;
+    netY = nYPlus - nYMinus;
+    if(netX == 0) {   // netY will not be zero
+        // One of nYPLus and nYMinus will be zero, so this expression will work
+        timeToWait = float(nYPlus + nYMinus)/100.0f;
+        // Just wait for time to expire and stop relay
+        while(pulseTimer.GetElapsedSeconds() < timeToWait);
+        // need to know which one to stop
+        if(bNorth)
+            ret = SVBPulseGuide(m_nCameraID, SVB_GUIDE_NORTH, 0);
+        else
+            ret = SVBPulseGuide(m_nCameraID, SVB_GUIDE_SOUTH, 0);
+        if(ret!=SVB_SUCCESS) {
+    #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] SVBPulseGuide error :  " << ret << std::endl;
+            m_sLogFile.flush();
+    #endif
+            nErr = ERR_CMDFAILED;
+        }
+        return nErr;
+    }
+
+    if(netY == 0)  {  // netX will not be zero
+        // Again, one of these will be zero
+        timeToWait = float(nXPlus + nXMinus)/100.0f;
+        // Just wait for time to expire and stop relay
+        while(pulseTimer.GetElapsedSeconds() < timeToWait);
+        // need to know which one to stop
+        if(bEast)
+            ret = SVBPulseGuide(m_nCameraID, SVB_GUIDE_EAST, 0);
+        else
+            ret = SVBPulseGuide(m_nCameraID, SVB_GUIDE_WEST, 0);
+
+        if(ret!=SVB_SUCCESS) {
+    #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] SVBPulseGuide error :  " << ret << std::endl;
+            m_sLogFile.flush();
+    #endif
+            nErr = ERR_CMDFAILED;
+        }
+        return nErr;
+    }
+    //
+    //  Dual axis movement, Are they both the same. Wait and then terminate both at same time
+    //
+    if(abs(netY) == abs(netX)) {
+        // Pick one, doesn't matter which
+        timeToWait = float(nXPlus + nXMinus)/100.0f;
+        // Just wait for time to expire and stop relay
+        while(pulseTimer.GetElapsedSeconds() < timeToWait);
+
+        // need to know which one to stop
+        if(bNorth)
+            ret = SVBPulseGuide(m_nCameraID, SVB_GUIDE_NORTH, 0);
+        else
+            ret = SVBPulseGuide(m_nCameraID, SVB_GUIDE_SOUTH, 0);
+
+        // need to know which one to stop
+        if(bEast)
+            ret = SVBPulseGuide(m_nCameraID, SVB_GUIDE_EAST, 0);
+        else
+            ret = SVBPulseGuide(m_nCameraID, SVB_GUIDE_WEST, 0);
+
+        if(ret!=SVB_SUCCESS) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] SVBPulseGuide error :  " << ret << std::endl;
+            m_sLogFile.flush();
+#endif
+            nErr = ERR_CMDFAILED;
+        }
+        return nErr;
+    }
+    //
+    // Dual axis movement, not the same time for each!
+    //
+    if(abs(netY) < abs(netX)) { // East-West movement was greater
+        // Wait for shorter time
+        timeToWait = float(nYPlus + nYMinus)/100.0f;
+        while(pulseTimer.GetElapsedSeconds() < timeToWait);
+        // need to know which one to stop
+        if(bNorth)
+            ret = SVBPulseGuide(m_nCameraID, SVB_GUIDE_NORTH, 0);
+        else
+            ret = SVBPulseGuide(m_nCameraID, SVB_GUIDE_SOUTH, 0);
+
+        if(ret!=SVB_SUCCESS) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] SVBPulseGuide error :  " << ret << std::endl;
+            m_sLogFile.flush();
+#endif
+            nErr = ERR_CMDFAILED;
+        }
+
+        // Longer time
+        timeToWait = float(nXPlus + nXMinus)/100.0f;
+        while(pulseTimer.GetElapsedSeconds() < timeToWait);
+
+        // need to know which one to stop
+        if(bEast)
+            ret = SVBPulseGuide(m_nCameraID, SVB_GUIDE_EAST, 0);
+        else
+            ret = SVBPulseGuide(m_nCameraID, SVB_GUIDE_WEST, 0);
+
+        if(ret!=SVB_SUCCESS) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] SVBPulseGuide error :  " << ret << std::endl;
+            m_sLogFile.flush();
+#endif
+            nErr = ERR_CMDFAILED;
+        }
+
+        return nErr;
+    }
+    else { // North-South movement was greater
+        // Wait for shorter time
+        timeToWait = float(nXPlus + nXMinus)/100.0f;
+        while(pulseTimer.GetElapsedSeconds() < timeToWait);
+        // need to know which one to stop
+        if(bEast)
+            ret = SVBPulseGuide(m_nCameraID, SVB_GUIDE_EAST, 0);
+        else
+            ret = SVBPulseGuide(m_nCameraID, SVB_GUIDE_WEST, 0);
+
+        if(ret!=SVB_SUCCESS) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] SVBPulseGuide error :  " << ret << std::endl;
+            m_sLogFile.flush();
+#endif
+            nErr = ERR_CMDFAILED;
+        }
+
+        // Longer time
+        timeToWait = float(nYPlus + nYMinus)/100.0f;
+        while(pulseTimer.GetElapsedSeconds() < timeToWait);
+
+        if(bNorth)
+            ret = SVBPulseGuide(m_nCameraID, SVB_GUIDE_NORTH, 0);
+        else
+            ret = SVBPulseGuide(m_nCameraID, SVB_GUIDE_SOUTH, 0);
+
+        if(ret!=SVB_SUCCESS) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] SVBPulseGuide error :  " << ret << std::endl;
+            m_sLogFile.flush();
+#endif
+            nErr = ERR_CMDFAILED;
+        }
+
+        return nErr;
+    }
     return nErr;
 
 }
