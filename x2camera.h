@@ -53,6 +53,7 @@ class AddFITSKeyInterface;
 #define KEY_SHARPNESS               "Sharpness"
 #define KEY_SATURATION              "Saturation"
 #define KEY_OFFSET                  "Offset"
+#define KEY_BAD_PIXEL_CORRECTION    "BadPixelCorrection"
 
 
 enum DIALOGS {SELECT, SETTINGS };
@@ -247,9 +248,10 @@ private:
     CSVBony         m_Camera;
     enumCameraIndex m_CameraIdx;
     int             m_nCameraID;
-    char            m_szCameraSerial[128];
+    std::string     m_sCameraSerial;
     std::vector<camera_info_t>           m_tCameraIdList;
 
+    int loadCameraSettings(std::string sSerial);
     int doSVBonyCAmFeatureConfig();
     void doSelectCamEvent(X2GUIExchangeInterface* uiex, const char* pszEvent);
     void doSettingsCamEvent(X2GUIExchangeInterface* uiex, const char* pszEvent);

@@ -51,6 +51,7 @@ CSVBony::CSVBony()
     m_nSaturation = -1;
     m_nAutoExposureTarget = -1;
     m_nBlackLevel = -1;
+    m_bBadPixelCorrectionEnabled = false;
 
     m_bTempertureSupported = false;
 
@@ -61,7 +62,10 @@ CSVBony::CSVBony()
     m_dSetPoint = m_dTemperature;
     m_dCoolerEnabled = false;
 
+    m_confGuideDir = SVB_GUIDE_NORTH;
+
     memset(m_szCameraName,0,BUFFER_LEN);
+
 #ifdef PLUGIN_DEBUG
 #if defined(SB_WIN_BUILD)
     m_sLogfilePath = getenv("HOMEDRIVE");
@@ -74,21 +78,18 @@ CSVBony::CSVBony()
     m_sLogfilePath = getenv("HOME");
     m_sLogfilePath += "/SVBonyLog.txt";
 #endif
-    Logfile = fopen(m_sLogfilePath.c_str(), "w");
+    m_sLogFile.open(m_sLogfilePath, std::ios::out |std::ios::trunc);
 #endif
 
     std::string sSDKVersion;
     getFirmwareVersion(sSDKVersion);
-
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][CSVBony] Version %3.2f build 2021_01_31_1800.\n", timestamp, PLUGIN_VERSION);
-    fprintf(Logfile, "[%s][CSVBony] Constructor Called.\n", timestamp);
-    fprintf(Logfile, "[%s][CSVBony] %s.\n", timestamp, sSDKVersion.c_str());
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [CSVBony] Version " << std::fixed << std::setprecision(2) << PLUGIN_VERSION << " build " << __DATE__ << " " << __TIME__ << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [CSVBony] " << sSDKVersion << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [CSVBony] Constructor Called." << std::endl;
+    m_sLogFile.flush();
 #endif
+
 
     std::vector<camera_info_t> tCameraIdList;
     listCamera(tCameraIdList);
@@ -103,6 +104,10 @@ CSVBony::~CSVBony()
 #pragma mark - Camera access
 void CSVBony::setUserConf(bool bUserConf)
 {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]" << " [setUserConf]  Set m_bSetUserConf to : " << (bUserConf?"Yes":"No") << std::endl;
+    m_sLogFile.flush();
+#endif
     m_bSetUserConf = bUserConf;
 }
 
@@ -110,19 +115,17 @@ int CSVBony::Connect(int nCameraID)
 {
     int nErr = PLUGIN_OK;
     int i;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
     SVB_CONTROL_CAPS    Caps;
     long nMin, nMax;
 
     m_bConnected = false;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][Connect] Connect called\n", timestamp);
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Connect called" << std::endl;
+    m_sLogFile.flush();
 #endif
+
 
     if(nCameraID)
         m_nCameraID = nCameraID;
@@ -143,21 +146,15 @@ int CSVBony::Connect(int nCameraID)
     }
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][Connect] Connecting to camera ID %d serial %s\n", timestamp, m_nCameraID, m_sCameraSerial.c_str());
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Connecting to camera ID  " << m_nCameraID << " Serial " << m_sCameraSerial << std::endl;
+    m_sLogFile.flush();
 #endif
 
     ret = SVBOpenCamera(m_nCameraID);
     if (ret != SVB_SUCCESS) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        ltime = time(NULL);
-        timestamp = asctime(localtime(&ltime));
-        timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s][Connect] Error connecting to camera ID %d serial %s, Error = %d\n", timestamp, m_nCameraID, m_sCameraSerial.c_str(), ret);
-        fflush(Logfile);
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Error connecting to camera ID  " << m_nCameraID << " Serial " << m_sCameraSerial << " , ret = " << ret << std::endl;
+        m_sLogFile.flush();
 #endif
         return ERR_NORESPONSE;
         }
@@ -165,52 +162,47 @@ int CSVBony::Connect(int nCameraID)
     m_bConnected = true;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][Connect] Disabling autosave params\n", timestamp);
-    fflush(Logfile);
+    SVB_BOOL bNeedUpgrade;
+    char minVersion[1024];
+    SVBIsCameraNeedToUpgrade(m_nCameraID, &bNeedUpgrade, minVersion);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] bNeedUpgrade : " << (bNeedUpgrade?"Yes":"No") << " , min Version " << minVersion << std::endl;
+    m_sLogFile.flush();
 #endif
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Disabling autosave params" << std::endl;
+    m_sLogFile.flush();
+#endif
+
     ret = SVBSetAutoSaveParam(m_nCameraID, SVB_FALSE);
     if (ret != SVB_SUCCESS) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        ltime = time(NULL);
-        timestamp = asctime(localtime(&ltime));
-        timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s][Connect] Error seting autosave to false, Error = %d\n", timestamp, ret);
-        fflush(Logfile);
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Error seting autosave to false, Error = " << ret << std::endl;
+        m_sLogFile.flush();
 #endif
     }
 
+
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][Connect] Turn off autoexposure\n", timestamp);
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Turn off autoexposure" << std::endl;
+    m_sLogFile.flush();
 #endif
+
     ret = SVBSetControlValue(m_nCameraID, SVB_EXPOSURE , 1000000, SVB_FALSE);
 
     getCameraNameFromID(m_nCameraID, m_sCameraName);
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        ltime = time(NULL);
-        timestamp = asctime(localtime(&ltime));
-        timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s][Connect] Connected to camera ID %d serial %s\n", timestamp, m_nCameraID, m_sCameraSerial.c_str());
-        fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Connected to camera ID  " << m_nCameraID << " Serial " << m_sCameraSerial << std::endl;
+    m_sLogFile.flush();
 #endif
 
-    
     ret = SVBGetCameraProperty(m_nCameraID, &m_cameraProperty);
     if (ret != SVB_SUCCESS)
     {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        ltime = time(NULL);
-        timestamp = asctime(localtime(&ltime));
-        timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s][Connect] SVBGetCameraProperty Error : %d\n", timestamp, ret);
-        fflush(Logfile);
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] SVBGetCameraProperty Error = " << ret << std::endl;
+        m_sLogFile.flush();
 #endif
         SVBCloseCamera(m_nCameraID);
         m_bConnected = false;
@@ -266,19 +258,16 @@ int CSVBony::Connect(int nCameraID)
         m_nCurrentBin = m_SupportedBins[0]; // if bin 1 was not availble .. use first bin in the array
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][Connect] Camera properties :\n", timestamp);
-    fprintf(Logfile, "[%s][Connect] m_nMaxWidth     : %d\n", timestamp, m_nMaxWidth);
-    fprintf(Logfile, "[%s][Connect] m_nMaxHeight    : %d\n", timestamp, m_nMaxHeight);
-    fprintf(Logfile, "[%s][Connect] m_bIsColorCam   : %s\n", timestamp, m_bIsColorCam?"Yes":"No");
-    fprintf(Logfile, "[%s][Connect] m_nBayerPattern : %d\n", timestamp, m_nBayerPattern);
-    fprintf(Logfile, "[%s][Connect] m_nMaxBitDepth  : %d\n", timestamp, m_nMaxBitDepth);
-    fprintf(Logfile, "[%s][Connect] m_nVideoMode    : %d\n", timestamp, m_nVideoMode);
-    fprintf(Logfile, "[%s][Connect] m_nNbBitToShift : %d\n", timestamp, m_nNbBitToShift);
-    fprintf(Logfile, "[%s][Connect] m_nNbBin        : %d\n", timestamp, m_nNbBin);
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Camera properties :" << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] m_nMaxWidth       :" << m_nMaxWidth << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] m_nMaxHeight      :" << m_nMaxHeight << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] m_bIsColorCam     :" << (m_bIsColorCam?"Yes":"No") << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] m_nBayerPattern   :" << m_nBayerPattern << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] m_nMaxBitDepth    :" << m_nMaxBitDepth << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] m_nVideoMode      :" << m_nVideoMode << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] m_nNbBitToShift   :" << m_nNbBitToShift << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] m_nNbBin          :" << m_nNbBin << std::endl;
+    m_sLogFile.flush();
 #endif
 
     float pixelSize;
@@ -286,11 +275,8 @@ int CSVBony::Connect(int nCameraID)
     if (ret != SVB_SUCCESS && ret != SVB_ERROR_UNKNOW_SENSOR_TYPE)
     {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        ltime = time(NULL);
-        timestamp = asctime(localtime(&ltime));
-        timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s][Connect] SVBGetSensorPixelSize Error : %d\n", timestamp, ret);
-        fflush(Logfile);
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] SVBGetSensorPixelSize Error = " << ret << std::endl;
+        m_sLogFile.flush();
 #endif
         SVBCloseCamera(m_nCameraID);
         m_bConnected = false;
@@ -298,41 +284,30 @@ int CSVBony::Connect(int nCameraID)
     }
     if(ret == SVB_ERROR_UNKNOW_SENSOR_TYPE) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][Connect] m_dPixelSize    : Unknown !!!!!!! \n", timestamp);
-    fflush(Logfile);
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] m_dPixelSize Unknown, Error = " << ret << std::endl;
+        m_sLogFile.flush();
 #endif
         m_dPixelSize = 0;
     }
     else {
         m_dPixelSize = (double)pixelSize;
+
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        ltime = time(NULL);
-        timestamp = asctime(localtime(&ltime));
-        timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s][Connect] m_dPixelSize    : %3.2f\n", timestamp, m_dPixelSize);
-        fflush(Logfile);
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] m_dPixelSize = " << m_dPixelSize << std::endl;
+        m_sLogFile.flush();
 #endif
     }
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][Connect] Setting ROI to max size\n", timestamp);
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Setting ROI to max size." << std::endl;
+    m_sLogFile.flush();
 #endif
 
     ret = SVBSetROIFormat(m_nCameraID, 0, 0, m_nMaxWidth, m_nMaxHeight, 1);
     if (ret != SVB_SUCCESS) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        ltime = time(NULL);
-        timestamp = asctime(localtime(&ltime));
-        timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s][Connect] SVBSetROIFormat Error : %d\n", timestamp, ret);
-        fflush(Logfile);
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] SVBSetROIFormat  Error = " << ret << std::endl;
+        m_sLogFile.flush();
 #endif
         SVBCloseCamera(m_nCameraID);
         m_bConnected = false;
@@ -341,11 +316,8 @@ int CSVBony::Connect(int nCameraID)
     ret = SVBGetROIFormat(m_nCameraID, &m_nROILeft, &m_nROITop, &m_nROIWidth, &m_nROIHeight, &m_nCurrentBin);
     if (ret != SVB_SUCCESS) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        ltime = time(NULL);
-        timestamp = asctime(localtime(&ltime));
-        timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s][Connect] SVBGetROIFormat Error : %d\n", timestamp, ret);
-        fflush(Logfile);
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] SVBGetROIFormat  Error = " << ret << std::endl;
+        m_sLogFile.flush();
 #endif
         SVBCloseCamera(m_nCameraID);
         m_bConnected = false;
@@ -353,57 +325,52 @@ int CSVBony::Connect(int nCameraID)
     }
 
     ret = SVBGetNumOfControls(m_nCameraID, &m_nControlNums);
+
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][Connect] m_nControlNums : %d\n", timestamp, m_nControlNums);
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] m_nControlNums : " << m_nControlNums << std::endl;
+    m_sLogFile.flush();
 #endif
 
     for (i = 0; i < m_nControlNums; i++) {
         ret = SVBGetControlCaps(m_nCameraID, i, &Caps);
         if (ret != SVB_SUCCESS) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-            ltime = time(NULL);
-            timestamp = asctime(localtime(&ltime));
-            timestamp[strlen(timestamp) - 1] = 0;
-            fprintf(Logfile, "[%s][Connect] Error getting caps : %d\n", timestamp, ret);
-            fflush(Logfile);
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Error getting caps "<< i <<", Error = " << ret << std::endl;
+            m_sLogFile.flush();
 #endif
             continue;
         }
+
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        ltime = time(NULL);
-        timestamp = asctime(localtime(&ltime));
-        timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s][Connect] ********************************************************\n", timestamp);
-        fprintf(Logfile, "[%s][Connect] ControlCaps Name              : %s\n", timestamp, Caps.Name);
-        fprintf(Logfile, "[%s][Connect] ControlCaps Description       : %s\n", timestamp, Caps.Description);
-        fprintf(Logfile, "[%s][Connect] ControlCaps MinValue          : %ld\n", timestamp, Caps.MinValue);
-        fprintf(Logfile, "[%s][Connect] ControlCaps MaxValue          : %ld\n", timestamp, Caps.MaxValue);
-        fprintf(Logfile, "[%s][Connect] ControlCaps IsAutoSupported   : %s\n", timestamp, Caps.IsAutoSupported?"Yes":"No");
-        fprintf(Logfile, "[%s][Connect] ControlCaps IsWritable        : %s\n", timestamp, Caps.IsWritable?"Yes":"No");
-        fflush(Logfile);
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] ********************************************************" << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] ControlCaps Name            : " << Caps.Name << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] ControlCaps Description     : " << Caps.Description << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] ControlCaps MinValue        : " << Caps.MinValue << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] ControlCaps MaxValue        : " << Caps.MaxValue << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] ControlCaps IsAutoSupported : " << (Caps.IsAutoSupported?"Yes":"No") << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] ControlCaps IsWritable      : " << (Caps.IsWritable?"Yes":"No") << std::endl;
+        m_sLogFile.flush();
 #endif
+
         m_ControlList.push_back(Caps);
     }
 
     // get Extended properties for newer camera
-#ifdef COOLER_SUPPORT
     ret = SVBGetCameraPropertyEx(m_nCameraID, &m_CameraPorpertyEx);
     m_bTempertureSupported = m_CameraPorpertyEx.bSupportControlTemp;
     m_bPulseGuidingSupported = m_CameraPorpertyEx.bSupportPulseGuide;
-#endif
-    
+
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][Connect] ********************************************************\n", timestamp);
-    fprintf(Logfile, "[%s][Connect] m_bTempertureSupported             : %s\n", timestamp, m_bTempertureSupported?"Yes":"No");
-    fprintf(Logfile, "[%s][Connect] m_bPulseGuidingSupported             : %s\n", timestamp, m_bPulseGuidingSupported?"Yes":"No");
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] ********************************************************" << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] m_bTempertureSupported   : " << (m_bTempertureSupported?"Yes":"No") << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] m_bPulseGuidingSupported : " << (m_bPulseGuidingSupported?"Yes":"No") << std::endl;
+    m_sLogFile.flush();
+#endif
+
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Setting default properties" << std::endl;
+    m_sLogFile.flush();
 #endif
 
     if(m_bSetUserConf) {
@@ -420,6 +387,7 @@ int CSVBony::Connect(int nCameraID)
         setSharpness(m_nSharpness);
         setSaturation(m_nSaturation);
         setBlackLevel(m_nBlackLevel);
+        setBadPixelCorrection(m_bBadPixelCorrectionEnabled);
     }
     else
     {
@@ -435,13 +403,19 @@ int CSVBony::Connect(int nCameraID)
         getSharpness(nMin, nMax, m_nSharpness);
         getSaturation(nMin, nMax, m_nSaturation);
         getBlackLevel(nMin, nMax, m_nBlackLevel);
+        setBadPixelCorrection(m_bBadPixelCorrectionEnabled);
     }
 
     rebuildGainList();
 
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Setting amera image type and mode"  << std::endl;
+    m_sLogFile.flush();
+#endif
     ret = SVBSetOutputImageType(m_nCameraID, m_nVideoMode);
     ret = SVBSetCameraMode(m_nCameraID, SVB_MODE_TRIG_SOFT);
-    
+
+
     ret = SVBStartVideoCapture(m_nCameraID);
     if(ret!=SVB_SUCCESS) {
         m_bConnected = false;
@@ -450,11 +424,8 @@ int CSVBony::Connect(int nCameraID)
     m_bCapturerunning = true;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][Connect] Connected : %s\n", timestamp, m_bConnected?"Yes":"No");
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Connect] Connected : " << ( m_bConnected?"Yes":"No") << std::endl;
+    m_sLogFile.flush();
 #endif
 
     return nErr;
@@ -463,11 +434,8 @@ int CSVBony::Connect(int nCameraID)
 void CSVBony::Disconnect(bool bTrunCoolerOff)
 {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][Disconnect] Disconnceting from CameraId = %d\n", timestamp, m_nCameraID);
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [Disconnect] Disconnceting from camera ID  " << m_nCameraID << " Serial " << m_sCameraSerial << std::endl;
+    m_sLogFile.flush();
 #endif
     if(bTrunCoolerOff)
         setCoolerTemperature(false, 15);
@@ -488,11 +456,8 @@ void CSVBony::setCameraId(int nCameraId)
 {
     m_nCameraID = nCameraId;
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][setCameraId] nCameraId = %d\n", timestamp, nCameraId);
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setCameraId] Camera ID : " << m_nCameraID << std::endl;
+    m_sLogFile.flush();
 #endif
 }
 
@@ -501,117 +466,106 @@ void CSVBony::getCameraId(int &nCameraId)
     nCameraId = m_nCameraID;
 }
 
-void CSVBony::getCameraIdFromSerial(int &nCameraId, std::string sSerial)
+int CSVBony::getCameraIdFromSerial(int &nCameraId, std::string sSerial)
 {
-    SVB_ERROR_CODE ret;
+    int nErr = PLUGIN_OK;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
+    SVB_CAMERA_INFO CameraInfo;
+
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        ltime = time(NULL);
-        timestamp = asctime(localtime(&ltime));
-        timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s][getCameraIdFromSerial] sSerial = %s\n", timestamp, sSerial.c_str());
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getCameraIdFromSerial] sSerial : " << sSerial << std::endl;
+    m_sLogFile.flush();
 #endif
 
-    if(!m_bConnected) {
-        nCameraId = 0;
-        m_nCameraNum = SVBGetNumOfConnectedCameras();
-        for (int i = 0; i < m_nCameraNum; i++)
+    nCameraId = -1;
+
+    m_nCameraNum = SVBGetNumOfConnectedCameras();
+    for (int i = 0; i < m_nCameraNum; i++)
+    {
+        ret = SVBGetCameraInfo(&CameraInfo, i);
+        if (ret == SVB_SUCCESS)
         {
-            ret = SVBGetCameraInfo(&m_CameraInfo, i);
-            if (ret == SVB_SUCCESS)
-            {
-                if(sSerial==m_CameraInfo.CameraSN) {
-                    nCameraId = m_CameraInfo.CameraID;
-#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-                    ltime = time(NULL);
-                    timestamp = asctime(localtime(&ltime));
-                    timestamp[strlen(timestamp) - 1] = 0;
-                    fprintf(Logfile, "[%s][getCameraIdFromSerial] nCameraId = %d\n", timestamp, nCameraId);
-                    fflush(Logfile);
-#endif
-                }
+            if(sSerial==CameraInfo.CameraSN) {
+                nCameraId = CameraInfo.CameraID;
             }
         }
     }
-    else {
-        nCameraId = m_CameraInfo.CameraID;
-    }
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getCameraIdFromSerial] nCameraId : " << nCameraId << std::endl;
+    m_sLogFile.flush();
+#endif
+
+    if(nCameraId<0)
+        nErr = ERR_NODEVICESELECTED;
+    return nErr;
 }
 
-void CSVBony::getCameraSerialFromID(int nCameraId, std::string &sSerial)
+int CSVBony::getCameraSerialFromID(int nCameraId, std::string &sSerial)
 {
 
-    SVB_ERROR_CODE ret;
-#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        ltime = time(NULL);
-        timestamp = asctime(localtime(&ltime));
-        timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s][getCameraSerialFromID] nCameraId = %d\n", timestamp, nCameraId);
-    fflush(Logfile);
-#endif
+    int nErr = PLUGIN_OK;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
+    SVB_CAMERA_INFO CameraInfo;
 
-    if(!m_bConnected) {
-        m_nCameraNum = SVBGetNumOfConnectedCameras();
-        for (int i = 0; i < m_nCameraNum; i++)
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getCameraSerialFromID] nCameraId : " << nCameraId << std::endl;
+    m_sLogFile.flush();
+#endif
+    if(nCameraId<0)
+        return ERR_NODEVICESELECTED;
+    sSerial.clear();
+    m_nCameraNum = SVBGetNumOfConnectedCameras();
+    for (int i = 0; i < m_nCameraNum; i++)
+    {
+        ret = SVBGetCameraInfo(&CameraInfo, i);
+        if (ret == SVB_SUCCESS)
         {
-            ret = SVBGetCameraInfo(&m_CameraInfo, i);
-            if (ret == SVB_SUCCESS)
-            {
-                if(nCameraId==m_CameraInfo.CameraID) {
-                    sSerial.assign(m_CameraInfo.CameraSN);
-                    break;
-                }
+            if(nCameraId==CameraInfo.CameraID) {
+                sSerial.assign(CameraInfo.CameraSN);
+                break;
             }
         }
     }
-    else {
-        sSerial.assign(m_CameraInfo.CameraSN);
-    }
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][getCameraSerialFromID] camera id %d SN: %s\n", timestamp, nCameraId, sSerial.c_str());
-    fflush(Logfile);
+    if(sSerial.size()) {
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getCameraSerialFromID] camera id  = " << nCameraId <<" SN: "<< sSerial << std::endl;
+    }
+    else {
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getCameraSerialFromID] camera serial  not found for id: "<< nCameraId << std::endl;
+    }
+    m_sLogFile.flush();
 #endif
+    return nErr;
 }
 
 void CSVBony::getCameraNameFromID(int nCameraId, std::string &sName)
 {
 
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
+    SVB_CAMERA_INFO CameraInfo;
+
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        ltime = time(NULL);
-        timestamp = asctime(localtime(&ltime));
-        timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s][getCameraNameFromID] nCameraId = %d\n", timestamp, nCameraId);
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getCameraNameFromID] nCameraId : " << nCameraId << std::endl;
+    m_sLogFile.flush();
 #endif
-    if(!m_bConnected) {
-        m_nCameraNum = SVBGetNumOfConnectedCameras();
-        for (int i = 0; i < m_nCameraNum; i++)
+    m_nCameraNum = SVBGetNumOfConnectedCameras();
+    for (int i = 0; i < m_nCameraNum; i++)
+    {
+        ret = SVBGetCameraInfo(&CameraInfo, i);
+        if (ret == SVB_SUCCESS)
         {
-            ret = SVBGetCameraInfo(&m_CameraInfo, i);
-            if (ret == SVB_SUCCESS)
-            {
-                if(nCameraId==m_CameraInfo.CameraID) {
-                    sName.assign(m_CameraInfo.FriendlyName);
-                    break;
-                }
+            if(nCameraId==CameraInfo.CameraID) {
+                sName.assign(CameraInfo.FriendlyName);
+                break;
             }
         }
     }
-    else {
-        sName.assign(m_CameraInfo.FriendlyName);
-    }
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][getCameraNameFromID] camera id %d name : %s\n", timestamp, nCameraId, sName.c_str());
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getCameraNameFromID] camera id " << nCameraId << " name : " << sName << std::endl;
+    m_sLogFile.flush();
 #endif
 }
 
@@ -619,11 +573,8 @@ void CSVBony::setCameraSerial(std::string sSerial)
 {
     m_sCameraSerial.assign(sSerial);
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        ltime = time(NULL);
-        timestamp = asctime(localtime(&ltime));
-        timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s][setCameraId] m_sCameraSerial = %s\n", timestamp, m_sCameraSerial.c_str());
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setCameraSerial] m_sCameraSerial : " << m_sCameraSerial << std::endl;
+    m_sLogFile.flush();
 #endif
 }
 
@@ -641,7 +592,12 @@ int CSVBony::listCamera(std::vector<camera_info_t>  &cameraIdList)
 {
     int nErr = PLUGIN_OK;
     camera_info_t   tCameraInfo;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
+    SVB_CAMERA_INFO CameraInfo;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [listCamera] called" << std::endl;
+    m_sLogFile.flush();
+#endif
 
     cameraIdList.clear();
 
@@ -650,32 +606,29 @@ int CSVBony::listCamera(std::vector<camera_info_t>  &cameraIdList)
         m_nCameraNum = SVBGetNumOfConnectedCameras();
         for (int i = 0; i < m_nCameraNum; i++)
         {
-            ret = SVBGetCameraInfo(&m_CameraInfo, i);
+            ret = SVBGetCameraInfo(&CameraInfo, i);
             if (ret == SVB_SUCCESS)
             {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-                ltime = time(NULL);
-                timestamp = asctime(localtime(&ltime));
-                timestamp[strlen(timestamp) - 1] = 0;
-                fprintf(Logfile, "[%s][listCamera] Friendly name: %s\n", timestamp, m_CameraInfo.FriendlyName);
-                fprintf(Logfile, "[%s][listCamera] Port type: %s\n", timestamp, m_CameraInfo.PortType);
-                fprintf(Logfile, "[%s][listCamera] SN: %s\n", timestamp, m_CameraInfo.CameraSN);
-                fprintf(Logfile, "[%s][listCamera] Device ID: 0x%x\n", timestamp, m_CameraInfo.DeviceID);
-                fprintf(Logfile, "[%s][listCamera] Camera ID: %d\n", timestamp, m_CameraInfo.CameraID);
-                fflush(Logfile);
+                m_sLogFile << "["<<getTimeStamp()<<"]"<< " [listCamera] Friendly name : " << CameraInfo.FriendlyName << std::endl;
+                m_sLogFile << "["<<getTimeStamp()<<"]"<< " [listCamera] Port type     : " << CameraInfo.PortType << std::endl;
+                m_sLogFile << "["<<getTimeStamp()<<"]"<< " [listCamera] SN            : " << CameraInfo.CameraSN << std::endl;
+                m_sLogFile << "["<<getTimeStamp()<<"]"<< " [listCamera] Device ID     : " << CameraInfo.DeviceID << std::endl;
+                m_sLogFile << "["<<getTimeStamp()<<"]"<< " [listCamera] Camera ID     : " << CameraInfo.CameraID << std::endl;
+                m_sLogFile.flush();
 #endif
-                tCameraInfo.cameraId = m_CameraInfo.CameraID;
-                strncpy(tCameraInfo.model, m_CameraInfo.FriendlyName, BUFFER_LEN);
-                strncpy((char *)tCameraInfo.Sn.id, m_CameraInfo.CameraSN, sizeof(SVB_ID));
+                tCameraInfo.cameraId = CameraInfo.CameraID;
+                strncpy(tCameraInfo.model, CameraInfo.FriendlyName, BUFFER_LEN);
+                strncpy((char *)tCameraInfo.Sn.id, CameraInfo.CameraSN, sizeof(SVB_ID));
 
                 cameraIdList.push_back(tCameraInfo);
             }
         }
     }
     else {
-        tCameraInfo.cameraId = m_CameraInfo.CameraID;
-        strncpy(tCameraInfo.model, m_CameraInfo.FriendlyName, BUFFER_LEN);
-        strncpy((char *)tCameraInfo.Sn.id, m_CameraInfo.CameraSN, sizeof(SVB_ID));
+        tCameraInfo.cameraId = CameraInfo.CameraID;
+        strncpy(tCameraInfo.model, CameraInfo.FriendlyName, BUFFER_LEN);
+        strncpy((char *)tCameraInfo.Sn.id, CameraInfo.CameraSN, sizeof(SVB_ID));
         cameraIdList.push_back(tCameraInfo);
     }
     return nErr;
@@ -683,9 +636,27 @@ int CSVBony::listCamera(std::vector<camera_info_t>  &cameraIdList)
 
 void CSVBony::getFirmwareVersion(std::string &sVersion)
 {
+    std::stringstream ssTmp;
     std::string sTmp;
-    sTmp.assign(SVBGetSDKVersion());
-    sVersion = "SDK version " + sTmp;
+    char szFirmware[256];
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFirmwareVersion] called " << std::endl;
+    m_sLogFile.flush();
+#endif
+
+    ssTmp << "SDK "<<SVBGetSDKVersion();
+    if(m_bConnected) {
+        SVBGetCameraFirmwareVersion(m_nCameraID,szFirmware);
+        ssTmp << ", Firmware " << szFirmware;
+    }
+    sVersion.assign(ssTmp.str());
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFirmwareVersion] Firmware : " << sVersion << std::endl;
+    m_sLogFile.flush();
+#endif
+
 }
 
 int CSVBony::getNumBins()
@@ -709,26 +680,15 @@ int CSVBony::getBinFromIndex(int nIndex)
 int CSVBony::startCaputure(double dTime)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
     int nTimeout;
     m_bAbort = false;
 
     nTimeout = 0;
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][startCaputure] Start Capture\n", timestamp);
-    fprintf(Logfile, "[%s][startCaputure] Waiting for camera to be idle\n", timestamp);
-    fflush(Logfile);
-#endif
-    
-#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][startCaputure] Starting capture\n", timestamp);
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [startCaputure] called " << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [startCaputure] Starting capture" << std::endl;
+    m_sLogFile.flush();
 #endif
     // set exposure time (s -> us)
     ret = SVBSetControlValue(m_nCameraID, SVB_EXPOSURE , long(dTime * 1000000), SVB_FALSE);
@@ -755,7 +715,7 @@ int CSVBony::startCaputure(double dTime)
 int CSVBony::stopCaputure()
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
 
     ret = SVBStopVideoCapture(m_nCameraID);
     if(ret!=SVB_SUCCESS)
@@ -764,13 +724,9 @@ int CSVBony::stopCaputure()
     m_bCapturerunning = false;
     
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][stopCaputure] capture stoppeds\n", timestamp);
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [stopCaputure] Capture stopped" << std::endl;
+    m_sLogFile.flush();
 #endif
-
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
     std::this_thread::yield();
     return nErr;
@@ -784,7 +740,7 @@ void CSVBony::abortCapture(void)
 
 SVB_ERROR_CODE CSVBony::restartCamera()
 {
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
 
     SVBStopVideoCapture(m_nCameraID);
     SVBCloseCamera(m_nCameraID);
@@ -833,7 +789,6 @@ int CSVBony::getTemperture(double &dTemp, double &dPower, double &dSetPoint, boo
     m_dTemperature = double(nValue)/10.0;
     dTemp = m_dTemperature;
     if(m_bTempertureSupported) {
-#ifdef COOLER_SUPPORT
         getControlValues(SVB_TARGET_TEMPERATURE, nMin, nMax, nValue, bTmp);
         m_dSetPoint = double(nValue)/10.0;
         getControlValues(SVB_COOLER_POWER, nMin, nMax, nValue, bTmp);
@@ -844,17 +799,12 @@ int CSVBony::getTemperture(double &dTemp, double &dPower, double &dSetPoint, boo
         dSetPoint = m_dSetPoint;
         bEnabled = m_dCoolerEnabled;
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        ltime = time(NULL);
-        timestamp = asctime(localtime(&ltime));
-        timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s][getTemperture] dTemp = %3.2f\n", timestamp, dTemp);
-        fprintf(Logfile, "[%s][getTemperture] dSetPoint = %3.2f\n", timestamp, dSetPoint);
-        fprintf(Logfile, "[%s][getTemperture] dPower = %3.2f\n", timestamp, dPower);
-        fprintf(Logfile, "[%s][getTemperture] bEnabled = %s\n", timestamp, bEnabled?"Yes":"No");
-        fflush(Logfile);
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getTemperture] dTemp     : " << dTemp << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getTemperture] dSetPoint : " << dSetPoint << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getTemperture] dPower    : " << dPower << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getTemperture] bEnabled  : " << (bEnabled?"Yes":"No") << std::endl;
+        m_sLogFile.flush();
 #endif
-#endif
-
     }
     else {
         dPower = 0;
@@ -873,23 +823,17 @@ int CSVBony::setCoolerTemperature(bool bOn, double dTemp)
     if(m_bTempertureSupported) {
         nTemp = int(dTemp*10);
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        ltime = time(NULL);
-        timestamp = asctime(localtime(&ltime));
-        timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s][setCoolerTemperature] Setting temperature to %3.2f\n", timestamp, dTemp);
-        fprintf(Logfile, "[%s][setCoolerTemperature] Converted temperature : %ld\n", timestamp, nTemp);
-        fprintf(Logfile, "[%s][setCoolerTemperature] Turning cooler %s\n", timestamp, bOn?"On":"Off");
-        fflush(Logfile);
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setCoolerTemperature] Setting temperature to : " << dTemp << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setCoolerTemperature] Converted temperature  : " << nTemp << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setCoolerTemperature] Turning cooler         : " << (bOn?"On":"Off") << std::endl;
+        m_sLogFile.flush();
 #endif
-#ifdef COOLER_SUPPORT
         ret = setControlValue(SVB_TARGET_TEMPERATURE, nTemp);
         if(ret != SVB_SUCCESS)
             nErr = ERR_CMDFAILED;
         ret = setControlValue(SVB_COOLER_ENABLE, bOn?1:0);
         if(ret != SVB_SUCCESS)
             nErr = ERR_CMDFAILED;
-#endif
-
     }
     return nErr;
 }
@@ -967,14 +911,11 @@ int CSVBony::getGain(long &nMin, long &nMax, long &nValue)
 {
     int nErr = PLUGIN_OK;
     SVB_BOOL bTmp;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][getGain] called\n", timestamp);
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getGain] Called"<< std::endl;
+    m_sLogFile.flush();
 #endif
 
     ret = getControlValues(SVB_GAIN, nMin, nMax, nValue, bTmp);
@@ -982,11 +923,8 @@ int CSVBony::getGain(long &nMin, long &nMax, long &nValue)
         return VAL_NOT_AVAILABLE;
     }
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][getGain] Gain is %ld\n", timestamp, nValue);
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getGain] Gain is " << nValue << std::endl;
+    m_sLogFile.flush();
 #endif
     return nErr;
 }
@@ -994,18 +932,13 @@ int CSVBony::getGain(long &nMin, long &nMax, long &nValue)
 int CSVBony::setGain(long nGain)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
 
     m_nGain = nGain;
-
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][setGain] Gain set to %ld\n", timestamp, m_nGain);
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getGain] Gain set to " << nGain << std::endl;
+    m_sLogFile.flush();
 #endif
-
     ret = setControlValue(SVB_GAIN, m_nGain);
     if(ret != SVB_SUCCESS)
         nErr = ERR_CMDFAILED;
@@ -1016,17 +949,13 @@ int CSVBony::setGain(long nGain)
 int CSVBony::getGamma(long &nMin, long &nMax, long &nValue)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
     SVB_BOOL bIsAuto;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][getGamma] called\n", timestamp);
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getGamma] Called"<< std::endl;
+    m_sLogFile.flush();
 #endif
-
     ret = getControlValues(SVB_GAMMA, nMin, nMax, nValue, bIsAuto);
     if(ret) {
         return VAL_NOT_AVAILABLE;
@@ -1037,16 +966,12 @@ int CSVBony::getGamma(long &nMin, long &nMax, long &nValue)
 int CSVBony::setGamma(long nGamma)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
     
     m_nGamma = nGamma;
-
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][setGamma] Gamma set to %ld\n", timestamp, m_nGamma);
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setGamma] Gamma set to " << nGamma << std::endl;
+    m_sLogFile.flush();
 #endif
 
     ret = setControlValue(SVB_GAMMA, m_nGamma);
@@ -1059,15 +984,12 @@ int CSVBony::setGamma(long nGamma)
 int CSVBony::getGammaContrast(long &nMin, long &nMax, long &nValue)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
     SVB_BOOL bIsAuto;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][getGammaContrast] called\n", timestamp);
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getGammaContrast] Called"<< std::endl;
+    m_sLogFile.flush();
 #endif
 
     ret = getControlValues(SVB_GAMMA_CONTRAST, nMin, nMax, nValue, bIsAuto);
@@ -1080,18 +1002,14 @@ int CSVBony::getGammaContrast(long &nMin, long &nMax, long &nValue)
 int CSVBony::setGammaContrast(long nGammaContrast)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
 
     m_nGammaContrast = nGammaContrast;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][setGammaContrast] GammaContrats set to %ld\n", timestamp, m_nGammaContrast);
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setGammaContrast] GammaContrats set to " << nGammaContrast << std::endl;
+    m_sLogFile.flush();
 #endif
-    
     ret = setControlValue(SVB_GAMMA_CONTRAST, m_nGammaContrast);
     if(ret != SVB_SUCCESS)
         nErr = ERR_CMDFAILED;
@@ -1102,61 +1020,48 @@ int CSVBony::setGammaContrast(long nGammaContrast)
 int CSVBony::getWB_R(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
     SVB_BOOL bTmp;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][getWB_R] called\n", timestamp);
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getWB_R] Called"<< std::endl;
+    m_sLogFile.flush();
 #endif
-
     ret = getControlValues(SVB_WB_R, nMin, nMax, nValue, bTmp);
     if(ret != SVB_SUCCESS) {
         return VAL_NOT_AVAILABLE;
     }
 
     bIsAuto = (bool)bTmp;
-    
+
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][getWB_R] WB_R is %ld\n", timestamp, nValue);
-    fprintf(Logfile, "[%s][getWB_R] bIsAuto is %s\n", timestamp, bIsAuto?"True":"False");
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getWB_R] WB_R is " << nValue << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getWB_R] bIsAuto is " << (bIsAuto?"True":"False") << std::endl;
+    m_sLogFile.flush();
 #endif
+
     return nErr;
 }
 
 int CSVBony::setWB_R(long nWB_R, bool bIsAuto)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
     
     m_nWbR = nWB_R;
     m_bR_Auto = bIsAuto;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][setWB_R] WB_R set to %ld\n", timestamp, m_nWbR);
-    fprintf(Logfile, "[%s][setWB_R] WB_R m_bR_Auto %s\n", timestamp, m_bR_Auto?"True":"False");
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setWB_R] WB_R set to " << m_nWbR << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setWB_R] WB_R bIsAuto set to " << (m_bR_Auto?"True":"False") << std::endl;
+    m_sLogFile.flush();
 #endif
-    
     ret = setControlValue(SVB_WB_R, m_nWbR, bIsAuto?SVB_TRUE:SVB_FALSE);
     if(ret != SVB_SUCCESS) {
         nErr = ERR_CMDFAILED;
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        ltime = time(NULL);
-        timestamp = asctime(localtime(&ltime));
-        timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s][setWB_R] WB_R set ERROR  %d\n", timestamp, ret);
-        fflush(Logfile);
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setWB_R] WB_R set ERROR : " << ret << std::endl;
+        m_sLogFile.flush();
 #endif
     }
     return nErr;
@@ -1165,17 +1070,13 @@ int CSVBony::setWB_R(long nWB_R, bool bIsAuto)
 int CSVBony::getWB_G(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
     SVB_BOOL bTmp;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][getWB_G] called\n", timestamp);
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getWB_G] Called"<< std::endl;
+    m_sLogFile.flush();
 #endif
-
     ret = getControlValues(SVB_WB_G, nMin, nMax, nValue, bTmp);
     if(ret != SVB_SUCCESS) {
         return VAL_NOT_AVAILABLE;
@@ -1184,12 +1085,9 @@ int CSVBony::getWB_G(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
     bIsAuto = (bool)bTmp;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][getWB_G] WB_G is %ld\n", timestamp, nValue);
-    fprintf(Logfile, "[%s][getWB_G] bIsAuto is %s\n", timestamp, bIsAuto?"True":"False");
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getWB_G] WB_G is " << nValue << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getWB_G] bIsAuto is " << (bIsAuto?"True":"False") << std::endl;
+    m_sLogFile.flush();
 #endif
     return nErr;
 }
@@ -1197,29 +1095,22 @@ int CSVBony::getWB_G(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
 int CSVBony::setWB_G(long nWB_G, bool bIsAuto)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
 
     m_nWbG = nWB_G;
     m_bG_Auto = bIsAuto;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][setWB_G] WB_G set to %ld\n", timestamp, m_nWbG);
-    fprintf(Logfile, "[%s][setWB_G] WB_G bIsAuto %s\n", timestamp, m_bG_Auto?"True":"False");
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setWB_G] WB_G set to " << m_nWbG << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setWB_G] WB_G bIsAuto set to " << (m_bG_Auto?"True":"False") << std::endl;
+    m_sLogFile.flush();
 #endif
-    
     ret = setControlValue(SVB_WB_G, m_nWbG, bIsAuto?SVB_TRUE:SVB_FALSE);
     if(ret != SVB_SUCCESS) {
         nErr = ERR_CMDFAILED;
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        ltime = time(NULL);
-        timestamp = asctime(localtime(&ltime));
-        timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s][setWB_G] WB_G set ERROR  %d\n", timestamp, ret);
-        fflush(Logfile);
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setWB_G] WB_G set ERROR : " << ret << std::endl;
+        m_sLogFile.flush();
 #endif
     }
     return nErr;
@@ -1228,18 +1119,13 @@ int CSVBony::setWB_G(long nWB_G, bool bIsAuto)
 int CSVBony::getWB_B(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
     SVB_BOOL bTmp;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][getWB_B] called\n", timestamp);
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getWB_B] Called"<< std::endl;
+    m_sLogFile.flush();
 #endif
-
-
     ret = getControlValues(SVB_WB_B, nMin, nMax, nValue, bTmp);
     if(ret != SVB_SUCCESS) {
         return VAL_NOT_AVAILABLE;
@@ -1248,12 +1134,9 @@ int CSVBony::getWB_B(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
     bIsAuto = (bool)bTmp;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][getWB_B] WB_B is %ld\n", timestamp, nValue);
-    fprintf(Logfile, "[%s][getWB_B] bIsAuto is %s\n", timestamp, bIsAuto?"True":"False");
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getWB_B] WB_B is " << nValue << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getWB_B] bIsAuto is " << (bIsAuto?"True":"False") << std::endl;
+    m_sLogFile.flush();
 #endif
     return nErr;
 }
@@ -1261,29 +1144,22 @@ int CSVBony::getWB_B(long &nMin, long &nMax, long &nValue, bool &bIsAuto)
 int CSVBony::setWB_B(long nWB_B, bool bIsAuto)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
 
     m_nWbB = nWB_B;
     m_bB_Auto = bIsAuto;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][setWB_B] WB_B set to %ld\n", timestamp, m_nWbB);
-    fprintf(Logfile, "[%s][setWB_B] WB_B m_bB_Auto %s\n", timestamp, m_bB_Auto?"True":"False");
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setWB_B] WB_B set to " << m_nWbB << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setWB_B] WB_B bIsAuto set to " << (m_bB_Auto?"True":"False") << std::endl;
+    m_sLogFile.flush();
 #endif
-
     ret = setControlValue(SVB_WB_B, m_nWbB, bIsAuto?SVB_TRUE:SVB_FALSE);
     if(ret != SVB_SUCCESS){
         nErr = ERR_CMDFAILED;
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        ltime = time(NULL);
-        timestamp = asctime(localtime(&ltime));
-        timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s][setWB_B] WB_B set ERROR  %d\n", timestamp, ret);
-        fflush(Logfile);
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setWB_B] WB_B set ERROR : " << ret << std::endl;
+        m_sLogFile.flush();
 #endif
     }
 
@@ -1293,17 +1169,13 @@ int CSVBony::setWB_B(long nWB_B, bool bIsAuto)
 int CSVBony::getFlip(long &nMin, long &nMax, long &nValue)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
     SVB_BOOL bIsAuto;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][getFlip] called\n", timestamp);
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFlip] Called"<< std::endl;
+    m_sLogFile.flush();
 #endif
-
     ret = getControlValues(SVB_FLIP, nMin, nMax, nValue, bIsAuto);
     if(ret != SVB_SUCCESS) {
         return VAL_NOT_AVAILABLE;
@@ -1314,18 +1186,14 @@ int CSVBony::getFlip(long &nMin, long &nMax, long &nValue)
 int CSVBony::setFlip(long nFlip)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
     
     m_nFlip = nFlip;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][setFlip] Flip set to %ld\n", timestamp, m_nFlip);
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setFlip] Flip set to " << m_nFlip << std::endl;
+    m_sLogFile.flush();
 #endif
-    
     ret = setControlValue(SVB_FLIP, m_nFlip);
     if(ret != SVB_SUCCESS)
         nErr = ERR_CMDFAILED;
@@ -1336,29 +1204,22 @@ int CSVBony::setFlip(long nFlip)
 int CSVBony::getSpeedMode(long &nMin, long &nMax, long &nValue)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
     SVB_BOOL bIsAuto = SVB_FALSE;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][getSpeedMode] called\n", timestamp);
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getSpeedMode] Called"<< std::endl;
+    m_sLogFile.flush();
 #endif
-
     ret = getControlValues(SVB_FRAME_SPEED_MODE, nMin, nMax, nValue, bIsAuto);
     if(ret != SVB_SUCCESS) {
         return VAL_NOT_AVAILABLE;
     }
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][getSpeedMode] speed mode set to %ld\n", timestamp, nValue);
-    fprintf(Logfile, "[%s][getSpeedMode] speed mode nMin %ld\n", timestamp, nMin);
-    fprintf(Logfile, "[%s][getSpeedMode] speed mode nMax %ld\n", timestamp, nMax);
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getSpeedMode] speed mode is " << nValue << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getSpeedMode] speed mode nMin is " << nMin << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getSpeedMode] speed mode nMax is " << nMax << std::endl;
+    m_sLogFile.flush();
 #endif
     return nErr;
 }
@@ -1366,18 +1227,15 @@ int CSVBony::getSpeedMode(long &nMin, long &nMax, long &nValue)
 int CSVBony::setSpeedMode(long nSpeed)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
     
     m_nSpeedMode = nSpeed;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][setSpeedMode] SpeedMode set to %ld\n", timestamp, m_nSpeedMode);
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setSpeedMode] Called"<< std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setSpeedMode] SpeedMode set to " << nSpeed << std::endl;
+    m_sLogFile.flush();
 #endif
-    
     ret = setControlValue(SVB_FRAME_SPEED_MODE, m_nSpeedMode);
     if(ret != SVB_SUCCESS)
         nErr = ERR_CMDFAILED;
@@ -1388,17 +1246,13 @@ int CSVBony::setSpeedMode(long nSpeed)
 int CSVBony::getContrast(long &nMin, long &nMax, long &nValue)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
     SVB_BOOL bIsAuto = SVB_FALSE;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][getContrast] called\n", timestamp);
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getContrast] Called"<< std::endl;
+    m_sLogFile.flush();
 #endif
-
     ret = getControlValues(SVB_CONTRAST, nMin, nMax, nValue, bIsAuto);
     if(ret != SVB_SUCCESS) {
         return VAL_NOT_AVAILABLE;
@@ -1409,18 +1263,15 @@ int CSVBony::getContrast(long &nMin, long &nMax, long &nValue)
 int CSVBony::setContrast(long nContrast)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
     
     m_nContrast = nContrast;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][setContrast] Contrast set to %ld\n", timestamp, m_nContrast);
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setContrast] Called"<< std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setContrast] Contrast set to " << m_nContrast << std::endl;
+    m_sLogFile.flush();
 #endif
-
     ret = setControlValue(SVB_CONTRAST, m_nContrast);
     if(ret != SVB_SUCCESS)
         nErr = ERR_CMDFAILED;
@@ -1431,17 +1282,13 @@ int CSVBony::setContrast(long nContrast)
 int CSVBony::getSharpness(long &nMin, long &nMax, long &nValue)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
     SVB_BOOL bIsAuto = SVB_FALSE;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][getSharpness] called\n", timestamp);
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getSharpness] Called"<< std::endl;
+    m_sLogFile.flush();
 #endif
-
     ret = getControlValues(SVB_SHARPNESS, nMin, nMax, nValue, bIsAuto);
     if(ret != SVB_SUCCESS) {
         return VAL_NOT_AVAILABLE;
@@ -1452,18 +1299,15 @@ int CSVBony::getSharpness(long &nMin, long &nMax, long &nValue)
 int CSVBony::setSharpness(long nSharpness)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
 
     m_nSharpness = nSharpness;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][setSharpness] Sharpness set to %ld\n", timestamp, m_nSharpness);
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setSharpness] Called"<< std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setSharpness] Sharpness set to " << m_nSharpness << std::endl;
+    m_sLogFile.flush();
 #endif
-    
     ret = setControlValue(SVB_SHARPNESS, m_nSharpness);
     if(ret != SVB_SUCCESS)
         nErr = ERR_CMDFAILED;
@@ -1474,17 +1318,13 @@ int CSVBony::setSharpness(long nSharpness)
 int CSVBony::getSaturation(long &nMin, long &nMax, long &nValue)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
     SVB_BOOL bIsAuto = SVB_FALSE;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][getSaturation] called\n", timestamp);
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getSaturation] Called"<< std::endl;
+    m_sLogFile.flush();
 #endif
-
     ret = getControlValues(SVB_SATURATION, nMin, nMax, nValue, bIsAuto);
     if(ret != SVB_SUCCESS) {
         return VAL_NOT_AVAILABLE;
@@ -1495,18 +1335,15 @@ int CSVBony::getSaturation(long &nMin, long &nMax, long &nValue)
 int CSVBony::setSaturation(long nSaturation)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
 
     m_nSaturation = nSaturation;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][setSaturation] Saturation set to %ld\n", timestamp, m_nSaturation);
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setSaturation] Called"<< std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setSaturation] Saturation set to " << m_nSaturation << std::endl;
+    m_sLogFile.flush();
 #endif
-    
     ret = setControlValue(SVB_SATURATION, m_nSaturation);
     if(ret != SVB_SUCCESS)
         nErr = ERR_CMDFAILED;
@@ -1517,17 +1354,13 @@ int CSVBony::setSaturation(long nSaturation)
 int CSVBony::getBlackLevel(long &nMin, long &nMax, long &nValue)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
     SVB_BOOL bIsAuto = SVB_FALSE;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][getBlackLevel] called\n", timestamp);
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getBlackLevel] Called"<< std::endl;
+    m_sLogFile.flush();
 #endif
-
     ret = getControlValues(SVB_BLACK_LEVEL, nMin, nMax, nValue, bIsAuto);
     if(ret != SVB_SUCCESS) {
         return VAL_NOT_AVAILABLE;
@@ -1538,18 +1371,15 @@ int CSVBony::getBlackLevel(long &nMin, long &nMax, long &nValue)
 int CSVBony::setBlackLevel(long nBlackLevel)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
     
     m_nBlackLevel = nBlackLevel;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][setBlackLevel] Black level set to %ld\n", timestamp, m_nBlackLevel);
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setBlackLevel] Called"<< std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setBlackLevel] Black level set to " << m_nBlackLevel << std::endl;
+    m_sLogFile.flush();
 #endif
-    
     ret = setControlValue(SVB_BLACK_LEVEL, m_nBlackLevel);
     if(ret != SVB_SUCCESS)
         nErr = ERR_CMDFAILED;
@@ -1557,34 +1387,69 @@ int CSVBony::setBlackLevel(long nBlackLevel)
     return nErr;
 }
 
+
+int CSVBony::getBadPixelCorrection(bool &bEnabled)
+{
+    int nErr = PLUGIN_OK;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
+    SVB_BOOL bIsAuto = SVB_FALSE;
+    long nMin, nMax, nValue;
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getBadPixelCorrection] Called"<< std::endl;
+    m_sLogFile.flush();
+#endif
+
+    ret = getControlValues(SVB_BAD_PIXEL_CORRECTION_ENABLE, nMin, nMax, nValue, bIsAuto);
+    if(ret != SVB_SUCCESS) {
+        return VAL_NOT_AVAILABLE;
+    }
+    m_bBadPixelCorrectionEnabled = (nValue==1?true:false);
+    bEnabled = m_bBadPixelCorrectionEnabled;
+    return nErr;
+}
+
+int CSVBony::setBadPixelCorrection(bool bEnabled)
+{
+    int nErr = PLUGIN_OK;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
+
+    m_bBadPixelCorrectionEnabled = bEnabled;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setBadPixelCorrection] Called"<< std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setBadPixelCorrection] Bad pixel correction " << (bEnabled == SVB_TRUE? "Enabled":"Disabled") << std::endl;
+    m_sLogFile.flush();
+#endif
+    ret = setControlValue(SVB_BAD_PIXEL_CORRECTION_ENABLE, m_bBadPixelCorrectionEnabled?1:0);
+    if(ret != SVB_SUCCESS)
+        nErr = ERR_CMDFAILED;
+
+    return nErr;
+}
+
+
 SVB_ERROR_CODE CSVBony::setControlValue(SVB_CONTROL_TYPE nControlType, long nValue, SVB_BOOL bAuto)
 {
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
     
     if(!m_bConnected)
         return SVB_SUCCESS;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][setControlValue] nControlType = %d\n", timestamp, nControlType);
-    fprintf(Logfile, "[%s][setControlValue] nValue       = %ld\n", timestamp, nValue);
-    fprintf(Logfile, "[%s][setControlValue] bAuto        = %s\n", timestamp, bAuto == SVB_TRUE? "Yes":"No");
-    fprintf(Logfile, "[%s][setControlValue] ************************\n\n", timestamp);
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setControlValue] nControlType = " << nControlType << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setControlValue] nValue       = " << nValue << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setControlValue] bAuto        = " << (bAuto == SVB_TRUE? "Yes":"No") << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setControlValue] ************************" << std::endl<< std::endl;
+    m_sLogFile.flush();
 #endif
+
 
     ret = SVBSetControlValue(m_nCameraID, nControlType, nValue, bAuto);
     if(ret != SVB_SUCCESS) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        ltime = time(NULL);
-        timestamp = asctime(localtime(&ltime));
-        timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s][setControlValue] Error setting value !!!! : %d\n", timestamp, ret);
-        fflush(Logfile);
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setControlValue] Error setting value !!!! : " << ret << std::endl;
+        m_sLogFile.flush();
 #endif
-
     }
     return ret;
 }
@@ -1592,18 +1457,14 @@ SVB_ERROR_CODE CSVBony::setControlValue(SVB_CONTROL_TYPE nControlType, long nVal
 
 SVB_ERROR_CODE CSVBony::getControlValues(SVB_CONTROL_TYPE nControlType, long &nMin, long &nMax, long &nValue, SVB_BOOL &bIsAuto)
 {
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
     int nControlID;
     bool bControlAvailable = false;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][getControlValues] called\n", timestamp);
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getControlValues] Called"<< std::endl;
+    m_sLogFile.flush();
 #endif
-
     // look for the control
     for(nControlID = 0; nControlID< m_nControlNums; nControlID++) {
         if(m_ControlList.at(nControlID).ControlType == nControlType) {
@@ -1622,11 +1483,8 @@ SVB_ERROR_CODE CSVBony::getControlValues(SVB_CONTROL_TYPE nControlType, long &nM
     ret = SVBGetControlValue(m_nCameraID, nControlType, &nValue, &bIsAuto);
     if(ret != SVB_SUCCESS){
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        ltime = time(NULL);
-        timestamp = asctime(localtime(&ltime));
-        timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s][getControlValues] Error, ret = %d\n", timestamp, ret);
-        fflush(Logfile);
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getControlValues] Error, ret = " << ret << std::endl;
+        m_sLogFile.flush();
 #endif
         return ret;
     }
@@ -1635,18 +1493,14 @@ SVB_ERROR_CODE CSVBony::getControlValues(SVB_CONTROL_TYPE nControlType, long &nM
     nMax = m_ControlList.at(nControlID).MaxValue;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][getControlValues] nControlType = %d\n", timestamp, nControlType);
-    fprintf(Logfile, "[%s][getControlValues] nMin         = %ld\n", timestamp, nMin);
-    fprintf(Logfile, "[%s][getControlValues] nMax         = %ld\n", timestamp, nMax);
-    fprintf(Logfile, "[%s][getControlValues] nValue       = %ld\n", timestamp, nValue);
-    fprintf(Logfile, "[%s][getControlValues] bIsAuto      = %s\n", timestamp, bIsAuto == SVB_TRUE? "Yes":"No");
-    fprintf(Logfile, "[%s][getControlValues] ************************\n\n", timestamp);
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getControlValues] nControlType = " << nControlType << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getControlValues] nMin         = " << nMin << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getControlValues] nMax         = " << nMax << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getControlValues] nValue       = " << nValue << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getControlValues] bIsAuto      = " << (bIsAuto == SVB_TRUE? "Yes":"No") << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getControlValues] ************************" << std::endl<< std::endl;
+    m_sLogFile.flush();
 #endif
-
     return ret;
 }
 
@@ -1655,7 +1509,7 @@ SVB_ERROR_CODE CSVBony::getControlValues(SVB_CONTROL_TYPE nControlType, long &nM
 int CSVBony::setROI(int nLeft, int nTop, int nWidth, int nHeight)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
     int nNewLeft = 0;
     int nNewTop = 0;
     int nNewWidth = 0;
@@ -1708,43 +1562,33 @@ int CSVBony::setROI(int nLeft, int nTop, int nWidth, int nHeight)
         nNewHeight = m_nReqROIHeight;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][setROI] nLeft          : %d\n", timestamp, nLeft);
-    fprintf(Logfile, "[%s][setROI] nTop           : %d\n", timestamp, nTop);
-    fprintf(Logfile, "[%s][setROI] nWidth         : %d\n", timestamp, nWidth);
-    fprintf(Logfile, "[%s][setROI] nHeight        : %d\n", timestamp, nHeight);
-    
-    fprintf(Logfile, "[%s][setROI] nNewLeft       : %d\n", timestamp, nNewLeft);
-    fprintf(Logfile, "[%s][setROI] nNewTop        : %d\n", timestamp, nNewTop);
-    fprintf(Logfile, "[%s][setROI] nNewWidth      : %d\n", timestamp, nNewWidth);
-    fprintf(Logfile, "[%s][setROI] nNewHeight     : %d\n", timestamp, nNewHeight);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] nLeft      : " << nLeft << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] nTop       : " << nTop << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] nWidth     : " << nWidth << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] nHeight    :" << nHeight << std::endl;
 
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] nNewLeft   : " << nNewLeft << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] nNewTop    : " << nNewTop << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] nNewWidth  : " << nNewWidth << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] nNewHeight : " << nNewHeight << std::endl;
+    m_sLogFile.flush();
 #endif
 
-    
     if( m_nROILeft == nNewLeft && m_nROITop == nNewTop && m_nROIWidth == nNewWidth && m_nROIHeight == nNewHeight) {
         return nErr; // no change since last ROI change request
     }
+
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][setROI] Requested x, y, w, h : %d, %d, %d, %d\n", timestamp, nLeft, nTop, nWidth, nHeight);
-    fprintf(Logfile, "[%s][setROI] Set to    x, y, w, h : %d, %d, %d, %d\n", timestamp, nNewLeft, nNewTop, nNewWidth, nNewHeight);
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] Requested x, y, w, h : " << nLeft << ", " << nTop << ", " << nWidth << ", " << nHeight << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] Set to    x, y, w, h : " << nNewLeft << ", " << nNewTop << ", " << nNewWidth << ", " << nNewHeight << std::endl;
+    m_sLogFile.flush();
 #endif
 
     ret = SVBSetROIFormat(m_nCameraID, nNewLeft, nNewTop, nNewWidth, nNewHeight, m_nCurrentBin);
     if(ret!=SVB_SUCCESS) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        ltime = time(NULL);
-        timestamp = asctime(localtime(&ltime));
-        timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s][setROI] Setting new ROI failled\n", timestamp);
-        fflush(Logfile);
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] Setting new ROI failled, ret = " << ret << std::endl;
+        m_sLogFile.flush();
 #endif
         return ERR_CMDFAILED;
     }
@@ -1753,11 +1597,8 @@ int CSVBony::setROI(int nLeft, int nTop, int nWidth, int nHeight)
     m_nROIWidth = nNewWidth;
     m_nROIHeight = nNewHeight;
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        ltime = time(NULL);
-        timestamp = asctime(localtime(&ltime));
-        timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s][setROI] new ROI set\n", timestamp);
-        fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setROI] New ROI set" << std::endl;
+    m_sLogFile.flush();
 #endif
     return nErr;
 }
@@ -1765,7 +1606,7 @@ int CSVBony::setROI(int nLeft, int nTop, int nWidth, int nHeight)
 int CSVBony::clearROI()
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
     
     ret = SVBSetROIFormat(m_nCameraID, 0, 0, m_nMaxWidth/m_nCurrentBin, m_nMaxHeight/m_nCurrentBin, m_nCurrentBin);
     if(ret!=SVB_SUCCESS)
@@ -1793,7 +1634,7 @@ uint32_t CSVBony::getBitDepth()
 int CSVBony::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
     int sizeReadFromCam;
     unsigned char* imgBuffer = nullptr;
     int i = 0;
@@ -1808,22 +1649,25 @@ int CSVBony::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
         stopCaputure();
         return ERR_POINTER;
     }
+
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][getFrame] nHeight          : %d\n", timestamp, nHeight);
-    fprintf(Logfile, "[%s][getFrame] nMemWidth        : %d\n", timestamp, nMemWidth);
-    fprintf(Logfile, "[%s][getFrame] m_nROILeft       : %d\n", timestamp, m_nROILeft);
-    fprintf(Logfile, "[%s][getFrame] m_nReqROILeft    : %d\n", timestamp, m_nReqROILeft);
-    fprintf(Logfile, "[%s][getFrame] m_nROITop        : %d\n", timestamp, m_nROITop);
-    fprintf(Logfile, "[%s][getFrame] m_nReqROITop     : %d\n", timestamp, m_nReqROITop);
-    fprintf(Logfile, "[%s][getFrame] m_nROIWidth      : %d\n", timestamp, m_nROIWidth);
-    fprintf(Logfile, "[%s][getFrame] m_nReqROIWidth   : %d\n", timestamp, m_nReqROIWidth);
-    fprintf(Logfile, "[%s][getFrame] m_nROIHeight     : %d\n", timestamp, m_nROIHeight);
-    fprintf(Logfile, "[%s][getFrame] m_nReqROIHeight  : %d\n", timestamp, m_nReqROIHeight);
-    fprintf(Logfile, "[%s][getFrame] getBitDepth()/8  : %d\n", timestamp, getBitDepth()/8);
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] nHeight         : " << nHeight << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] nMemWidth       : " << nMemWidth << std::endl;
+
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] m_nROILeft      : " << m_nROILeft << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] m_nReqROILeft   :" << m_nReqROILeft << std::endl;
+
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] m_nROITop       : " << m_nROITop << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] m_nReqROITop    : " << m_nReqROITop << std::endl;
+
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] m_nROIWidth     : " << m_nROIWidth << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] m_nReqROIWidth  : " << m_nReqROIWidth << std::endl;
+
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] m_nROIHeight    : " << m_nROIHeight << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] m_nReqROIHeight : " << m_nReqROIHeight << std::endl;
+
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] getBitDepth()/8 : " << getBitDepth()/8 << std::endl;
+    m_sLogFile.flush();
 #endif
 
     // do we need to extract data as ROI was re-aligned to match SVBony specs of heigth%2 and width%8
@@ -1839,13 +1683,10 @@ int CSVBony::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
 
     sizeReadFromCam = m_nROIHeight * srcMemWidth;
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][getFrame] srcMemWidth      : %d\n", timestamp,srcMemWidth);
-    fprintf(Logfile, "[%s][getFrame] nMemWidth        : %d\n", timestamp,nMemWidth);
-    fprintf(Logfile, "[%s][getFrame] sizeReadFromCam  : %d\n", timestamp,sizeReadFromCam);
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] srcMemWidth     : " << srcMemWidth << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] nMemWidth       : " << nMemWidth << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] sizeReadFromCam : " << sizeReadFromCam << std::endl;
+    m_sLogFile.flush();
 #endif
 
     while(true) {
@@ -1854,13 +1695,12 @@ int CSVBony::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
             timeout++;
             if(timeout > MAX_DATA_TIMEOUT) {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-                ltime = time(NULL);
-                timestamp = asctime(localtime(&ltime));
-                timestamp[strlen(timestamp) - 1] = 0;
-                fprintf(Logfile, "[%s][getFrame] SVBGetVideoData error %d\n", timestamp, ret);
-                fflush(Logfile);
+                m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] SVBGetVideoData error : " << ret << std::endl;
+                m_sLogFile.flush();
 #endif
                 stopCaputure();
+                if(imgBuffer != frameBuffer)
+                    free(imgBuffer);
                 return ERR_RXTIMEOUT;
             }
             continue;
@@ -1880,20 +1720,14 @@ int CSVBony::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
         copyWidth = srcMemWidth>nMemWidth?nMemWidth:srcMemWidth;
         copyHeight = m_nROIHeight>nHeight?nHeight:m_nROIHeight;
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-        ltime = time(NULL);
-        timestamp = asctime(localtime(&ltime));
-        timestamp[strlen(timestamp) - 1] = 0;
-        fprintf(Logfile, "[%s][getFrame] copying (%d,%d,%d,%d) => (%d,%d,%d,%d)\n", timestamp,
-                                                                                            m_nROILeft,    m_nROITop,    m_nROIWidth,    m_nROIHeight,
-                                                                                            m_nReqROILeft, m_nReqROITop, m_nReqROIWidth, m_nReqROIHeight);
-        fprintf(Logfile, "[%s][getFrame] srcMemWidth        : %d\n", timestamp, srcMemWidth);
-        fprintf(Logfile, "[%s][getFrame] nMemWidth          : %d\n", timestamp, nMemWidth);
-        fprintf(Logfile, "[%s][getFrame] copyHeight         : %d\n", timestamp, copyHeight);
-        fprintf(Logfile, "[%s][getFrame] copyWidth          : %d\n", timestamp, copyWidth);
-
-        fprintf(Logfile, "[%s][getFrame] sizeReadFromCam    : %d\n", timestamp, sizeReadFromCam);
-        fprintf(Logfile, "[%s][getFrame] size to TSX        : %d\n", timestamp, nHeight * nMemWidth);
-        fflush(Logfile);
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] copying (" << m_nROILeft << ", " << m_nROITop << ", " << m_nROIWidth << ", " << m_nROIHeight << ") => (" <<  m_nReqROILeft << ", " << m_nReqROITop << ", " << m_nReqROIWidth << ", " << m_nReqROIHeight << ")" << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] srcMemWidth     : " << srcMemWidth << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] nMemWidth       : " << nMemWidth << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] copyHeight      : " << copyHeight << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] copyWidth       : " << copyWidth << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] sizeReadFromCam : " << sizeReadFromCam << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getFrame] size to TSX     : " <<  nHeight * nMemWidth << std::endl;
+        m_sLogFile.flush();
 #endif
         // copy every line from source buffer newly aligned into TSX buffer cutting at copyWidth
         for(i=0; i<copyHeight; i++) {
@@ -1912,35 +1746,285 @@ int CSVBony::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
 int CSVBony::RelayActivate(const int nXPlus, const int nXMinus, const int nYPlus, const int nYMinus, const bool bSynchronous, const bool bAbort)
 {
     int nErr = PLUGIN_OK;
-    SVB_ERROR_CODE ret;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
     SVB_BOOL bCanPulse = SVB_FALSE;
-    SVB_GUIDE_DIRECTION nDir = SVB_GUIDE_NORTH;
     int nDurration = 0;
-    
+    int netX;
+    int netY;
+    bool bNorth, bSouth, bEast, bWest;
+    float timeToWait =0.0;
+    CStopWatch pulseTimer;
+
     ret = SVBCanPulseGuide(m_nCameraID, &bCanPulse);
-    if(bCanPulse) {
-        if(!bAbort) {
-            nDurration = 5000;
-            if(nXPlus != 0 && nXMinus ==0)
-                nDir = SVB_GUIDE_WEST;
-            if(nXPlus == 0 && nXMinus !=0)
-                nDir = SVB_GUIDE_EAST;
-            
-            if(nYPlus != 0 && nYMinus ==0)
-                nDir = SVB_GUIDE_SOUTH;
-            if(nYPlus == 0 && nYMinus !=0)
-                nDir = SVB_GUIDE_NORTH;
+    if(!bCanPulse)
+        return ERR_COMMANDNOTSUPPORTED;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] nXPlus       : " << nXPlus << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] nXMinus      : " << nXMinus << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] nYPlus       : " << nYPlus << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] nYMinus      : " << nYMinus << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] bSynchronous : " << (bSynchronous?"True":"False") << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] bAbort       : " << (bAbort?"True":"False") << std::endl;
+    m_sLogFile.flush();
+#endif
+
+    if(bAbort) {
+        ret = SVBPulseGuide(m_nCameraID, SVB_GUIDE_NORTH, 0);
+        ret = SVBPulseGuide(m_nCameraID, SVB_GUIDE_SOUTH, 0);
+        ret = SVBPulseGuide(m_nCameraID, SVB_GUIDE_EAST, 0);
+        ret = SVBPulseGuide(m_nCameraID, SVB_GUIDE_WEST, 0);
+        return nErr;
+    }
+
+    if(!bSynchronous) { // done for the GUI
+        if(nXPlus == 0 && nXMinus ==0 && nYPlus == 0 && nYMinus ==0) {
+            nDurration = 0;
         }
         else {
-            nDurration = 0; // should stop the pulse
-            nDir = SVB_GUIDE_NORTH;
+            if(nXPlus != 0 && nXMinus ==0) {
+                nDurration = int(float(nXPlus)/100.0f * 1000); // in ms
+                m_confGuideDir = SVB_GUIDE_EAST;
+            }
+            if(nXPlus == 0 && nXMinus !=0) {
+                nDurration = int(float(nXMinus)/100.0f * 1000); // in ms
+                m_confGuideDir = SVB_GUIDE_WEST;
+            }
+            if(nYPlus != 0 && nYMinus ==0) {
+                nDurration = int(float(nYPlus)/100.0f * 1000); // in ms
+                m_confGuideDir = SVB_GUIDE_NORTH;
+            }
+            if(nYPlus == 0 && nYMinus !=0) {
+                nDurration = int(float(nYMinus)/100.0f * 1000); // in ms
+                m_confGuideDir = SVB_GUIDE_SOUTH;
+            }
         }
-        ret = SVBPulseGuide(m_nCameraID, nDir, nDurration); // hopefully this is not blocking !!! 
-        if(ret!=SVB_SUCCESS)
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] GUI move m_confGuideDir    : " << m_confGuideDir << std::endl;
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] GUI move nDurration : " << nDurration << std::endl;
+        m_sLogFile.flush();
+#endif
+        ret = SVBPulseGuide(m_nCameraID, m_confGuideDir, nDurration); // hopefully this is not blocking !!!
+        if(ret!=SVB_SUCCESS) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] GUI move POASetConfig error :  " << ret << std::endl;
+            m_sLogFile.flush();
+#endif
             nErr =ERR_CMDFAILED;
+        }
+        return nErr;
     }
-    else
-        nErr = ERR_NOT_IMPL;
+
+    // start guiding / calibrating
+    bEast = false;
+    bWest = false;
+    bNorth = false;
+    bSouth = false;
+    // East/West
+    if(nXPlus != 0 && nXMinus ==0) {
+        nDurration = int(float(nXPlus)/100.0f) * 1000; // in ms
+        ret = SVBPulseGuide(m_nCameraID, SVB_GUIDE_EAST, nDurration);
+        if(ret!=SVB_SUCCESS) {
+    #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] AutoGuide move SVBPulseGuide error :  " << ret << std::endl;
+            m_sLogFile.flush();
+    #endif
+            nErr = ERR_CMDFAILED;
+        }
+        bEast = true;
+    }
+    if(nXPlus == 0 && nXMinus !=0) {
+        nDurration = int(float(nXMinus)/100.0f * 1000); // in ms
+        ret = SVBPulseGuide(m_nCameraID, SVB_GUIDE_WEST, nDurration);
+        if(ret!=SVB_SUCCESS) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] AutoGuide move SVBPulseGuide error :  " << ret << std::endl;
+            m_sLogFile.flush();
+#endif
+            nErr = ERR_CMDFAILED;
+        }
+        bWest = true;
+    }
+    // North/South
+    if(nYPlus != 0 && nYMinus ==0) {
+        nDurration = int(float(nYPlus)/100.0f * 1000); // in ms
+        ret = SVBPulseGuide(m_nCameraID, SVB_GUIDE_NORTH, nDurration);
+        if(ret!=SVB_SUCCESS) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] AutoGuide move SVBPulseGuide error :  " << ret << std::endl;
+            m_sLogFile.flush();
+#endif
+            nErr = ERR_CMDFAILED;
+        }
+        bNorth = true;
+    }
+
+    if(nYPlus == 0 && nYMinus !=0) {
+        nDurration = int(float(nYMinus)/100.0f * 1000); // in ms
+        ret = SVBPulseGuide(m_nCameraID, SVB_GUIDE_SOUTH, nDurration);
+        if(ret!=SVB_SUCCESS) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] AutoGuide move SVBPulseGuide error :  " << ret << std::endl;
+            m_sLogFile.flush();
+#endif
+            nErr = ERR_CMDFAILED;
+        }
+        bSouth = true;
+    }
+
+    pulseTimer.Reset();
+    // One of these will always be zero, so this gives me the net
+    // plus or minus movement
+    netX = nXPlus - nXMinus;
+    netY = nYPlus - nYMinus;
+    if(netX == 0) {   // netY will not be zero
+        // One of nYPLus and nYMinus will be zero, so this expression will work
+        timeToWait = float(nYPlus + nYMinus)/100.0f;
+        // Just wait for time to expire and stop relay
+        while(pulseTimer.GetElapsedSeconds() < timeToWait);
+        // need to know which one to stop
+        if(bNorth)
+            ret = SVBPulseGuide(m_nCameraID, SVB_GUIDE_NORTH, 0);
+        else
+            ret = SVBPulseGuide(m_nCameraID, SVB_GUIDE_SOUTH, 0);
+        if(ret!=SVB_SUCCESS) {
+    #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] SVBPulseGuide error :  " << ret << std::endl;
+            m_sLogFile.flush();
+    #endif
+            nErr = ERR_CMDFAILED;
+        }
+        return nErr;
+    }
+
+    if(netY == 0)  {  // netX will not be zero
+        // Again, one of these will be zero
+        timeToWait = float(nXPlus + nXMinus)/100.0f;
+        // Just wait for time to expire and stop relay
+        while(pulseTimer.GetElapsedSeconds() < timeToWait);
+        // need to know which one to stop
+        if(bEast)
+            ret = SVBPulseGuide(m_nCameraID, SVB_GUIDE_EAST, 0);
+        else
+            ret = SVBPulseGuide(m_nCameraID, SVB_GUIDE_WEST, 0);
+
+        if(ret!=SVB_SUCCESS) {
+    #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] SVBPulseGuide error :  " << ret << std::endl;
+            m_sLogFile.flush();
+    #endif
+            nErr = ERR_CMDFAILED;
+        }
+        return nErr;
+    }
+    //
+    //  Dual axis movement, Are they both the same. Wait and then terminate both at same time
+    //
+    if(abs(netY) == abs(netX)) {
+        // Pick one, doesn't matter which
+        timeToWait = float(nXPlus + nXMinus)/100.0f;
+        // Just wait for time to expire and stop relay
+        while(pulseTimer.GetElapsedSeconds() < timeToWait);
+
+        // need to know which one to stop
+        if(bNorth)
+            ret = SVBPulseGuide(m_nCameraID, SVB_GUIDE_NORTH, 0);
+        else
+            ret = SVBPulseGuide(m_nCameraID, SVB_GUIDE_SOUTH, 0);
+
+        // need to know which one to stop
+        if(bEast)
+            ret = SVBPulseGuide(m_nCameraID, SVB_GUIDE_EAST, 0);
+        else
+            ret = SVBPulseGuide(m_nCameraID, SVB_GUIDE_WEST, 0);
+
+        if(ret!=SVB_SUCCESS) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] SVBPulseGuide error :  " << ret << std::endl;
+            m_sLogFile.flush();
+#endif
+            nErr = ERR_CMDFAILED;
+        }
+        return nErr;
+    }
+    //
+    // Dual axis movement, not the same time for each!
+    //
+    if(abs(netY) < abs(netX)) { // East-West movement was greater
+        // Wait for shorter time
+        timeToWait = float(nYPlus + nYMinus)/100.0f;
+        while(pulseTimer.GetElapsedSeconds() < timeToWait);
+        // need to know which one to stop
+        if(bNorth)
+            ret = SVBPulseGuide(m_nCameraID, SVB_GUIDE_NORTH, 0);
+        else
+            ret = SVBPulseGuide(m_nCameraID, SVB_GUIDE_SOUTH, 0);
+
+        if(ret!=SVB_SUCCESS) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] SVBPulseGuide error :  " << ret << std::endl;
+            m_sLogFile.flush();
+#endif
+            nErr = ERR_CMDFAILED;
+        }
+
+        // Longer time
+        timeToWait = float(nXPlus + nXMinus)/100.0f;
+        while(pulseTimer.GetElapsedSeconds() < timeToWait);
+
+        // need to know which one to stop
+        if(bEast)
+            ret = SVBPulseGuide(m_nCameraID, SVB_GUIDE_EAST, 0);
+        else
+            ret = SVBPulseGuide(m_nCameraID, SVB_GUIDE_WEST, 0);
+
+        if(ret!=SVB_SUCCESS) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] SVBPulseGuide error :  " << ret << std::endl;
+            m_sLogFile.flush();
+#endif
+            nErr = ERR_CMDFAILED;
+        }
+
+        return nErr;
+    }
+    else { // North-South movement was greater
+        // Wait for shorter time
+        timeToWait = float(nXPlus + nXMinus)/100.0f;
+        while(pulseTimer.GetElapsedSeconds() < timeToWait);
+        // need to know which one to stop
+        if(bEast)
+            ret = SVBPulseGuide(m_nCameraID, SVB_GUIDE_EAST, 0);
+        else
+            ret = SVBPulseGuide(m_nCameraID, SVB_GUIDE_WEST, 0);
+
+        if(ret!=SVB_SUCCESS) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] SVBPulseGuide error :  " << ret << std::endl;
+            m_sLogFile.flush();
+#endif
+            nErr = ERR_CMDFAILED;
+        }
+
+        // Longer time
+        timeToWait = float(nYPlus + nYMinus)/100.0f;
+        while(pulseTimer.GetElapsedSeconds() < timeToWait);
+
+        if(bNorth)
+            ret = SVBPulseGuide(m_nCameraID, SVB_GUIDE_NORTH, 0);
+        else
+            ret = SVBPulseGuide(m_nCameraID, SVB_GUIDE_SOUTH, 0);
+
+        if(ret!=SVB_SUCCESS) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_sLogFile << "["<<getTimeStamp()<<"]"<< " [RelayActivate] SVBPulseGuide error :  " << ret << std::endl;
+            m_sLogFile.flush();
+#endif
+            nErr = ERR_CMDFAILED;
+        }
+
+        return nErr;
+    }
     return nErr;
 
 }
@@ -1955,11 +2039,8 @@ void CSVBony::buildGainList(long nMin, long nMax, long nValue)
     m_nNbGainValue = 0;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][buildGainList] Rebuilding gain list\n", timestamp);
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [buildGainList] Rebuilding gain list"<< std::endl;
+    m_sLogFile.flush();
 #endif
 
     if(nMin != nValue) {
@@ -1976,23 +2057,18 @@ void CSVBony::buildGainList(long nMin, long nMax, long nValue)
     m_nNbGainValue++;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][buildGainList] m_nNbGainValue : %d\n", timestamp, m_nNbGainValue);
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [buildGainList] m_nNbGainValue : " << m_nNbGainValue << std::endl;
+    m_sLogFile.flush();
 #endif
-
 }
+
 int CSVBony::getNbGainInList()
 {
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][getNbGainInList] m_nNbGainValue : %d\n", timestamp, m_nNbGainValue);
-    fflush(Logfile);
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getNbGainInList] m_nNbGainValue :  " << m_nNbGainValue << std::endl;
+    m_sLogFile.flush();
 #endif
+
     return m_nNbGainValue;
 }
 
@@ -2012,14 +2088,22 @@ std::string CSVBony::getGainFromListAtIndex(int nIndex)
 }
 
 
-void CSVBony::log(std::string logString)
+#ifdef PLUGIN_DEBUG
+void CSVBony::log(std::string sLogEntry)
 {
-#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    ltime = time(NULL);
-    timestamp = asctime(localtime(&ltime));
-    timestamp[strlen(timestamp) - 1] = 0;
-    fprintf(Logfile, "[%s][log] %s\n", timestamp,logString.c_str());
-    fflush(Logfile);
-#endif
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [log] " << sLogEntry << std::endl;
+    m_sLogFile.flush();
 
 }
+
+const std::string CSVBony::getTimeStamp()
+{
+    time_t     now = time(0);
+    struct tm  tstruct;
+    char       buf[80];
+    tstruct = *localtime(&now);
+    std::strftime(buf, sizeof(buf), "%Y-%m-%d.%X", &tstruct);
+
+    return buf;
+}
+#endif

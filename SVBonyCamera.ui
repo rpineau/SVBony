@@ -6,20 +6,20 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>374</width>
-    <height>558</height>
+    <width>470</width>
+    <height>600</height>
    </rect>
   </property>
   <property name="minimumSize">
    <size>
-    <width>374</width>
-    <height>558</height>
+    <width>470</width>
+    <height>600</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
-    <width>374</width>
-    <height>558</height>
+    <width>470</width>
+    <height>600</height>
    </size>
   </property>
   <property name="windowTitle">
@@ -228,7 +228,7 @@
       <property name="geometry">
        <rect>
         <x>256</x>
-        <y>496</y>
+        <y>520</y>
         <width>81</width>
         <height>24</height>
        </rect>
@@ -241,7 +241,7 @@
       <property name="geometry">
        <rect>
         <x>168</x>
-        <y>496</y>
+        <y>520</y>
         <width>81</width>
         <height>24</height>
        </rect>
@@ -394,8 +394,8 @@
      <widget class="QLabel" name="label_logo">
       <property name="geometry">
        <rect>
-        <x>44</x>
-        <y>8</y>
+        <x>96</x>
+        <y>0</y>
         <width>264</width>
         <height>64</height>
        </rect>
@@ -463,7 +463,7 @@
       <property name="geometry">
        <rect>
         <x>272</x>
-        <y>186</y>
+        <y>184</y>
         <width>56</width>
         <height>20</height>
        </rect>
@@ -476,7 +476,7 @@
       <property name="geometry">
        <rect>
         <x>272</x>
-        <y>218</y>
+        <y>216</y>
         <width>56</width>
         <height>20</height>
        </rect>
@@ -489,13 +489,179 @@
       <property name="geometry">
        <rect>
         <x>272</x>
-        <y>250</y>
+        <y>248</y>
         <width>56</width>
         <height>20</height>
        </rect>
       </property>
       <property name="text">
        <string>Auto</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_13">
+      <property name="geometry">
+       <rect>
+        <x>8</x>
+        <y>472</y>
+        <width>144</width>
+        <height>24</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Bad pixel correction :</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+      </property>
+     </widget>
+     <widget class="QComboBox" name="BadPixel">
+      <property name="geometry">
+       <rect>
+        <x>160</x>
+        <y>472</y>
+        <width>112</width>
+        <height>24</height>
+       </rect>
+      </property>
+      <item>
+       <property name="text">
+        <string>Disabled</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Enabled</string>
+       </property>
+      </item>
+     </widget>
+     <widget class="QLabel" name="RwbRange">
+      <property name="geometry">
+       <rect>
+        <x>336</x>
+        <y>184</y>
+        <width>104</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Range N/A</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="BwbRange">
+      <property name="geometry">
+       <rect>
+        <x>336</x>
+        <y>248</y>
+        <width>104</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Range N/A</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="GwbRange">
+      <property name="geometry">
+       <rect>
+        <x>336</x>
+        <y>216</y>
+        <width>104</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Range N/A</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="gainRange">
+      <property name="geometry">
+       <rect>
+        <x>280</x>
+        <y>88</y>
+        <width>112</width>
+        <height>24</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Range N/A</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="offsetRange">
+      <property name="geometry">
+       <rect>
+        <x>280</x>
+        <y>440</y>
+        <width>112</width>
+        <height>24</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Range N/A</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="gammaRange">
+      <property name="geometry">
+       <rect>
+        <x>280</x>
+        <y>120</y>
+        <width>112</width>
+        <height>24</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Range N/A</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="gammaContrastRange">
+      <property name="geometry">
+       <rect>
+        <x>280</x>
+        <y>152</y>
+        <width>112</width>
+        <height>24</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Range N/A</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="contrastRange">
+      <property name="geometry">
+       <rect>
+        <x>280</x>
+        <y>344</y>
+        <width>112</width>
+        <height>24</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Range N/A</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="sharpnessRange">
+      <property name="geometry">
+       <rect>
+        <x>280</x>
+        <y>376</y>
+        <width>112</width>
+        <height>24</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Range N/A</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="saturationRange">
+      <property name="geometry">
+       <rect>
+        <x>280</x>
+        <y>408</y>
+        <width>112</width>
+        <height>24</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Range N/A</string>
       </property>
      </widget>
     </widget>

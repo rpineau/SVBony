@@ -16,6 +16,8 @@
 		931844001EEF460500AE51F8 /* SVBony.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 931843FE1EEF460500AE51F8 /* SVBony.cpp */; };
 		931844011EEF460500AE51F8 /* SVBony.h in Headers */ = {isa = PBXBuildFile; fileRef = 931843FF1EEF460500AE51F8 /* SVBony.h */; };
 		931844041EEF502500AE51F8 /* CoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 931844021EEF500B00AE51F8 /* CoreServices.framework */; };
+		9329D43A2A11612A000C541F /* libusb-1.0.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 9329D4392A11612A000C541F /* libusb-1.0.a */; };
+		9329D43C2A11617A000C541F /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9329D43B2A11617A000C541F /* Security.framework */; };
 		9390466D25D7101E009D84F1 /* StopWatch.h in Headers */ = {isa = PBXBuildFile; fileRef = 9390466C25D7101E009D84F1 /* StopWatch.h */; };
 		93E4668F25C7956C00ECFB9D /* SVBCameraSDK.h in Headers */ = {isa = PBXBuildFile; fileRef = 93E4668E25C7956C00ECFB9D /* SVBCameraSDK.h */; };
 		93E47CE125B3D508002EFE61 /* libSVBCameraSDK.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 931844051EEF507A00AE51F8 /* libSVBCameraSDK.a */; };
@@ -34,6 +36,8 @@
 		931844021EEF500B00AE51F8 /* CoreServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreServices.framework; path = System/Library/Frameworks/CoreServices.framework; sourceTree = SDKROOT; };
 		931844051EEF507A00AE51F8 /* libSVBCameraSDK.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libSVBCameraSDK.a; path = static_libs/macOS/libSVBCameraSDK.a; sourceTree = "<group>"; };
 		931844071EEF50D100AE51F8 /* libobjc.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libobjc.tbd; path = usr/lib/libobjc.tbd; sourceTree = SDKROOT; };
+		9329D4392A11612A000C541F /* libusb-1.0.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libusb-1.0.a"; path = "static_libs/macOS/libusb-1.0.a"; sourceTree = "<group>"; };
+		9329D43B2A11617A000C541F /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
 		9390466C25D7101E009D84F1 /* StopWatch.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = StopWatch.h; sourceTree = "<group>"; };
 		93E4668E25C7956C00ECFB9D /* SVBCameraSDK.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SVBCameraSDK.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -43,6 +47,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9329D43C2A11617A000C541F /* Security.framework in Frameworks */,
+				9329D43A2A11612A000C541F /* libusb-1.0.a in Frameworks */,
 				931844041EEF502500AE51F8 /* CoreServices.framework in Frameworks */,
 				93E47CE125B3D508002EFE61 /* libSVBCameraSDK.a in Frameworks */,
 				931843FD1EEF395D00AE51F8 /* CoreFoundation.framework in Frameworks */,
@@ -97,6 +103,8 @@
 		931843F91EEF394F00AE51F8 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				9329D43B2A11617A000C541F /* Security.framework */,
+				9329D4392A11612A000C541F /* libusb-1.0.a */,
 				931844071EEF50D100AE51F8 /* libobjc.tbd */,
 				931844021EEF500B00AE51F8 /* CoreServices.framework */,
 				931843FC1EEF395D00AE51F8 /* CoreFoundation.framework */,
@@ -192,7 +200,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = x86_64;
+				ARCHS = "$(ARCHS_STANDARD)";
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_CXX_LANGUAGE_STANDARD = "compiler-default";
@@ -258,7 +266,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = x86_64;
+				ARCHS = "$(ARCHS_STANDARD)";
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_CXX_LANGUAGE_STANDARD = "compiler-default";

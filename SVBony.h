@@ -35,14 +35,12 @@
 
 // #define PLUGIN_DEBUG    2
 
-#define PLUGIN_VERSION      1.4
+#define PLUGIN_VERSION      1.8
 #define BUFFER_LEN 128
 #define PLUGIN_OK   0
 #define MAX_NB_BIN  16
 
 #define VAL_NOT_AVAILABLE           0xDEADBEEF
-
-#define COOLER_SUPPORT
 
 #define MAX_DATA_TIMEOUT    50
 
@@ -65,8 +63,8 @@ public:
     void        Disconnect(bool bTrunCoolerOff);
     void        setCameraId(int nCameraId);
     void        getCameraId(int &nCcameraId);
-    void        getCameraIdFromSerial(int &nCameraId, std::string sSerial);
-    void        getCameraSerialFromID(int nCameraId, std::string &sSerial);
+    int         getCameraIdFromSerial(int &nCameraId, std::string sSerial);
+    int         getCameraSerialFromID(int nCameraId, std::string &sSerial);
     void        getCameraNameFromID(int nCameraId, std::string &sName);
     
     void        getCameraName(std::string &sName);
@@ -119,6 +117,9 @@ public:
     int         setSaturation(long nSaturation);
     int         getBlackLevel(long &nMin, long &nMax, long &nValue);
     int         setBlackLevel(long nBlackLevel);
+    int         getBadPixelCorrection(bool &bEnabled);
+    int         setBadPixelCorrection(bool bEnbaled);
+
 
     int         setROI(int nLeft, int nTop, int nWidth, int nHeight);
     int         clearROI(void);
@@ -135,7 +136,10 @@ public:
     int         getNbGainInList();
     std::string getGainFromListAtIndex(int nIndex);
     void        rebuildGainList();
+#ifdef PLUGIN_DEBUG
     void        log(std::string logString);
+#endif
+    
 protected:
     
     SVB_ERROR_CODE          getControlValues(SVB_CONTROL_TYPE nControlType, long &nMin, long &nMax, long &nValue, SVB_BOOL &bIsAuto);
@@ -146,11 +150,8 @@ protected:
     bool                    m_bSetUserConf;
     int                     m_nCameraNum;
 
-    SVB_CAMERA_INFO         m_CameraInfo;
     SVB_CAMERA_PROPERTY     m_cameraProperty;
-#ifdef COOLER_SUPPORT
     SVB_CAMERA_PROPERTY_EX  m_CameraPorpertyEx;
-#endif
 
     SVB_IMG_TYPE            m_nVideoMode;
     int                     m_nControlNums;
@@ -176,7 +177,7 @@ protected:
     long                    m_nSaturation;
     long                    m_nAutoExposureTarget;
     long                    m_nBlackLevel;
-
+    bool                    m_bBadPixelCorrectionEnabled;
     double                  m_dPixelSize;
     int                     m_nMaxWidth;
     int                     m_nMaxHeight;
@@ -214,6 +215,7 @@ protected:
     int                     m_nReqROITop;
     int                     m_nReqROIWidth;
     int                     m_nReqROIHeight;
+    SVB_GUIDE_DIRECTION     m_confGuideDir;
 
     // temperature
     CStopWatch              m_TemperatureTimer;
@@ -227,11 +229,10 @@ protected:
     
 
 #ifdef PLUGIN_DEBUG
-    std::string m_sLogfilePath;
     // timestamp for logs
-    char *timestamp;
-    time_t ltime;
-    FILE *Logfile;      // LogFile
+    const std::string getTimeStamp();
+    std::ofstream m_sLogFile;
+    std::string m_sLogfilePath;
 #endif
 
 };
