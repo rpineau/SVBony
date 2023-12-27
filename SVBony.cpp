@@ -387,7 +387,7 @@ int CSVBony::Connect(int nCameraID)
         setSharpness(m_nSharpness);
         setSaturation(m_nSaturation);
         setBlackLevel(m_nBlackLevel);
-        setBadPixelCorrection(m_bBadPixelCorrectionEnabled);
+        setBadPixelCorrection(m_nBadPixelCorrectionThreshold);
     }
     else
     {
@@ -404,6 +404,7 @@ int CSVBony::Connect(int nCameraID)
         getSaturation(nMin, nMax, m_nSaturation);
         getBlackLevel(nMin, nMax, m_nBlackLevel);
         setBadPixelCorrection(m_bBadPixelCorrectionEnabled);
+        getBadPixelCorrectionThreshold(nMin, nMax, m_nBlackLevel);
     }
 
     rebuildGainList();
@@ -1421,6 +1422,43 @@ int CSVBony::setBadPixelCorrection(bool bEnabled)
     m_sLogFile.flush();
 #endif
     ret = setControlValue(SVB_BAD_PIXEL_CORRECTION_ENABLE, m_bBadPixelCorrectionEnabled?1:0);
+    if(ret != SVB_SUCCESS)
+        nErr = ERR_CMDFAILED;
+
+    return nErr;
+}
+
+int CSVBony::getBadPixelCorrectionThreshold(long &nMin, long &nMax, long &nValue)
+{
+
+    int nErr = PLUGIN_OK;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
+    SVB_BOOL bIsAuto = SVB_FALSE;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getBadPixelCorrectionThreshold] Called"<< std::endl;
+    m_sLogFile.flush();
+#endif
+    ret = getControlValues(SVB_BAD_PIXEL_CORRECTION_THRESHOLD, nMin, nMax, nValue, bIsAuto);
+    if(ret != SVB_SUCCESS) {
+        return VAL_NOT_AVAILABLE;
+    }
+    return nErr;
+}
+
+int CSVBony::setBadPixelCorrectionThreshold(long nThreshold)
+{
+    int nErr = PLUGIN_OK;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
+
+    m_nBadPixelCorrectionThreshold = nThreshold;
+
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getBadPixelCorrectionThreshold] Called"<< std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getBadPixelCorrectionThreshold] Bad pixel correction threshold" << nThreshold << std::endl;
+    m_sLogFile.flush();
+#endif
+    ret = setControlValue(SVB_BAD_PIXEL_CORRECTION_THRESHOLD, m_nBadPixelCorrectionThreshold);
     if(ret != SVB_SUCCESS)
         nErr = ERR_CMDFAILED;
 

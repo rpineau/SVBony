@@ -35,7 +35,7 @@
 
 // #define PLUGIN_DEBUG    2
 
-#define PLUGIN_VERSION      1.9
+#define PLUGIN_VERSION      1.11
 #define BUFFER_LEN 128
 #define PLUGIN_OK   0
 #define MAX_NB_BIN  16
@@ -119,7 +119,8 @@ public:
     int         setBlackLevel(long nBlackLevel);
     int         getBadPixelCorrection(bool &bEnabled);
     int         setBadPixelCorrection(bool bEnbaled);
-
+    int         getBadPixelCorrectionThreshold(long &nMin, long &nMax, long &nValue);
+    int         setBadPixelCorrectionThreshold(long nThreshold);
 
     int         setROI(int nLeft, int nTop, int nWidth, int nHeight);
     int         clearROI(void);
@@ -178,6 +179,7 @@ protected:
     long                    m_nAutoExposureTarget;
     long                    m_nBlackLevel;
     bool                    m_bBadPixelCorrectionEnabled;
+    long                    m_nBadPixelCorrectionThreshold;
     double                  m_dPixelSize;
     int                     m_nMaxWidth;
     int                     m_nMaxHeight;

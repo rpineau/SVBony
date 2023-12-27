@@ -162,6 +162,10 @@ int X2Camera::loadCameraSettings(std::string sSerial)
     if(nValue!=VAL_NOT_AVAILABLE)
         m_Camera.setBadPixelCorrection(nValue==1?true:false);
 
+    nValue = m_pIniUtil->readInt(sSerial.c_str(), KEY_BAD_PIXEL_CORRECTION_TH, VAL_NOT_AVAILABLE);
+    if(nValue!=VAL_NOT_AVAILABLE)
+        m_Camera.setBadPixelCorrectionThreshold((long)nValue);
+
     m_Camera.setUserConf(true);
     return nErr;
 }
@@ -260,6 +264,7 @@ int X2Camera::doSVBonyCAmFeatureConfig()
     bool bPressedOK = false;
     bool bEnabled = false;
     std::stringstream ssTmp;
+    bool bCorrectionEnabled;
 
     X2GUIExchangeInterface*            dx = NULL;
 
@@ -444,12 +449,33 @@ int X2Camera::doSVBonyCAmFeatureConfig()
             std::stringstream().swap(ssTmp);
         }
 
-        nErr = m_Camera.getBadPixelCorrection(bEnabled);
+        nErr = m_Camera.getBadPixelCorrection(bCorrectionEnabled);
         if(nErr == VAL_NOT_AVAILABLE)
-            dx->setEnabled("BadPixel", false);
+            dx->setEnabled("comboBox", false);
         else {
-            dx->setCurrentIndex("BadPixel", (bEnabled?1:0));
+            dx->setCurrentIndex("comboBox", (bCorrectionEnabled?1:0));
         }
+
+        nErr = m_Camera.getBadPixelCorrectionThreshold(nMin, nMax, nVal);
+        if(nErr == VAL_NOT_AVAILABLE) {
+            dx->setEnabled("badPixelThreshold", false);
+            dx->setText("badPixelThresholdRange", "");
+        }
+        else {
+            dx->setPropertyInt("badPixelThreshold", "minimum", (int)nMin);
+            dx->setPropertyInt("badPixelThreshold", "maximum", (int)nMax);
+            dx->setPropertyInt("badPixelThreshold", "value", (int)nVal);
+            ssTmp << nMin << " to " << nMax;
+            dx->setText("badPixelThresholdRange", ssTmp.str().c_str());
+            std::stringstream().swap(ssTmp);
+            if(bCorrectionEnabled) {
+                dx->setEnabled("badPixelThreshold", true);
+            }
+            else {
+                dx->setEnabled("badPixelThreshold", false);
+            }
+        }
+
     }
     else {
         dx->setEnabled("Gain", false);
@@ -565,13 +591,17 @@ int X2Camera::doSVBonyCAmFeatureConfig()
             if(!nErr)
                 m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_OFFSET, nCtrlVal);
         }
-        if(dx->isEnabled("BadPixel")) {
-            nCtrlVal = dx->currentIndex("BadPixel");
+        if(dx->isEnabled("comboBox")) {
+            nCtrlVal = dx->currentIndex("comboBox");
             nErr = m_Camera.setBadPixelCorrection(nCtrlVal==0?false:true);
             if(!nErr)
                 m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_BAD_PIXEL_CORRECTION, nCtrlVal);
         }
 
+        dx->propertyInt("badPixelThreshold", "value", nCtrlVal);
+        nErr = m_Camera.setBadPixelCorrectionThreshold((long)nCtrlVal);
+        if(!nErr)
+            m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_BAD_PIXEL_CORRECTION_TH, nCtrlVal);
     }
 
     return nErr;
@@ -599,7 +629,7 @@ void X2Camera::doSelectCamEvent(X2GUIExchangeInterface* uiex, const char* pszEve
 void X2Camera::doSettingsCamEvent(X2GUIExchangeInterface* uiex, const char* pszEvent)
 {
     bool bEnable;
-
+    int nTmp;
 
     if (!strcmp(pszEvent, "on_checkBox_stateChanged")) {
         bEnable = uiex->isChecked("checkBox");
@@ -619,6 +649,18 @@ void X2Camera::doSettingsCamEvent(X2GUIExchangeInterface* uiex, const char* pszE
     if (!strcmp(pszEvent, "on_checkBox_4_stateChanged")) {
         bEnable = uiex->isChecked("checkBox_4");
         uiex->setEnabled("WB_B", !bEnable);
+    }
+
+    if (!strcmp(pszEvent, "on_comboBox_currentIndexChanged")) {
+        nTmp = uiex->currentIndex("comboBox");
+        switch(nTmp) {
+            case 0: // disabled
+                uiex->setEnabled("badPixelThreshold", false);
+                break;
+            case 1: // enabled
+                uiex->setEnabled("badPixelThreshold", true);
+                break;
+        }
     }
 
 }

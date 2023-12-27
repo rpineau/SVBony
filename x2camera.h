@@ -54,6 +54,7 @@ class AddFITSKeyInterface;
 #define KEY_SATURATION              "Saturation"
 #define KEY_OFFSET                  "Offset"
 #define KEY_BAD_PIXEL_CORRECTION    "BadPixelCorrection"
+#define KEY_BAD_PIXEL_CORRECTION_TH "BadPixelCorrectionThreshold"
 
 
 enum DIALOGS {SELECT, SETTINGS };
