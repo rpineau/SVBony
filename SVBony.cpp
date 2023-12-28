@@ -1728,7 +1728,7 @@ int CSVBony::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
 #endif
 
     while(true) {
-        ret = SVBGetVideoData(m_nCameraID, imgBuffer, sizeReadFromCam, 100);
+        ret = SVBGetVideoData(m_nCameraID, imgBuffer, sizeReadFromCam, 500);
         if(ret!=SVB_SUCCESS) {
             timeout++;
             if(timeout > MAX_DATA_TIMEOUT) {
@@ -1741,6 +1741,9 @@ int CSVBony::getFrame(int nHeight, int nMemWidth, unsigned char* frameBuffer)
                     free(imgBuffer);
                 return ERR_RXTIMEOUT;
             }
+            // wait and retry
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            std::this_thread::yield();
             continue;
         }
         else

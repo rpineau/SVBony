@@ -42,7 +42,7 @@
 
 #define VAL_NOT_AVAILABLE           0xDEADBEEF
 
-#define MAX_DATA_TIMEOUT    50
+#define MAX_DATA_TIMEOUT    10
 
 typedef struct _camera_info {
     int     cameraId;
