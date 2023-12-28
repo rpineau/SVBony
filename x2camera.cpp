@@ -503,6 +503,9 @@ int X2Camera::doSVBonyCAmFeatureConfig()
         if(dx->isEnabled("SpeedMode")) {
             nCtrlVal = dx->currentIndex("SpeedMode");
             nErr = m_Camera.setSpeedMode((long)nCtrlVal);
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_Camera.log(std::string("setSpeedMode ") + std::to_string(nCtrlVal) + " , nErr = " + std::to_string(nErr) );
+#endif
             if(!nErr)
                 m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_SPEED_MODE, nCtrlVal);
         }
@@ -510,6 +513,9 @@ int X2Camera::doSVBonyCAmFeatureConfig()
         if(dx->isEnabled("Gain")) {
             dx->propertyInt("Gain", "value", nCtrlVal);
             nErr = m_Camera.setGain((long)nCtrlVal);
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_Camera.log(std::string("setGain ") + std::to_string(nCtrlVal) + " , nErr = " + std::to_string(nErr) );
+#endif
             if(!nErr) {
                 m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_GAIN, nCtrlVal);
                 m_Camera.rebuildGainList();
@@ -518,6 +524,9 @@ int X2Camera::doSVBonyCAmFeatureConfig()
         if(dx->isEnabled("Gamma")) {
             dx->propertyInt("Gamma", "value", nCtrlVal);
             nErr = m_Camera.setGamma((long)nCtrlVal);
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_Camera.log(std::string("setGamma ") + std::to_string(nCtrlVal) + " , nErr = " + std::to_string(nErr) );
+#endif
             if(!nErr)
                 m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_GAMMA, nCtrlVal);
         }
@@ -525,6 +534,9 @@ int X2Camera::doSVBonyCAmFeatureConfig()
         if(dx->isEnabled("GammaContrast")) {
             dx->propertyInt("GammaContrast", "value", nCtrlVal);
             nErr = m_Camera.setGammaContrast((long)nCtrlVal);
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_Camera.log(std::string("setGammaContrast ") + std::to_string(nCtrlVal) + " , nErr = " + std::to_string(nErr) );
+#endif
             if(!nErr)
                 m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_GAMMA_CONTRAST, nCtrlVal);
         }
@@ -533,6 +545,9 @@ int X2Camera::doSVBonyCAmFeatureConfig()
             dx->propertyInt("WB_R", "value", nCtrlVal);
             bIsAuto = dx->isChecked("checkBox_2");
             nErr = m_Camera.setWB_R((long)nCtrlVal, bIsAuto);
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_Camera.log(std::string("setWB_R ") + std::to_string(nCtrlVal) + " , nErr = " + std::to_string(nErr) );
+#endif
             if(!nErr) {
                 m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_WHITE_BALANCE_R, nCtrlVal);
                 m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_WHITE_BALANCE_R_AUTO, bIsAuto?1:0);
@@ -543,6 +558,9 @@ int X2Camera::doSVBonyCAmFeatureConfig()
             dx->propertyInt("WB_G", "value", nCtrlVal);
             bIsAuto = dx->isChecked("checkBox_3");
             nErr = m_Camera.setWB_G((long)nCtrlVal, bIsAuto);
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_Camera.log(std::string("setWB_G ") + std::to_string(nCtrlVal) + " , nErr = " + std::to_string(nErr) );
+#endif
             if(!nErr){
                 m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_WHITE_BALANCE_G, nCtrlVal);
                 m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_WHITE_BALANCE_G_AUTO, bIsAuto?1:0);
@@ -553,6 +571,9 @@ int X2Camera::doSVBonyCAmFeatureConfig()
             dx->propertyInt("WB_B", "value", nCtrlVal);
             bIsAuto = dx->isChecked("checkBox_4");
             nErr = m_Camera.setWB_B((long)nCtrlVal, bIsAuto);
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_Camera.log(std::string("setWB_B ") + std::to_string(nCtrlVal) + " , nErr = " + std::to_string(nErr) );
+#endif
             if(!nErr) {
                 m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_WHITE_BALANCE_B, nCtrlVal);
                 m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_WHITE_BALANCE_B_AUTO, bIsAuto?1:0);
@@ -561,12 +582,18 @@ int X2Camera::doSVBonyCAmFeatureConfig()
         if(dx->isEnabled("Flip")) {
             nCtrlVal = dx->currentIndex("Flip");
             nErr = m_Camera.setFlip((long)nCtrlVal);
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_Camera.log(std::string("setFlip ") + std::to_string(nCtrlVal) + " , nErr = " + std::to_string(nErr) );
+#endif
             if(!nErr)
                 m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_FLIP, nCtrlVal);
         }
         if(dx->isEnabled("Contrast")) {
             dx->propertyInt("Contrast", "value", nCtrlVal);
             nErr = m_Camera.setContrast((long)nCtrlVal);
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_Camera.log(std::string("setContrast ") + std::to_string(nCtrlVal) + " , nErr = " + std::to_string(nErr) );
+#endif
             if(!nErr)
                 m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_CONTRAST, nCtrlVal);
         }
@@ -574,6 +601,9 @@ int X2Camera::doSVBonyCAmFeatureConfig()
         if(dx->isEnabled("Sharpness")) {
             dx->propertyInt("Sharpness", "value", nCtrlVal);
             nErr = m_Camera.setSharpness((long)nCtrlVal);
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_Camera.log(std::string("setSharpness ") + std::to_string(nCtrlVal) + " , nErr = " + std::to_string(nErr) );
+#endif
             if(!nErr)
                 m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_SHARPNESS, nCtrlVal);
         }
@@ -581,6 +611,9 @@ int X2Camera::doSVBonyCAmFeatureConfig()
         if(dx->isEnabled("Saturation")) {
             dx->propertyInt("Saturation", "value", nCtrlVal);
             nErr = m_Camera.setSaturation((long)nCtrlVal);
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_Camera.log(std::string("setSaturation ") + std::to_string(nCtrlVal) + " , nErr = " + std::to_string(nErr) );
+#endif
             if(!nErr)
                 m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_SATURATION, nCtrlVal);
         }
@@ -588,18 +621,27 @@ int X2Camera::doSVBonyCAmFeatureConfig()
         if(dx->isEnabled("Offset")) {
             dx->propertyInt("Offset", "value", nCtrlVal);
             nErr = m_Camera.setBlackLevel((long)nCtrlVal);
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_Camera.log(std::string("setBlackLevel ") + std::to_string(nCtrlVal) + " , nErr = " + std::to_string(nErr) );
+#endif
             if(!nErr)
                 m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_OFFSET, nCtrlVal);
         }
         if(dx->isEnabled("comboBox")) {
             nCtrlVal = dx->currentIndex("comboBox");
             nErr = m_Camera.setBadPixelCorrection(nCtrlVal==0?false:true);
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+            m_Camera.log(std::string("badPixCorrection ") + (nCtrlVal==0?"False":"True") + " , nErr = " + std::to_string(nErr) );
+#endif
             if(!nErr)
                 m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_BAD_PIXEL_CORRECTION, nCtrlVal);
         }
 
         dx->propertyInt("badPixelThreshold", "value", nCtrlVal);
         nErr = m_Camera.setBadPixelCorrectionThreshold((long)nCtrlVal);
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        m_Camera.log(std::string("setBadPixelCorrectionThreshold ") + std::to_string(nCtrlVal) + " , nErr = " + std::to_string(nErr) );
+#endif
         if(!nErr)
             m_pIniUtil->writeInt(m_sCameraSerial.c_str(), KEY_BAD_PIXEL_CORRECTION_TH, nCtrlVal);
     }

@@ -1454,8 +1454,8 @@ int CSVBony::setBadPixelCorrectionThreshold(long nThreshold)
     m_nBadPixelCorrectionThreshold = nThreshold;
 
 #if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
-    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getBadPixelCorrectionThreshold] Called"<< std::endl;
-    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [getBadPixelCorrectionThreshold] Bad pixel correction threshold" << nThreshold << std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setBadPixelCorrectionThreshold] Called"<< std::endl;
+    m_sLogFile << "["<<getTimeStamp()<<"]"<< " [setBadPixelCorrectionThreshold] Bad pixel correction threshold " << nThreshold << std::endl;
     m_sLogFile.flush();
 #endif
     ret = setControlValue(SVB_BAD_PIXEL_CORRECTION_THRESHOLD, m_nBadPixelCorrectionThreshold);
