@@ -177,7 +177,8 @@ int X2Camera::execModalSettingsDialog()
     int nErr = SB_OK;
     bool bPressedOK = false;
     int i;
-    char tmpBuffer[128];
+    std::stringstream ssTmp;
+
     int nCamIndex;
     bool bCameraFoud = false;
 
@@ -204,19 +205,20 @@ int X2Camera::execModalSettingsDialog()
     //Intialize the user interface
     m_Camera.listCamera(m_tCameraIdList);
     if(!m_tCameraIdList.size()) {
-        snprintf(tmpBuffer,128,"No Camera found");
-        dx->comboBoxAppendString("comboBox",tmpBuffer);
+        ssTmp << "No Camera found";
+        dx->comboBoxAppendString("comboBox",ssTmp.str().c_str());
         dx->setCurrentIndex("comboBox",0);
     }
     else {
         bCameraFoud = true;
         nCamIndex = 0;
         for(i=0; i< m_tCameraIdList.size(); i++) {
+            ssTmp << m_tCameraIdList[i].model << " [" << m_tCameraIdList[i].Sn.id << "]";
             //Populate the camera combo box and set the current index (selection)
-            snprintf(tmpBuffer, 128, "%s [%s]",m_tCameraIdList[i].model, m_tCameraIdList[i].Sn.id);
-            dx->comboBoxAppendString("comboBox",tmpBuffer);
+            dx->comboBoxAppendString("comboBox",ssTmp.str().c_str());
             if(m_tCameraIdList[i].cameraId == m_nCameraID)
                 nCamIndex = i;
+            std::stringstream().swap(ssTmp);
         }
         dx->setCurrentIndex("comboBox",nCamIndex);
     }
@@ -262,7 +264,6 @@ int X2Camera::doSVBonyCAmFeatureConfig()
     int nCtrlVal;
     bool bIsAuto;
     bool bPressedOK = false;
-    bool bEnabled = false;
     std::stringstream ssTmp;
     bool bCorrectionEnabled;
 

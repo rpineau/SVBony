@@ -8,10 +8,7 @@
 #ifndef SVBony_hpp
 #define SVBony_hpp
 
-#include <stdio.h>
 #include <math.h>
-#include <string.h>
-#include <stdlib.h>
 #include <string>
 #include <vector>
 #include <sstream>

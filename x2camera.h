@@ -1,7 +1,14 @@
 #pragma once
 #include <math.h>
-#include <stdio.h>
-#include <string.h>
+#include <string>
+#include <vector>
+#include <sstream>
+#include <iostream>
+#include <sstream>
+#include <iomanip>
+#include <fstream>
+#include <map>
+#include <thread>
 
 #include "../../licensedinterfaces/cameradriverinterface.h"
 #include "../../licensedinterfaces/pixelsizeinterface.h"
