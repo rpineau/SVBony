@@ -213,7 +213,7 @@ int X2Camera::execModalSettingsDialog()
         bCameraFoud = true;
         nCamIndex = 0;
         for(i=0; i< m_tCameraIdList.size(); i++) {
-            ssTmp << m_tCameraIdList[i].model << " [" << m_tCameraIdList[i].Sn.id << "]";
+            ssTmp << m_tCameraIdList[i].model << " [" << m_tCameraIdList[i].Sn << "]";
             //Populate the camera combo box and set the current index (selection)
             dx->comboBoxAppendString("comboBox",ssTmp.str().c_str());
             if(m_tCameraIdList[i].cameraId == m_nCameraID)

@@ -136,7 +136,7 @@ int CSVBony::Connect(int nCameraID)
             listCamera(tCameraIdList);
             if(tCameraIdList.size()) {
                 m_nCameraID = tCameraIdList[0].cameraId;
-                m_sCameraSerial.assign((char *)tCameraIdList[0].Sn.id);
+                m_sCameraSerial.assign(tCameraIdList[0].Sn);
             }
             else
                 return ERR_NODEVICESELECTED;
@@ -588,7 +588,7 @@ void CSVBony::getCameraName(std::string &sName)
 {
     sName.assign(m_sCameraName);
 }
-
+/*
 int CSVBony::listCamera(std::vector<camera_info_t>  &cameraIdList)
 {
     int nErr = PLUGIN_OK;
@@ -634,6 +634,53 @@ int CSVBony::listCamera(std::vector<camera_info_t>  &cameraIdList)
     }
     return nErr;
 }
+*/
+
+int CSVBony::listCamera(std::vector<camera_info_t>  &cameraIdList)
+{
+    int nErr = PLUGIN_OK;
+    SVB_ERROR_CODE ret = SVB_SUCCESS;
+    camera_info_t   tCameraInfo;
+
+    cameraIdList.clear();
+
+    if(!m_bConnected) {
+        // need 2 calls as there is a bug in the SDK and it doesn't see newly connected camera on the first call
+        m_nCameraNum = SVBGetNumOfConnectedCameras();
+        m_nCameraNum = SVBGetNumOfConnectedCameras();
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+        m_sLogFile << "["<<getTimeStamp()<<"]"<< " [listCamera] m_nCameraNum : " << m_nCameraNum<< std::endl;
+        m_sLogFile.flush();
+#endif
+
+        for (int i = 0; i < m_nCameraNum; i++)
+        {
+            ret = SVBGetCameraInfo(&m_CameraInfo, i);
+            if (ret == SVB_SUCCESS) {
+#if defined PLUGIN_DEBUG && PLUGIN_DEBUG >= 2
+                m_sLogFile << "["<<getTimeStamp()<<"]"<< " [listCamera] Name : " << m_CameraInfo.FriendlyName << std::endl;
+                m_sLogFile << "["<<getTimeStamp()<<"]"<< " [listCamera] USB Port type : " << m_CameraInfo.PortType  << std::endl;
+                m_sLogFile << "["<<getTimeStamp()<<"]"<< " [listCamera] SN  : " << m_CameraInfo.CameraSN << std::endl;
+                m_sLogFile << "["<<getTimeStamp()<<"]"<< " [listCamera] Camera ID : " << m_CameraInfo.CameraID << std::endl;
+                m_sLogFile.flush();
+#endif
+                tCameraInfo.cameraId = m_CameraInfo.CameraID;
+                tCameraInfo.model.assign(m_CameraInfo.FriendlyName);
+                tCameraInfo.Sn.assign(m_CameraInfo.CameraSN);
+                cameraIdList.push_back(tCameraInfo);
+            }
+        }
+    }
+    else {
+        tCameraInfo.cameraId = m_CameraInfo.CameraID;
+        tCameraInfo.model.assign(m_CameraInfo.FriendlyName);
+        tCameraInfo.Sn.assign(m_CameraInfo.CameraSN);
+        cameraIdList.push_back(tCameraInfo);
+
+    }
+    return nErr;
+}
+
 
 void CSVBony::getFirmwareVersion(std::string &sVersion)
 {

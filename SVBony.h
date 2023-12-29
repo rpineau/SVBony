@@ -45,8 +45,8 @@
 
 typedef struct _camera_info {
     int     cameraId;
-    SVB_SN  Sn;
-    char    model[BUFFER_LEN];
+    std::string  Sn;
+    std::string    model;
 } camera_info_t;
 
 
@@ -152,6 +152,7 @@ protected:
 
     SVB_CAMERA_PROPERTY     m_cameraProperty;
     SVB_CAMERA_PROPERTY_EX  m_CameraPorpertyEx;
+    SVB_CAMERA_INFO         m_CameraInfo;
 
     SVB_IMG_TYPE            m_nVideoMode;
     int                     m_nControlNums;
