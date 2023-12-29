@@ -8,6 +8,8 @@
 #ifndef SVBony_hpp
 #define SVBony_hpp
 
+#include <string.h>
+
 #include <math.h>
 #include <string>
 #include <vector>
