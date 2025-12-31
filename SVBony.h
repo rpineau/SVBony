@@ -34,7 +34,7 @@
 
 //#define PLUGIN_DEBUG    2
 
-#define PLUGIN_VERSION      1.13
+#define PLUGIN_VERSION      1.20
 #define BUFFER_LEN 128
 #define PLUGIN_OK   0
 #define MAX_NB_BIN  16
